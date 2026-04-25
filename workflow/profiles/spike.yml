@@ -1,0 +1,70 @@
+# Jupiter Profile — Spike
+# Time-boxed technical investigation profile. Use to answer a specific technical
+# question before committing to a design decision. Produces a spike report.
+# Typically spawned via /jupiter:spawn --type spike
+
+version: "3.0"
+id: spike
+label: "Spike"
+description: >
+  Time-boxed technical investigation to answer a specific question.
+  Use when a design decision cannot be made without hands-on investigation
+  or prototype work. Produces a spike report capturing: the question asked,
+  the investigation approach, findings, and the recommended decision.
+  The spike report is the input to an ADR in the parent initiative.
+
+phases:
+  include: [intent]
+  exclude: [requirements, design, assessment]
+  intent_variant: spike
+  note: >
+    In spike mode, the intent phase captures the technical question being
+    investigated and the investigation plan. The output is a spike report
+    structured as: question, approach, findings, recommendation, ADR input.
+
+gates:
+  human_required_on_all_phases: false
+  reviewer_panel_available: false
+  spec_check_available: false
+  human_recommended: true
+  human_note: >
+    Human review is not required to complete a spike, but the architect should
+    review the spike report before using it to inform a design decision.
+    Use /jupiter:review to record the review.
+
+time_box:
+  enabled: true
+  default_iterations: 2
+  note: >
+    Spikes are strictly time-boxed. After {default_iterations} iterations,
+    produce the best available answer and stop. An incomplete answer is better
+    than an open-ended investigation. The spike report must include a recommended
+    decision even if confidence is low — the architect decides whether to act on it.
+
+iteration:
+  budget: 2
+  stuck_threshold: 1
+  stuck_action: >
+    Surface current findings and produce a spike report with whatever has been
+    learned. Note confidence level explicitly. Do not continue beyond the time box.
+
+context:
+  density: minimal
+  required:
+    - workspace/context/project.yml
+  optional:
+    - workspace/context/standards/
+    - workspace/context/adrs/
+
+parent_linkage:
+  enabled: true
+  field: parent_initiative_id
+  fold_back: manual
+  fold_back_note: >
+    The spike report is input to a design decision in the parent initiative.
+    Typically the architect creates an ADR in the parent, citing the spike
+    report as evidence.
+
+output:
+  spike:
+    artifact: "workspace/artifacts/requirements/{initiative_id}-spike.md"

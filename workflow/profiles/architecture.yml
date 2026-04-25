@@ -1,0 +1,57 @@
+# Jupiter Profile — Architecture
+# Standard profile for architecture governance work.
+# All three phases active. Human gate required on every phase.
+# Use this for any initiative that produces a ratified SAD.
+
+version: "3.0"
+id: architecture
+label: "Architecture Governance"
+description: >
+  Full architecture governance workflow: Intent → Requirements → Design.
+  Human gate required at every phase transition. Reviewer panel available
+  on all phases. Produces a ratified SAD and a set of accepted ADRs.
+
+phases:
+  include: [intent, requirements, design]
+  exclude: [assessment]
+
+gates:
+  human_required_on_all_phases: true
+  reviewer_panel_available: true
+  spec_check_available: true
+
+reviewer_panel:
+  enabled: true
+  default_roster: [ea, ba, da, sa, eng]
+  invocation: "/jupiter:review --panel"
+
+iteration:
+  budget: unlimited
+  stuck_threshold: 3
+  stuck_action: >
+    After {stuck_threshold} iterations with no gap reduction, surface a status
+    report to the architect identifying the specific checks that are not passing
+    and requesting guidance. Do not continue looping without direction.
+
+context:
+  density: standard
+  required:
+    - workspace/context/project.yml
+  optional:
+    - workspace/context/policy/
+    - workspace/context/standards/
+    - workspace/context/landscape/
+    - workspace/context/adrs/
+    - workspace/context/glossary/
+
+output:
+  intent:
+    artifact: workspace/INTENT.md
+  requirements:
+    artifact: "workspace/artifacts/requirements/{initiative_id}-requirements.md"
+    template: templates/requirements_template.md
+  design:
+    artifact: "workspace/artifacts/design/{initiative_id}-SAD.md"
+    adrs: "workspace/artifacts/design/adrs/"
+    template_sad: templates/SAD_template.md
+    template_adr: templates/ADR_template.md

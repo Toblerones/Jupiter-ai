@@ -1,0 +1,318 @@
+# Jupiter Gate Config — Assessment
+# Defines the checks the loop agent runs when evaluating an externally-produced artifact.
+#
+# Assessment is an evaluate-only mode: the loop agent does not produce a new artifact.
+# It assesses an existing one (loaded via /jupiter:assess --artifact <path>) against
+# the requirements baseline and project constraints.
+# Output: a structured findings report in workspace/assessment/{initiative_id}/findings.md
+#
+# Entry point: /jupiter:assess --artifact <path>
+# This sets the assessment profile and delegates to /jupiter:iterate.
+
+version: "3.0"
+transition: "assessment"
+pattern: alignment_evaluation
+description: >
+  Evaluate an externally-produced artifact against the requirements baseline and
+  project constraints. Produces a structured findings report classifying each
+  requirement as aligned, gap, violation, or risk. The loop agent does not produce
+  a new artifact — it assesses the provided one.
+
+# ─── Findings Schema ──────────────────────────────────────────────────────────
+# Required sections in the findings report. Referenced by auto check AC-RA-001.
+
+findings_report_sections:
+  - "Assessment Summary"
+  - "Artifact Under Assessment"
+  - "Requirements Baseline"
+  - "Per-Requirement Alignment"
+  - "Constraint Conformance"
+  - "Classified Findings"
+  - "Escalations"
+  - "Recommendations"
+  - "Architect Review Record"
+
+# Finding classification values
+finding_classifications:
+  aligned: "Requirement fully addressed by the artifact; no gap detected"
+  gap: "Requirement partially addressed or missing from the artifact"
+  violation: "Artifact explicitly contradicts the requirement or a constraint"
+  risk: "Requirement addressed but in a way that introduces identifiable risk"
+  not_assessed: "Evaluation impossible due to artifact ambiguity or missing context"
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-RA-001
+    name: findings_report_complete
+    description: >
+      The findings report contains all required sections listed in
+      findings_report_sections. Each section has substantive content — no section
+      is blank, missing, or contains placeholder text.
+    required: true
+    failure_message: >
+      Findings report is missing one or more required sections, or one or more
+      sections contain placeholder text. All sections must be populated with
+      substantive content before gate review.
+
+  - id: AC-RA-002
+    name: all_requirements_evaluated
+    description: >
+      Every REQ-* key from the requirements baseline appears in the
+      Per-Requirement Alignment section with a valid finding_classification.
+      No requirement may have classification "not_assessed" unless an explicit
+      rationale is recorded in the Escalations section.
+    required: true
+    failure_message: >
+      One or more REQ-* keys are absent from the Per-Requirement Alignment table,
+      or have classification "not_assessed" without a recorded escalation.
+      Every requirement must be evaluated and classified.
+
+  - id: AC-RA-003
+    name: constraint_categories_evaluated
+    description: >
+      The Constraint Conformance section explicitly covers each constraint category
+      that was loaded for this assessment: policy (required), standards (if loaded),
+      landscape (if loaded), adrs (if loaded). Each category must have a conformance
+      status (conformant, non-conformant, partially-conformant, or not-applicable)
+      with a rationale.
+    required: true
+    failure_message: >
+      The Constraint Conformance section does not cover all loaded constraint
+      categories. Each loaded category must have an explicit conformance status
+      and rationale. Check which categories were loaded and ensure all are covered.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-RA-001
+    name: findings_accurately_classified
+    description: >
+      Each finding is classified accurately using the defined classification values.
+      A gap is not a violation — the distinction matters for recommendations.
+      Aligned findings cite specific artifact evidence. Gap and violation findings
+      identify the specific requirement clause or constraint provision that is unmet.
+    required: true
+    failure_message: >
+      One or more findings are misclassified or lack supporting evidence.
+      Aligned findings need artifact evidence. Gap/violation findings need the
+      specific requirement clause or constraint provision that is unmet.
+      Review and correct all classification entries.
+
+  - id: AI-RA-002
+    name: recommendations_actionable
+    description: >
+      Every gap, violation, and risk finding has at least one specific, actionable
+      recommendation. "Revise the design" is not actionable — name the specific
+      section, decision, or component that needs revision and describe the change.
+      Aligned findings do not require recommendations.
+    required: true
+    failure_message: >
+      One or more gap, violation, or risk findings lack specific actionable
+      recommendations. Each non-aligned finding must have at least one
+      recommendation naming the specific artifact section or decision to revise.
+
+  - id: AI-RA-003
+    name: policy_obligations_checked
+    description: >
+      All policy documents loaded from workspace/context/policy/ have been
+      examined. Each policy obligation relevant to the artifact's domain has been
+      checked against the artifact. Where the artifact does not address a policy
+      obligation, a gap or violation finding is raised. Absence of a finding implies
+      explicit confirmation of conformance, not a skip.
+    required: true
+    failure_message: >
+      The policy conformance check is incomplete. Not all policy obligations from
+      workspace/context/policy/ have been evaluated against the artifact. Policy
+      documents are the primary evaluation surface — every relevant obligation must
+      be checked. Review the policy documents and complete the evaluation.
+
+  - id: AI-RA-004
+    name: landscape_conflicts_checked
+    description: >
+      If workspace/context/landscape/ documents were loaded, the artifact has been
+      checked for conflicts with the integration landscape: systems it must integrate
+      with, platforms it must run on, and constraints it must observe.
+      Integration landscape conflicts are classified as violations.
+    required: false
+    note: "Only evaluated when context/landscape/ files are present."
+    failure_message: >
+      Landscape conformance check is incomplete. The artifact has not been checked
+      against all integration landscape constraints in workspace/context/landscape/.
+      Review the landscape documents and complete the check for integration conflicts.
+
+  - id: AI-RA-005
+    name: assessment_internally_consistent
+    description: >
+      The findings report is internally consistent. A requirement cannot be
+      classified as "aligned" in Per-Requirement Alignment and "gap" in Classified
+      Findings. Recommendations do not contradict each other. The Assessment
+      Summary accurately summarises the Classified Findings counts.
+    required: true
+    failure_message: >
+      The findings report contains internal inconsistencies. Check for contradictions
+      between Per-Requirement Alignment and Classified Findings, and verify the
+      Assessment Summary counts match the actual finding totals.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+
+    - id: HG-RA-001
+      name: architect_approves_findings
+      description: >
+        The assessing architect has reviewed the complete findings report — all
+        sections — and explicitly approves it as an accurate and sound assessment.
+        The architect confirms that findings are correctly classified, recommendations
+        are appropriate, and no significant misalignment has been overlooked.
+        The architect is accountable for what is in the findings report.
+      required: true
+      failure_message: >
+        Architect approval is pending. Present the complete findings report via
+        /jupiter:review and record explicit approval before this gate can pass.
+        Do not mark the assessment complete without architect sign-off.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Assessment complete when all required auto checks and AI checks pass,
+    and the architect approves the findings report via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  You are evaluating an externally-produced artifact against a requirements
+  baseline and project constraints. Your output is a structured findings report.
+
+  You are NOT producing a new design. You are assessing an existing one.
+  The provided artifact is the subject. The requirements and constraints are
+  the evaluation surface. The findings report is your output.
+
+  STEP 1 — LOAD THE ARTIFACT UNDER ASSESSMENT
+  Load the artifact from the path provided via /jupiter:assess --artifact.
+  Read it completely before evaluating. Record: artifact type, author, version
+  (if present), and date. Do not make assumptions about its content — read it.
+
+  STEP 2 — LOAD THE REQUIREMENTS BASELINE
+  Load the requirements artifact for this initiative. Extract every REQ-* key,
+  its description, type, and acceptance criteria. List them before starting
+  the per-requirement evaluation — this is your evaluation checklist.
+  Count the total requirements. You must evaluate every one.
+
+  STEP 3 — LOAD ALL CONSTRAINTS (PRIMARY EVALUATION SURFACE)
+  Load every constraint file available:
+
+    REQUIRED:
+    - workspace/context/project.yml — constraint dimensions, compliance context
+    - workspace/context/policy/     — regulatory documents, compliance mandates.
+                                      Read every policy document completely.
+                                      These are the primary evaluation yardstick.
+
+    LOAD IF PRESENT:
+    - workspace/context/standards/  — architecture standards
+    - workspace/context/landscape/  — integration landscape, platform constraints
+    - workspace/context/adrs/       — prior architecture decisions (consistency check)
+    - workspace/context/glossary/   — domain vocabulary (terminology alignment)
+
+  Constraints are not supplementary references — they drive your findings.
+  A requirement the artifact does not address is a GAP.
+  A constraint the artifact contradicts is a VIOLATION.
+  Do not skip a policy document because it is long — read it fully.
+
+  STEP 4 — EVALUATE EACH REQUIREMENT
+  For each REQ-* key:
+    1. Locate where (if anywhere) the artifact addresses this requirement.
+    2. Assess whether the artifact's treatment satisfies the acceptance criteria.
+    3. Classify using exactly one value:
+         aligned      — requirement fully addressed; cite the artifact section
+         gap          — requirement not addressed or only partially addressed
+         violation    — artifact explicitly contradicts the requirement
+         risk         — requirement addressed but introduces identifiable risk
+         not_assessed — evaluation impossible (escalate immediately)
+    4. Record in Per-Requirement Alignment:
+         {req_key, description, classification, evidence_or_gap, notes}
+    5. For gap/violation/risk: note the specific clause unmet.
+       For aligned: cite the specific artifact section that addresses it.
+    6. For not_assessed: add an entry to the Escalations section immediately.
+
+  STEP 5 — EVALUATE CONSTRAINT CONFORMANCE
+  For each loaded constraint category:
+
+    Policy (REQUIRED — examine every obligation):
+      For each policy document: identify every obligation relevant to the domain.
+      Check whether the artifact addresses the obligation.
+      Non-conformant obligations become violation findings.
+      Record overall policy conformance status in Constraint Conformance section.
+
+    Standards (if loaded):
+      Check artifact structure and decisions against loaded architecture standards.
+      Record conformance status in Constraint Conformance section.
+
+    Landscape (if loaded):
+      Check for integration conflicts — systems, platforms, infrastructure constraints.
+      Integration landscape conflicts are violations.
+      Record conformance status in Constraint Conformance section.
+
+    ADRs (if loaded):
+      Check whether the artifact's decisions are consistent with prior ADRs.
+      A decision contradicting an accepted ADR is a violation.
+      Record conformance status in Constraint Conformance section.
+
+  STEP 6 — BUILD THE CLASSIFIED FINDINGS LIST
+  Consolidate all non-aligned findings into the Classified Findings section.
+  For each finding:
+    - finding_id: FIND-{NNN}
+    - type: gap | violation | risk
+    - source: requirement ({REQ-*}) | policy ({doc_name}) | standard | landscape | adr
+    - description: what is unmet or contradicted
+    - evidence: specific artifact section or absence thereof
+    - recommendation: specific, actionable change the artifact author should make
+
+  STEP 7 — WRITE RECOMMENDATIONS
+  For each gap, violation, and risk finding, write at least one actionable
+  recommendation naming:
+    - The specific artifact section, design decision, or component to revise
+    - The specific change needed (not just "address this requirement")
+    - Why the change matters in terms of the requirement or constraint
+  Do not write "the design should be improved." Write "Section X should add
+  [specific content] to address REQ-F-PROC-003 acceptance criterion 2."
+
+  STEP 8 — POPULATE ALL REPORT SECTIONS
+    1. Assessment Summary     — total requirements, counts by classification,
+                                critical findings count, overall conformance verdict
+    2. Artifact Under Assessment — artifact name, author, version, date, path
+    3. Requirements Baseline  — total count, REQ key range, source artifact path
+    4. Per-Requirement Alignment — table of all REQ-* keys with classification
+    5. Constraint Conformance — per-category conformance status and rationale
+    6. Classified Findings    — consolidated FIND-* list (gaps, violations, risks)
+    7. Escalations            — not_assessed findings with rationale; items requiring
+                                human resolution before assessment can be completed
+    8. Recommendations        — actionable recommendations for each non-aligned finding
+    9. Architect Review Record — table ready for architect sign-off entry
+
+  STEP 9 — SELF-REVIEW (before presenting for human gate)
+  Verify:
+    - Every REQ-* key appears in Per-Requirement Alignment
+    - Every loaded constraint category is covered in Constraint Conformance
+    - Every not_assessed finding has an entry in Escalations
+    - Every gap/violation/risk finding has at least one recommendation
+    - Assessment Summary counts match the actual finding totals
+    - No contradictions within the report
+    - Aligned findings cite specific artifact evidence
+    - Gap/violation/risk findings name specific clauses
+
+  STEP 10 — PRESENT FOR ARCHITECT REVIEW
+  After auto checks and AI checks pass, present the complete findings report
+  via /jupiter:review. Explicitly request:
+    - Architect approval of the findings report
+    - Confirmation that findings are correctly classified
+    - Confirmation that recommendations are appropriate
+  Do not mark the assessment complete without architect approval.
+  The human gate is non-negotiable — never auto-approve on behalf of the architect.

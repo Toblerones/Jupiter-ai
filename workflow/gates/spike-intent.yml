@@ -1,0 +1,187 @@
+# Jupiter Gate Config — Spike Intent
+# Used when an initiative runs under the `spike` profile.
+# The intent phase is the only phase in this profile, and the artifact it produces
+# is a spike report — input to a design decision (typically an ADR) in the parent
+# initiative.
+# Spikes are strictly time-boxed (default 2 iterations) — produce the best answer
+# you can within the budget, even if confidence is low.
+
+version: "3.0"
+transition: "spike → report"
+description: >
+  Produce a spike report answering a specific technical question.
+  Outputs: question, investigation approach, findings, recommended decision,
+  ADR input. Confidence is reported explicitly.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-SI-001
+    name: report_sections_present
+    description: >
+      The spike report contains all required sections: Question, Approach,
+      Findings, Recommended Decision, Confidence, ADR Input.
+    required: true
+    failure_message: >
+      One or more required sections are missing from the spike report.
+      A spike report without all six sections is incomplete.
+
+  - id: AC-SI-002
+    name: question_singular_and_specific
+    description: >
+      The Question section names exactly one technical question, phrased
+      specifically enough to admit a yes/no or one-of-N answer. Multi-question
+      spikes are not allowed — split into separate spikes.
+    required: true
+    failure_message: >
+      The spike either has no clearly stated question or has multiple questions
+      bundled together. Restate as a single specific question, or split into
+      separate spike initiatives.
+
+  - id: AC-SI-003
+    name: parent_initiative_referenced
+    description: >
+      The spike report explicitly names the parent initiative it informs
+      (parent_initiative_id from the initiative file).
+    required: true
+    failure_message: >
+      Spike report does not reference its parent initiative. A spike without
+      an explicit parent cannot be wired into a design decision.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-SI-001
+    name: approach_matches_question
+    description: >
+      The Approach section describes investigation steps that could plausibly
+      answer the stated question. Approach that doesn't engage with the
+      question is wasted spike effort.
+    required: true
+    failure_message: >
+      The investigation approach does not clearly bear on the stated question.
+      Either revise the approach or revise the question to match what was done.
+
+  - id: AI-SI-002
+    name: findings_support_recommendation
+    description: >
+      The Recommended Decision is supported by the Findings. If findings are
+      thin or contradictory, the recommendation should reflect that with low
+      confidence — not paper over the gap.
+    required: true
+    failure_message: >
+      The recommended decision is not supported by the findings, or papers
+      over contradictory evidence. Either gather more evidence or lower the
+      confidence and state the residual risk.
+
+  - id: AI-SI-003
+    name: confidence_stated_honestly
+    description: >
+      Confidence is stated explicitly (high / medium / low) with a one-line
+      justification. A spike with overstated confidence is more harmful than
+      a spike that admits uncertainty.
+    required: true
+    failure_message: >
+      Confidence is missing, vague ("reasonable"), or inconsistent with the
+      thinness of the findings. State confidence as high/medium/low and
+      justify it in one line.
+
+  - id: AI-SI-004
+    name: adr_input_actionable
+    description: >
+      The ADR Input section contains the material the architect needs to
+      author an ADR in the parent initiative: alternatives considered,
+      decision drivers, consequences. Not just a copy of the recommendation.
+    required: true
+    failure_message: >
+      ADR Input section does not contain enough structure for the architect
+      to author an ADR. At minimum: alternatives considered, decision drivers,
+      consequences if the recommendation is adopted.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+# Spike does not require human approval to complete (per spike profile).
+# Architect review is recommended before using the spike to inform a decision.
+
+human_gate:
+  required: false
+  checks: []
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: false
+  description: >
+    Phase complete when all required auto checks and AI checks pass.
+    Time-box: completion is forced when the profile's iteration.budget is
+    reached, even if gap > 0 — produce the best answer with available
+    evidence and state confidence honestly.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  You are producing a spike report — a time-boxed technical investigation
+  that answers one specific question. The report is input to a design
+  decision (typically an ADR) in the parent initiative.
+
+  STEP 1 — LOCK THE QUESTION
+  Read workspace/INTENT.md (or the initiative's intent field) — for spike
+  initiatives this captures the technical question and investigation plan.
+  Read the parent initiative file to understand which design decision is
+  waiting on this spike. State the question as a single sentence at the top
+  of the report. If you find yourself answering more than one question,
+  the spike has been mis-scoped — note this and ask the architect to split.
+
+  STEP 2 — INVESTIGATE
+  Investigation can include reading docs, building a throwaway prototype,
+  running benchmarks, reviewing the relevant landscape file, or testing
+  integration points. Spikes are cheap and fast — do not over-build.
+  Each iteration should narrow the answer.
+
+  STEP 3 — STRUCTURE THE REPORT
+  The report has six sections, in this order:
+
+  1. **Question** — one sentence, specific, answerable
+  2. **Approach** — what was done; list iterations and what each covered
+  3. **Findings** — what was observed; cite evidence (commands run, code
+     written, docs read, benchmarks captured)
+  4. **Recommended Decision** — the answer, stated as the decision the
+     architect should make (e.g. "Adopt PostgreSQL with logical replication"
+     not "PostgreSQL is fine")
+  5. **Confidence** — high / medium / low, with a one-line justification
+     based on how thin or thick the evidence is
+  6. **ADR Input** — material for the parent ADR: alternatives considered,
+     decision drivers, consequences if adopted
+
+  STEP 4 — RESPECT THE TIME BOX
+  Spike has a budget (default 2 iterations). If you have not converged by
+  the budget, produce the best answer you can and lower confidence
+  accordingly. An incomplete spike with low confidence is more useful than
+  no spike — the architect can decide whether to extend or accept risk.
+
+  STEP 5 — BE HONEST ABOUT CONFIDENCE
+  Overstating confidence is the worst outcome of a spike. If evidence is
+  thin, say so. If findings contradict each other, say so. The architect
+  cannot make a good decision from a falsely-confident spike.
+
+  STEP 6 — REFERENCE THE PARENT
+  The spike report must explicitly cite the parent initiative ID at the
+  top. The ADR Input section will be lifted into an ADR in the parent;
+  the parent reference is what makes that wiring traceable.
+
+  STEP 7 — SELF-REVIEW (before presenting)
+  Verify:
+    - All six sections present and non-empty
+    - Question is singular and specific
+    - Approach engages with the question
+    - Findings cite evidence
+    - Recommendation is supported by findings
+    - Confidence is stated honestly with justification
+    - ADR Input contains alternatives, drivers, consequences
+    - Parent initiative referenced
+
+  Spike does not require human gate approval to complete, but the architect
+  typically runs /jupiter:review to record review before authoring the ADR
+  in the parent initiative.

@@ -1,0 +1,151 @@
+# Jupiter Gate Config — Discovery Intent
+# Used when an initiative runs under the `discovery` profile.
+# The intent phase is the only phase in this profile, and the artifact it produces
+# is a discovery report (not a formal intent statement).
+# Discovery is time-boxed: typically 3 iterations. The architect reads the report
+# and folds findings back to a parent initiative manually.
+
+version: "3.0"
+transition: "discovery → report"
+description: >
+  Produce a discovery report capturing what was learned about an ill-defined
+  problem space. Outputs: problem landscape, key findings, answered questions,
+  open questions, recommended next steps.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-DI-001
+    name: report_sections_present
+    description: >
+      The discovery report contains all required sections: Problem Landscape,
+      Investigation Approach, Key Findings, Answered Questions, Open Questions,
+      Recommended Next Steps.
+    required: true
+    failure_message: >
+      One or more required sections are missing from the discovery report.
+      A discovery report without all six sections is incomplete.
+
+  - id: AC-DI-002
+    name: parent_initiative_referenced
+    description: >
+      The discovery report explicitly names the parent initiative it informs
+      (parent_initiative_id from the initiative file).
+    required: true
+    failure_message: >
+      Discovery report does not reference its parent initiative. Findings without
+      an explicit parent cannot be folded back coherently.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-DI-001
+    name: findings_traceable_to_evidence
+    description: >
+      Every key finding cites the evidence it is based on (interview, document,
+      observation, prototype, prior art). A finding without traceable evidence
+      is opinion, not a discovery output.
+    required: true
+    failure_message: >
+      One or more findings are not traceable to evidence. Re-state the evidence
+      basis for each finding, or remove findings that are unsupported.
+
+  - id: AI-DI-002
+    name: open_questions_actionable
+    description: >
+      Each open question is specific enough that the architect could decide
+      a next step (further discovery, spike, defer, accept risk). Vague open
+      questions ("we should think about scaling") are not useful inputs.
+    required: true
+    failure_message: >
+      One or more open questions are too vague to act on. Rewrite them so that
+      the architect could choose a concrete disposition for each.
+
+  - id: AI-DI-003
+    name: recommendations_grounded
+    description: >
+      Recommended next steps follow logically from the findings and answered
+      questions. They do not introduce conclusions that the body of the report
+      does not support.
+    required: true
+    failure_message: >
+      One or more recommendations are not supported by the report's findings.
+      Either add the missing evidence or revise the recommendation.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+# Discovery does not require human approval to complete (per discovery profile).
+# Human review is recommended before fold-back but optional.
+
+human_gate:
+  required: false
+  checks: []
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: false
+  description: >
+    Phase complete when all required auto checks and AI checks pass.
+    The architect optionally runs /jupiter:review before folding findings
+    back to the parent initiative. Time-box: completion is also forced
+    when the profile's iteration.budget is reached, even if gap > 0.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  You are producing a discovery report for a time-boxed exploration of an
+  ill-defined problem space. The report informs a parent initiative — its job
+  is to give the architect enough understanding to commit to (or revise) intent.
+
+  STEP 1 — READ THE DISCOVERY MANDATE
+  Read workspace/INTENT.md (or the initiative's intent field) — for discovery
+  initiatives this captures the question being explored, not a formal intent
+  statement. Read the parent initiative file to understand what triggered the
+  discovery and what decision the parent is waiting on.
+
+  STEP 2 — INVESTIGATE
+  Investigation can include reading existing context (landscape, glossary,
+  prior ADRs), interviewing stakeholders mentioned in the parent initiative,
+  reviewing comparable systems, or building throwaway prototypes. Discovery is
+  cheap exploration — do not over-engineer.
+
+  STEP 3 — STRUCTURE THE REPORT
+  The report has six sections, in this order:
+
+  1. **Problem Landscape** — what is the shape of the problem space, what are
+     the relevant systems / actors / constraints, what is already known
+  2. **Investigation Approach** — what was done in this discovery (interviews,
+     reading, prototyping); list iterations and what each focused on
+  3. **Key Findings** — what was learned; each finding cites evidence
+  4. **Answered Questions** — questions the parent initiative was waiting on
+     that this discovery resolved; for each, state the answer and confidence
+  5. **Open Questions** — questions that remain; for each, propose a
+     disposition (further discovery, spike, defer, accept risk)
+  6. **Recommended Next Steps** — concrete actions the parent initiative
+     should take based on the findings
+
+  STEP 4 — RESPECT THE TIME BOX
+  Discovery has a budget (default 3 iterations). If you have not converged by
+  the budget, that is expected — produce the best report you can with what
+  you have learned. An incomplete report is more useful than no report.
+  Note unanswered questions explicitly.
+
+  STEP 5 — REFERENCE THE PARENT
+  The discovery report must explicitly cite the parent initiative ID at the
+  top. Findings will be manually folded back; the parent reference is what
+  makes that traceable.
+
+  STEP 6 — SELF-REVIEW (before presenting)
+  Verify:
+    - All six sections present and non-empty
+    - Every finding cites evidence
+    - Every open question is specific enough to act on
+    - Recommendations are supported by the report body
+    - Parent initiative is referenced
+
+  Discovery does not require human gate approval to complete, but the
+  architect typically runs /jupiter:review to record review before folding
+  findings back to the parent.

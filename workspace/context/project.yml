@@ -1,0 +1,27 @@
+# Jupiter Project Configuration
+# This file is created by /jupiter:init and updated by the architect.
+# It is loaded by the loop agent at every iteration.
+# All fields populated at init time; add detail as the initiative progresses.
+
+project:
+  id: ""                   # short slug, e.g. "invoice-modernisation"
+  name: ""                 # full project name
+  business_owner: ""       # name and role
+  lead_architect: ""       # name
+  profile: architecture    # architecture | assessment | discovery | spike
+  created: ""              # ISO-8601 date
+
+scope:
+  in_scope: []             # list specific capabilities, domains, or systems in scope
+  out_of_scope: []         # explicitly declare what is NOT in scope
+
+constraints:
+  compliance: []           # list compliance obligations, e.g. [GDPR, PCI-DSS]
+  existing: []             # list existing architectural constraints,
+                           # e.g. ["must run on Azure", "must integrate with SAP"]
+
+# Optional — add as the initiative progresses
+architecture_principles: []  # list principles this design must follow
+performance_envelope: {}     # key performance targets, e.g. {p99_latency_ms: 500}
+stakeholders: []             # additional stakeholders beyond business_owner and lead_architect
+                             # format: {name: "", role: "", responsibility: ""}

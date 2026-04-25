@@ -1,0 +1,50 @@
+# Jupiter Profile — Assessment
+# Evaluate-only profile. Assesses an externally-produced artifact against
+# requirements and project constraints. Does not produce a new design artifact.
+# Entry point: /jupiter:assess --artifact <path>
+
+version: "3.0"
+id: assessment
+label: "Assessment"
+description: >
+  Evaluate an externally-produced artifact (requirements, design, ADR, or
+  architecture review) against the requirements baseline and project constraints.
+  Produces a structured findings report. Does not produce a new design artifact.
+  The loop agent assesses — it does not author.
+
+phases:
+  include: [assessment]
+  exclude: [intent, requirements, design]
+
+gates:
+  human_required_on_all_phases: true
+  reviewer_panel_available: false
+  spec_check_available: false
+
+iteration:
+  budget: 2
+  note: >
+    Assessment typically converges in 1-2 iterations. The first iteration
+    produces the draft findings report. The second (if needed) addresses
+    gaps identified in the auto or AI checks.
+  stuck_threshold: 2
+  stuck_action: >
+    After {stuck_threshold} iterations with no gate progress, present the
+    current draft findings report to the architect with an explanation of
+    which checks are not passing and why.
+
+context:
+  density: full
+  required:
+    - workspace/context/project.yml
+    - workspace/context/policy/
+  optional:
+    - workspace/context/standards/
+    - workspace/context/landscape/
+    - workspace/context/adrs/
+    - workspace/context/glossary/
+
+output:
+  assessment:
+    artifact: "workspace/assessment/{initiative_id}/findings.md"
+    inbox: workspace/assessment/inbox/

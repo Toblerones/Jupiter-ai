@@ -1,0 +1,130 @@
+# Jupiter Workflow — Phase Topology
+# This file defines the lifecycle phases and their relationships.
+# Commands and agents read this file to understand phase sequencing and artifact paths.
+# An SDK agent reads this identically to how Claude Code reads it.
+
+version: "3.0"
+
+phases:
+  intent:
+    id: intent
+    label: Intent
+    sequence: 1
+    description: >
+      Capture the initiating problem, opportunity, or architectural need.
+      Produce a clear statement of what is being changed and why.
+    artifact:
+      path: "workspace/INTENT.md"
+      type: intent_statement
+    gates_config: null
+    input_from: null
+    human_required: true
+    outputs_to: [requirements]
+
+  requirements:
+    id: requirements
+    sequence: 2
+    label: Requirements
+    description: >
+      Derive business and product requirements from the intent statement.
+      Requirements are tech-agnostic — they describe WHAT the system must do
+      for users and the business, not HOW. Architecture thinking begins in design.
+    artifact:
+      path: "workspace/artifacts/requirements/{initiative_id}-requirements.md"
+      type: requirements_document
+    gates_config: "workflow/gates/intent-requirements.yml"
+    input_from: intent
+    human_required: true
+    outputs_to: [design]
+
+  design:
+    id: design
+    sequence: 3
+    label: Design
+    description: >
+      Produce the Solution Architecture Document (SAD) and Architecture Decision Records (ADRs).
+      Phase 1: Solution Component Map — map every REQ key to an architecture building block (COMP-NNN),
+      identify Architecturally Significant Requirements (ASRs), surface design questions.
+      Phase 2: Write the full SAD using the component map as §4.
+      The component map must be architect-approved before SAD writing begins.
+    artifact:
+      path: "workspace/artifacts/design/{initiative_id}-SAD.md"
+      type: solution_architecture_document
+    sub_artifacts:
+      adrs:
+        path: "workspace/artifacts/design/adrs/"
+        pattern: "ADR-{NNN}-{slug}.md"
+        type: architecture_decision_record
+    gates_config: "workflow/gates/requirements-design.yml"
+    input_from: requirements
+    human_required: true
+    outputs_to: []
+    design_phases:
+      component_map:
+        sequence: 1
+        label: "Solution Component Map"
+        description: "Map REQ keys to COMP-NNN building blocks. Gate: every REQ key assigned."
+        gate_check: "component_coverage"
+      sad:
+        sequence: 2
+        label: "Solution Architecture Document"
+        description: "Full SAD using the component map as §4. Requires component map approval."
+        prerequisite: "component_map"
+
+  assessment:
+    id: assessment
+    sequence: null
+    label: Assessment
+    description: >
+      Evaluate an externally produced artifact (requirements, design, ADR, or architecture review)
+      against Jupiter gate criteria. Produces a structured findings report.
+      Entry point: drop artifact in workspace/assessment/inbox/ then run /jupiter:assess.
+    artifact:
+      path: "workspace/assessment/{initiative_id}/findings.md"
+      type: assessment_findings
+    gates_config: "workflow/gates/requirements-assessment.yml"
+    input_from: null
+    human_required: false
+    outputs_to: []
+
+# Standard transition sequence for most profiles
+standard_sequence: [intent, requirements, design]
+
+# Assessment runs outside the standard sequence — parallel or standalone
+assessment_profiles: [assessment, discovery]
+
+# Initiative status values
+status_values:
+  - not_started
+  - in_progress
+  - ready_for_review
+  - complete
+  - blocked
+  - budget_expired   # time-box reached on a profile with finite iteration.budget;
+                     # the artifact stands as the best-available output and the
+                     # architect should run /jupiter:review to record acceptance
+
+# REQ key format: REQ-{TYPE}-{DOMAIN}-{SEQ}
+req_key_format:
+  pattern: "REQ-{TYPE}-{DOMAIN}-{SEQ}"
+  types:
+    F: "Functional — what the system must do for users or the business"
+    NFR: "Non-Functional — performance, availability, scalability, maintainability"
+    BR: "Business Rule — domain constraints, policies, business logic"
+    C: "Compliance — legal, regulatory, standards obligations"
+    S: "Security — authentication, authorisation, data protection"
+  domain_length: "2-5 uppercase letters"
+  seq_format: "3-digit zero-padded (001, 002, ...)"
+  immutable: true
+
+# Component key format: COMP-{NNN}
+comp_key_format:
+  pattern: "COMP-{NNN}"
+  seq_format: "3-digit zero-padded (001, 002, ...)"
+  immutable: true
+
+# ADR key format: ADR-{NNN}-{slug}
+adr_key_format:
+  pattern: "ADR-{NNN}-{slug}.md"
+  seq_format: "3-digit zero-padded (001, 002, ...)"
+  slug_format: "lowercase-hyphenated"

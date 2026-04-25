@@ -1,0 +1,282 @@
+# Jupiter Gate Config — Intent → Requirements
+# Defines the checks the loop agent runs when producing requirements from the intent statement.
+# Requirements are business and product-focused: what the system must do for users and the
+# business. Architecture thinking is deferred to the design phase.
+#
+# Check ordering: auto checks first (deterministic), then AI checks (judgment), then human gate.
+# Gate run happens inside /jupiter:iterate — there is no separate gate command.
+# Gap = count of required checks failing. Phase complete = gap 0 + human gate approved.
+
+version: "3.0"
+transition: "intent → requirements"
+description: >
+  Produce structured, complete, traceable, and tech-agnostic requirements from the
+  intent statement. Requirements describe WHAT the system must do for users and the
+  business — not HOW the architecture will respond. Architecture thinking begins
+  in the design phase.
+
+# REQ key format reference (authoritative definition in workflow/stages.yml)
+req_key_format: "REQ-{TYPE}-{DOMAIN}-{SEQ}"
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+# Deterministic. The loop agent evaluates these mechanically.
+# Pass or fail is unambiguous — no judgment required.
+
+auto_checks:
+
+  - id: AC-IR-001
+    name: problem_statement_complete
+    description: >
+      Problem statement section is non-empty and contains no placeholder text
+      (e.g. [TODO], [REPLACE], TBD, or similar).
+    required: true
+    failure_message: >
+      Problem statement is missing, empty, or still contains placeholder text.
+      A clear problem statement is required before requirements can be extracted.
+
+  - id: AC-IR-002
+    name: stakeholder_map_present
+    description: >
+      At least one business owner and at least one technical owner are explicitly
+      named in the stakeholder map.
+    required: true
+    failure_message: >
+      Stakeholder map must name at least one business owner and one technical owner.
+      Anonymous requirements have no accountability chain.
+
+  - id: AC-IR-003
+    name: scope_boundary_documented
+    description: >
+      Both in-scope and out-of-scope are explicitly stated. Neither section is
+      empty or omitted.
+    required: true
+    failure_message: >
+      Scope boundary is incomplete. Both in-scope and out-of-scope sections must
+      be explicitly populated. Undeclared scope becomes implicit scope — a design risk.
+
+  - id: AC-IR-004
+    name: req_keys_assigned
+    description: >
+      Every requirement in the artifact has a unique REQ-{TYPE}-{DOMAIN}-{SEQ} key.
+      No two requirements share a key. No requirement is missing a key.
+    required: true
+    failure_message: >
+      One or more requirements are missing a REQ key, or duplicate keys exist.
+      All requirements must have unique immutable keys before gate review.
+
+  - id: AC-IR-005
+    name: req_types_valid
+    description: >
+      Every requirement type field is one of the five valid values: F (Functional),
+      NFR (Non-Functional), BR (Business Rule), C (Compliance), S (Security).
+      No other values are accepted.
+    required: true
+    failure_message: >
+      One or more requirements have an invalid type field.
+      Valid types: F, NFR, BR, C, S. Correct all type values before proceeding.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+# Judgment-based. The loop agent evaluates these using reasoning.
+# These check coherence, consistency, completeness, and alignment.
+
+ai_checks:
+
+  - id: AI-IR-001
+    name: problem_statement_coherent
+    description: >
+      The problem statement is internally consistent. It does not contain
+      contradictory goals, mutually exclusive objectives, or logical conflicts
+      between stated problems and proposed solutions.
+    required: true
+    failure_message: >
+      Problem statement contains internal contradictions or conflicting goals.
+      Resolve the inconsistency before requirements extraction — contradictory
+      problem statements produce incoherent requirements sets.
+
+  - id: AI-IR-002
+    name: scope_does_not_contradict_constraints
+    description: >
+      The declared scope boundary does not contradict any constraint loaded from
+      the project configuration (workspace/context/project.yml). In-scope items
+      must not violate declared regulatory, budget, or architectural constraints.
+    required: true
+    failure_message: >
+      Declared scope conflicts with one or more project constraints. Identify
+      the conflict and either revise the scope or raise a formal exception.
+
+  - id: AI-IR-003
+    name: requirements_consistent
+    description: >
+      The full set of requirements is internally non-contradictory. No two
+      requirements impose mutually exclusive constraints on the system.
+      Overlapping requirements do not conflict.
+    required: true
+    failure_message: >
+      Requirements set contains internal contradictions. Two or more requirements
+      impose conflicting constraints. Resolve the conflict — clarify with
+      stakeholders if needed — before proceeding to design.
+
+  - id: AI-IR-004
+    name: regulatory_requirements_captured
+    description: >
+      If a compliance context is defined in the project configuration, at least
+      one requirement typed C (Compliance) must be present in the requirements
+      artifact, directly addressing the stated regulatory context.
+    required: true
+    failure_message: >
+      Project configuration declares a compliance context but no C-type requirements
+      are present. Regulatory obligations must be captured as explicit requirements,
+      not left as implicit assumptions.
+
+  - id: AI-IR-005
+    name: requirements_business_framed
+    description: >
+      Functional requirements (F-type) describe what the system must do for users
+      or the business — not how the architecture must respond. Requirements
+      expressed as architecture decisions, technology choices, or implementation
+      constraints are incorrectly framed and must be rewritten in business/user terms.
+    required: true
+    failure_message: >
+      One or more F-type requirements are expressed in architecture or implementation
+      terms rather than business/user terms. Requirements must be tech-agnostic at
+      this phase. Rewrite to describe user or business outcomes. Architecture
+      responses are determined in the design phase.
+
+  - id: AI-IR-006
+    name: traces_to_intent
+    description: >
+      Every requirement includes a traces_to field referencing a valid intent
+      origin. No requirement exists without a traceable origin in the initiating
+      intent statement.
+    required: true
+    failure_message: >
+      One or more requirements are missing intent traceability. Every requirement
+      must include traces_to referencing its initiating intent. Untraceable
+      requirements indicate scope creep — verify origin before proceeding.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+# Requires explicit human confirmation. The loop agent never auto-approves these.
+# Run /jupiter:review after auto checks and AI checks pass.
+
+human_gate:
+  required: true
+  checks:
+
+    - id: HG-IR-001
+      name: business_owner_confirms_requirements
+      description: >
+        The business owner named in the stakeholder map has reviewed the requirements
+        artifact and confirmed that the requirements accurately reflect the intended
+        problem and desired outcomes. This is not a rubber stamp — the business owner
+        must have read and understood the requirements.
+      required: true
+      failure_message: >
+        Business owner sign-off is pending. Present the requirements artifact to the
+        business owner and record explicit confirmation before this gate can pass.
+
+    - id: HG-IR-002
+      name: lead_architect_confirms_completeness
+      description: >
+        The lead architect has reviewed the requirements artifact and confirmed it is
+        complete — nothing is missing, nothing is out of scope, and no requirement is
+        expressed in architecture terms that should be deferred to design. The lead
+        architect is not signing off on architecture decisions here — that happens in
+        the design phase.
+      required: true
+      failure_message: >
+        Lead architect completeness confirmation is pending. The lead architect must
+        review the requirements set, confirm it is complete and correctly scoped to
+        business/user terms, and explicitly sign off before this gate can pass.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Phase complete when all required auto checks and AI checks pass,
+    and the human gate is approved via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+# Injected into the loop agent context at the start of each iteration for this phase.
+
+agent_guidance: |
+  You are producing a requirements artifact from the intent statement.
+  Your goal: structured, complete, traceable, tech-agnostic requirements
+  that pass all auto checks and AI checks, then earn human gate approval.
+
+  Requirements at this phase describe WHAT the system must do for users and
+  the business. They do not describe HOW the architecture will respond.
+  Architecture thinking — solution components, ADRs — begins in the design phase.
+
+  STEP 1 — READ THE INTENT
+  Read the intent statement (workspace/INTENT.md or the initiative's intent field)
+  completely before extracting anything. Understand the problem being solved, the
+  business context, and any constraints already stated. Do not invent requirements
+  that have no basis in the intent.
+
+  STEP 2 — EXTRACT AND STRUCTURE REQUIREMENTS
+  Extract requirements from the intent. Classify each as one of:
+    F   — Functional: what the system must do for users or the business.
+          Expressed as capabilities, behaviours, or outcomes from the user/business
+          perspective. NOT expressed as architecture decisions or technology choices.
+          Good: "The system must allow invoice clerks to submit invoices via web form."
+          Bad:  "The system must expose an invoice submission REST API."
+    NFR — Non-Functional: quality attributes (performance, availability, scalability,
+          maintainability, reliability).
+    BR  — Business Rule: domain constraints, policies, and business logic the system
+          must enforce regardless of implementation.
+          Example: "An invoice cannot be approved by the same person who submitted it."
+    C   — Compliance: legal, regulatory, or standards obligations.
+    S   — Security: authentication, authorisation, data protection, threat model.
+
+  STEP 3 — ASSIGN REQ KEYS
+  Assign a unique REQ-{TYPE}-{DOMAIN}-{SEQ} key to every requirement.
+  Choose DOMAIN to reflect the business domain (e.g. PROC, AUTH, RPT, NOTIF).
+  Use separate sequences per type within each domain:
+    REQ-F-PROC-001, REQ-F-PROC-002, ...
+    REQ-NFR-PROC-001, ...
+    REQ-BR-INV-001, ...
+    REQ-C-GDPR-001, ...
+    REQ-S-AUTH-001, ...
+  Keys are immutable once assigned. Do not reuse or renumber.
+
+  STEP 4 — WRITE ACCEPTANCE CRITERIA
+  Every requirement must have at least one measurable, testable acceptance criterion.
+  Good: "Invoice submission completes within 3 seconds for files up to 10MB at p99."
+  Bad:  "The system should be fast."
+
+  STEP 5 — ADD INTENT TRACEABILITY
+  Every requirement must include: traces_to: [intent origin]
+  If a requirement relates to multiple intent items, list all.
+  Do not create requirements with no traceable origin.
+
+  STEP 6 — DOCUMENT SCOPE BOUNDARY
+  Explicitly state what is in scope and what is out of scope.
+  Out-of-scope is as important as in-scope — undeclared scope becomes implicit scope.
+  Be specific: "Mobile clients" is not specific. "iOS and Android native mobile apps" is.
+
+  STEP 7 — CHECK AGAINST PROJECT CONSTRAINTS
+  Load workspace/context/project.yml. Check requirements against:
+    - declared constraints (constraints.existing list)
+    - compliance context (constraints.compliance list)
+  If a compliance context is declared, you must have at least one REQ-C-* requirement
+  explicitly addressing it.
+
+  STEP 8 — SELF-REVIEW (before presenting for human gate)
+  Verify:
+    - Problem statement: no contradictions
+    - All requirements: consistent as a set — no two conflict
+    - All F-type requirements: expressed in business/user terms, not architecture terms
+    - All traces_to fields: reference a valid intent origin
+    - No requirement missing: key, type, acceptance criteria, or traces_to
+    - All BR-type requirements: domain constraints, not implementation choices
+
+  STEP 9 — PRESENT FOR HUMAN GATE
+  After auto checks and AI checks pass, present the complete requirements artifact.
+  Explicitly request:
+    - Business owner confirmation that requirements reflect the intended problem
+    - Lead architect confirmation that the requirements set is complete and correctly
+      expressed in business/user terms (no premature architecture decisions)
+  Run /jupiter:review when ready. Do not mark the phase complete without human approval.
+  The human gate is non-negotiable — never auto-approve on behalf of the human.

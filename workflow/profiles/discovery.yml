@@ -1,0 +1,69 @@
+# Jupiter Profile — Discovery
+# Time-boxed exploration profile. Use when the problem space is not yet
+# understood well enough to write intent. Produces an exploration report,
+# not a SAD. Findings are folded back to a parent initiative manually.
+# Typically spawned via /jupiter:spawn --type discovery
+
+version: "3.0"
+id: discovery
+label: "Discovery"
+description: >
+  Time-boxed exploration for ill-defined problem spaces. Use when you need
+  to understand the landscape before committing to intent. Produces a discovery
+  report capturing what was learned, what questions were answered, and what
+  open questions remain. Findings fold back to the parent initiative.
+
+phases:
+  include: [intent]
+  exclude: [requirements, design, assessment]
+  intent_variant: discovery
+  note: >
+    In discovery mode, the intent phase is used to capture exploration findings
+    rather than a formal intent statement. The output is a discovery report
+    describing: problem landscape, key findings, answered questions, open questions,
+    recommended next steps.
+
+gates:
+  human_required_on_all_phases: false
+  reviewer_panel_available: false
+  spec_check_available: false
+  human_recommended: true
+  human_note: >
+    Human review is not required to complete a discovery initiative, but the
+    architect should review the discovery report before folding findings back
+    to the parent. Use /jupiter:review to record the review.
+
+time_box:
+  enabled: true
+  default_iterations: 3
+  note: >
+    Discovery is time-boxed by iteration count, not calendar time.
+    After {default_iterations} iterations, surface what has been learned
+    and stop. Do not continue beyond the time box without architect guidance.
+
+iteration:
+  budget: 3
+  stuck_threshold: 2
+  stuck_action: >
+    Surface current findings and stop. Discovery has a fixed time box.
+
+context:
+  density: minimal
+  required:
+    - workspace/context/project.yml
+  optional:
+    - workspace/context/landscape/
+    - workspace/context/glossary/
+
+parent_linkage:
+  enabled: true
+  field: parent_initiative_id
+  fold_back: manual
+  fold_back_note: >
+    Findings do not automatically merge to the parent. The architect reviews
+    the discovery report and manually incorporates relevant findings into the
+    parent initiative's artifacts.
+
+output:
+  discovery:
+    artifact: "workspace/artifacts/requirements/{initiative_id}-discovery.md"
