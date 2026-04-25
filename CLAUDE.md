@@ -22,6 +22,12 @@ Jupiter is accessed through Claude Code slash commands in `.claude/commands/jupi
 | Requirements | `workspace/artifacts/requirements/{id}-requirements.md` — structured, tech-agnostic requirements | Yes |
 | Design | `workspace/artifacts/design/{id}-SAD.md` + ADRs | Yes |
 
+### Intent is loop-produced
+
+The intent phase is not a manual authoring step. `/jupiter:start` captures a one or two sentence seed from the architect (the problem statement) and writes it to INTENT.md. The loop agent then reads the seed plus all loaded context (project.yml, policy, landscape, ADRs, glossary) and elaborates the full four-section intent statement. The architect reviews, refines via further iterations if needed, and approves via `/jupiter:review`. Only after that does the requirements phase begin.
+
+This means the architect describes the problem; the loop agent draws out the business context, desired outcomes, and known constraints from what is already known. No blank-template authoring.
+
 ### Design runs in two sub-phases
 
 **Phase 1 — Solution Component Map**: map every REQ key to an architecture building block (COMP-NNN). Identify Architecturally Significant Requirements (ASRs) at the component level. Raise design questions. The architect approves the component map (HG-RD-001) via `/jupiter:review` before SAD writing begins.
@@ -47,7 +53,8 @@ All commands use the `/jupiter:` namespace.
 
 | Command | Purpose |
 |---------|---------|
-| `/jupiter:init` | Scaffold workspace and create first initiative |
+| `/jupiter:start` | **Primary entry point** — first run bootstraps workspace + captures intent seed + runs first iteration; subsequent runs detect state and route to the right next action |
+| `/jupiter:init` | Scaffold workspace only (programmatic use; start calls this on first run) |
 | `/jupiter:iterate` | Run one loop iteration on the current phase |
 | `/jupiter:status` | Show phase progress, gate status, and pending escalations |
 | `/jupiter:review` | Record human gate decision (approve / reject / refine) |
@@ -192,9 +199,9 @@ ADR status values: `Proposed` → `Accepted` or `Superseded`. No ADR may be `Pro
 
 ## Working in This Directory
 
-1. **Check state first.** Run `/jupiter:status` before acting.
+1. **Start with `/jupiter:start`.** On first run it bootstraps the workspace and captures the intent seed. On subsequent runs it detects state and routes — you don't need to remember which command comes next.
 2. **Read `workspace/log.jsonl` to understand history.** The initiative file and status report are derived views — the log is authoritative.
-3. **Iterate, then review.** Run `/jupiter:iterate` until gap = 0, then `/jupiter:review` for the human gate.
+3. **Iterate, then review.** Run `/jupiter:iterate` until gap = 0, then `/jupiter:review` for the human gate. `/jupiter:start` does this routing automatically.
 4. **Use the correct key formats.** REQ-{TYPE}-{DOMAIN}-{SEQ}, COMP-{NNN}, ADR-{NNN}-{slug}.
 5. **Append events, never modify.** The only authoritative write is an append to `workspace/log.jsonl`.
 6. **Human gate is the architect's decision.** Never emit `phase_complete` without an explicit architect approval recorded via `/jupiter:review`.

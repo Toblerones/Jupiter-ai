@@ -25,9 +25,11 @@ Load the gate config for the current phase transition from `workflow/gates/`:
 - `intent → requirements`: `workflow/gates/intent-requirements.yml`
 - `requirements → design`: `workflow/gates/requirements-design.yml`
 - `assessment`: `workflow/gates/requirements-assessment.yml`
+- `intent` under `architecture` profile: `workflow/gates/architecture-intent.yml` (elaborates full INTENT.md from architect's seed + loaded context)
 - `intent` under `discovery` profile: `workflow/gates/discovery-intent.yml` (produces a discovery report)
 - `intent` under `spike` profile: `workflow/gates/spike-intent.yml` (produces a spike report)
-- `intent` under `architecture` profile: no gate config — INTENT.md is manually edited by the architect; iterate's Step 1a handles auto-completion. The loop agent is not invoked for architecture-profile intent.
+
+All three profiles have loop-produced intent. The seed (one or two sentences written to INTENT.md's Problem Statement by `/jupiter:start`) is the input artifact for the first intent iteration.
 
 Load project context from `workspace/context/project.yml`. Per the active profile's context density setting, also load:
 - Required: `workspace/context/policy/` (always load all files)

@@ -1,0 +1,257 @@
+# Jupiter Gate Config — Architecture Intent
+# Used when an initiative runs under the `architecture` profile and the current
+# phase is `intent`. The loop agent reads a brief seed from the architect,
+# loads project context, and elaborates the full four-section INTENT.md.
+# The architect reviews and approves before requirements extraction begins.
+#
+# The seed is written to the Problem Statement section during /jupiter:start.
+# The loop agent elaborates Business Context, Desired Outcomes, and Known
+# Constraints from the seed + loaded context (policy, landscape, standards,
+# ADRs, glossary). The architect refines and approves.
+
+version: "3.0"
+transition: "intent → ready for review"
+description: >
+  Produce a complete, coherent, architect-approved intent statement from an
+  initial problem seed and loaded project context. The intent statement is
+  the root of the entire initiative — all requirements trace back to it.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-AI-001
+    name: problem_statement_present
+    description: >
+      The Problem Statement section is non-empty and contains no placeholder
+      text (e.g. [Replace with...], [TODO], TBD, or similar).
+    required: true
+    failure_message: >
+      Problem Statement section is empty or still contains placeholder text.
+      The loop agent must produce a specific problem statement from the seed.
+
+  - id: AC-AI-002
+    name: business_context_present
+    description: >
+      The Business Context section is non-empty and contains no placeholder text.
+    required: true
+    failure_message: >
+      Business Context section is empty or still contains placeholder text.
+      Describe why this initiative is necessary now — the situation that creates urgency.
+
+  - id: AC-AI-003
+    name: desired_outcomes_present
+    description: >
+      The Desired Outcomes section is non-empty, contains no placeholder text,
+      and lists at least two distinct business outcomes.
+    required: true
+    failure_message: >
+      Desired Outcomes section is empty, contains placeholder text, or lists
+      fewer than two outcomes. The architect and requirements phase both need
+      a clear success picture — not just a restatement of the problem.
+
+  - id: AC-AI-004
+    name: known_constraints_present
+    description: >
+      The Known Constraints section is non-empty and contains no placeholder text.
+      If there are genuinely no constraints at intent time, it must say so
+      explicitly ("None identified at intent time") rather than being empty.
+    required: true
+    failure_message: >
+      Known Constraints section is empty or still contains placeholder text.
+      State any constraints already known (compliance, architecture, budget, timeline)
+      or explicitly state "None identified at intent time".
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-AI-001
+    name: problem_is_business_framed
+    description: >
+      The Problem Statement describes a business or operational problem — not a
+      solution or an architecture decision. "We need a microservices architecture"
+      is a solution. "Invoice approvals take 15 days and the error rate is 12%"
+      is a problem. The intent statement must state what is wrong or needed,
+      not how to fix it.
+    required: true
+    failure_message: >
+      Problem Statement frames the issue as a solution or architecture decision
+      rather than a business problem. Rewrite to describe the observable gap,
+      failure, or opportunity — what is wrong or needed from the business perspective.
+
+  - id: AI-AI-002
+    name: outcomes_are_not_solutions
+    description: >
+      Desired Outcomes describe what the business will be able to do or achieve
+      after this initiative — not what the system will implement. Outcomes should
+      be measurable or at least verifiable. "A REST API for invoice submission"
+      is a solution. "Invoice clerks can submit invoices digitally with full
+      audit trail" is an outcome.
+    required: true
+    failure_message: >
+      One or more Desired Outcomes are expressed as technical solutions or system
+      features rather than business outcomes. Rewrite in terms of what the business
+      or its users will be able to do, not what will be built.
+
+  - id: AI-AI-003
+    name: intent_internally_consistent
+    description: >
+      The four sections are internally consistent. The Business Context explains
+      why the Problem Statement matters. The Desired Outcomes are achievable given
+      the Problem Statement. The Known Constraints do not contradict the Desired
+      Outcomes. No section contradicts another.
+    required: true
+    failure_message: >
+      The intent statement contains internal inconsistencies — sections that
+      contradict each other or do not logically connect. Resolve the inconsistency
+      before the requirements phase can begin.
+
+  - id: AI-AI-004
+    name: context_reflected
+    description: >
+      If compliance or regulatory constraints were declared in project.yml
+      (constraints.compliance), the Known Constraints section must acknowledge
+      them. If integration landscape documents were loaded, they should inform
+      the scope or constraints — not be ignored.
+    required: true
+    failure_message: >
+      Declared project constraints (compliance, architectural) are not reflected
+      in the intent statement. The requirements phase will inherit these constraints —
+      they must be visible at the intent level.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+
+    - id: HG-AI-001
+      name: architect_confirms_intent
+      description: >
+        The lead architect has reviewed the intent statement and confirmed it
+        accurately represents the initiative: the right problem, the right
+        context, the right outcomes, and the right constraints. This is the
+        foundation everything else builds on — a wrong intent produces wrong
+        requirements and wrong design.
+      required: true
+      failure_message: >
+        Intent has not been confirmed by the lead architect. Run /jupiter:review
+        to record approval. If the intent needs refinement, run /jupiter:iterate
+        again after editing.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Intent phase complete when all auto checks and AI checks pass, and the
+    architect confirms the intent statement via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  You are producing a complete intent statement for an architecture initiative.
+  The architect has provided a brief seed in the Problem Statement section.
+  Your job is to elaborate the full four-section INTENT.md using the seed
+  and all loaded context — not to invent, but to draw out what is implied.
+
+  STEP 1 — READ THE SEED
+  Read workspace/INTENT.md. The Problem Statement section contains the
+  architect's seed — a one or two sentence description of the problem or need.
+  This is your anchor. Do not contradict or reinterpret it. Everything you
+  produce must be consistent with and traceable to this seed.
+
+  STEP 2 — LOAD AND REASON OVER CONTEXT
+  You have loaded project context (project.yml, policy/, landscape/, standards/,
+  adrs/, glossary/). Before writing anything, reason over all of it:
+
+  - project.yml: What compliance obligations are declared? What architectural
+    constraints exist? What is the integration landscape?
+  - policy/: What regulatory obligations apply? Do any policies create urgency?
+  - landscape/: What existing systems are relevant? What integrations exist
+    that the initiative will need to account for?
+  - adrs/: What prior architectural decisions constrain the solution space?
+    (These belong in Known Constraints.)
+  - glossary/: What domain terms apply? Use the project's own vocabulary.
+  - standards/: What architecture standards will the design need to conform to?
+
+  STEP 3 — ELABORATE BUSINESS CONTEXT
+  Write the Business Context section. Describe the situation that makes this
+  initiative necessary: operational reality, business pressure, regulatory
+  trigger, growth constraint, strategic shift. Draw on what you read in
+  context — a policy file may reveal a compliance deadline, a landscape file
+  may reveal a legacy system that is end-of-life.
+
+  Be specific about WHY NOW. "The company is growing" is not context.
+  "Manual invoice processing cannot scale past the current 500 invoices/month
+  without additional headcount, and the finance team is targeting 1500/month
+  by Q4" is context.
+
+  STEP 4 — ELABORATE DESIRED OUTCOMES
+  Write the Desired Outcomes section. Each outcome describes something the
+  business or its users will be able to do after this initiative completes —
+  not what the system will implement.
+
+  Derive outcomes from the seed and context:
+  - If the seed describes a broken process → outcomes are the working process
+  - If the seed describes a missing capability → outcomes are the capability in use
+  - If compliance context exists → at least one outcome relates to compliance posture
+
+  At least two distinct outcomes are required. Outcomes should be distinguishable
+  from each other — don't restate the same idea twice.
+
+  STEP 5 — COMPILE KNOWN CONSTRAINTS
+  Write the Known Constraints section. Compile everything that is already known
+  to constrain the solution space:
+
+  - Compliance/regulatory obligations from project.yml and policy/
+  - Prior ADRs from adrs/ that constrain architecture choices
+  - Integration constraints from landscape/ (must integrate with X, cannot break Y)
+  - Architecture standards from standards/ that apply
+  - Any constraints stated in the seed itself
+
+  If after reviewing all context there are genuinely no constraints, write:
+  "None identified at intent time." — this is a valid answer, not a gap.
+
+  STEP 6 — WRITE THE FULL INTENT.MD
+  Write all four sections using the insights from Steps 1-5. Keep the tone
+  architectural — precise, not verbose. Each section should be 2-5 sentences
+  or a short bulleted list. Do not pad with generic filler.
+
+  Format:
+  ```markdown
+  # Intent
+
+  ## Problem Statement
+  {elaborated from seed — keep the core of what the architect wrote}
+
+  ## Business Context
+  {why now, what situation makes this necessary}
+
+  ## Desired Outcomes
+  - {outcome 1 — what the business/users can do}
+  - {outcome 2 — what the business/users can do}
+  - {additional outcomes if clearly implied by seed and context}
+
+  ## Known Constraints
+  - {constraint from compliance/regulatory}
+  - {constraint from prior ADRs}
+  - {constraint from integration landscape}
+  (or: None identified at intent time.)
+  ```
+
+  STEP 7 — SELF-REVIEW
+  Before presenting the gate report, verify:
+  - Problem Statement: no placeholder text, specific and observable
+  - Business Context: explains urgency, drawn from real context not invention
+  - Desired Outcomes: at least two, expressed as business outcomes not solutions
+  - Known Constraints: all project.yml compliance + landscape constraints reflected
+  - All four sections: internally consistent, no contradictions
+  - Vocabulary: matches glossary/ terms where applicable
+
+  STEP 8 — PRESENT FOR HUMAN GATE
+  After auto and AI checks pass, present the complete intent statement.
+  Ask the architect to confirm it accurately represents the initiative.
+  Run /jupiter:review when ready. The human gate is non-negotiable.

@@ -40,38 +40,18 @@ Determine the current phase:
 3. The current phase is the first phase that is not `complete`
 4. If `--phase` is provided, use that phase instead
 
-### Step 1a — Intent phase auto-completion
-
-If the current phase is `intent` and the active profile is `architecture` (or any profile where intent is just a manually-edited `INTENT.md` rather than a loop-produced artifact):
-
-1. Read `workspace/INTENT.md`.
-2. Check that all four placeholder markers have been replaced:
-   - `[Replace with a clear description of what is broken, missing, or needed.]`
-   - `[Replace with the business situation that makes this initiative necessary.]`
-   - `[Replace with the business outcomes this initiative should deliver.]`
-   - `[Replace with any constraints already known at intent time, or "None identified yet."]`
-3. If any placeholder remains, halt with:
-   > "INTENT.md still contains placeholder text. Edit workspace/INTENT.md before iterating. Run /jupiter:iterate again when done."
-4. If all placeholders are replaced, mark the intent phase complete:
-   - Update initiative file: `phases.intent.status = complete`
-   - Append `phase_complete` event:
-     ```json
-     {"event": "phase_complete", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "intent"}
-     ```
-5. Re-run the phase detection (Step 1, points 2–3) and continue with the next phase (typically `requirements`).
-
-For `discovery` and `spike` profiles, the intent phase is a loop-produced artifact (exploration report or spike report) — skip this auto-completion logic and let the loop agent handle the phase normally.
-
 ### Step 2 — Load gate config
 
-Map the current phase (and active profile) to its gate config file:
+Map the current phase and active profile to the gate config file:
 - If current phase is `requirements` → `workflow/gates/intent-requirements.yml`
 - If current phase is `design` → `workflow/gates/requirements-design.yml`
 - If current phase is `assessment` → `workflow/gates/requirements-assessment.yml`
 - If current phase is `intent`:
-  - If active profile is `discovery` → `workflow/gates/discovery-intent.yml` (intent variant produces a discovery report)
-  - If active profile is `spike` → `workflow/gates/spike-intent.yml` (intent variant produces a spike report)
-  - Otherwise (architecture profile) → no gate config; intent is a manually-edited INTENT.md handled by Step 1a
+  - If active profile is `architecture` → `workflow/gates/architecture-intent.yml` (loop agent elaborates full INTENT.md from seed + context)
+  - If active profile is `discovery` → `workflow/gates/discovery-intent.yml` (loop agent produces a discovery report)
+  - If active profile is `spike` → `workflow/gates/spike-intent.yml` (loop agent produces a spike report)
+
+All profiles have loop-produced intent — the intent phase is never manually auto-completed. The seed written by `/jupiter:start` is the starting artifact; the loop agent elaborates it.
 
 ### Step 3 — Load profile
 

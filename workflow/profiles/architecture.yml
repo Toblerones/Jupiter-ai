@@ -14,6 +14,7 @@ description: >
 phases:
   include: [intent, requirements, design]
   exclude: [assessment]
+  intent_variant: architecture   # loop agent produces INTENT.md from seed + context via architecture-intent.yml
 
 gates:
   human_required_on_all_phases: true
