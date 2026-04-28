@@ -26,7 +26,7 @@ findings_report_sections:
   - "Artifact Under Assessment"
   - "Requirements Baseline"
   - "Per-Requirement Alignment"
-  - "Constraint Conformance"
+  - "Guardrail Conformance"
   - "Classified Findings"
   - "Escalations"
   - "Recommendations"
@@ -70,16 +70,16 @@ auto_checks:
       Every requirement must be evaluated and classified.
 
   - id: AC-RA-003
-    name: constraint_categories_evaluated
+    name: guardrail_categories_evaluated
     description: >
-      The Constraint Conformance section explicitly covers each constraint category
+      The Guardrail Conformance section explicitly covers each constraint category
       that was loaded for this assessment: policy (required), standards (if loaded),
       landscape (if loaded), adrs (if loaded). Each category must have a conformance
       status (conformant, non-conformant, partially-conformant, or not-applicable)
       with a rationale.
     required: true
     failure_message: >
-      The Constraint Conformance section does not cover all loaded constraint
+      The Guardrail Conformance section does not cover all loaded constraint
       categories. Each loaded category must have an explicit conformance status
       and rationale. Check which categories were loaded and ensure all are covered.
 
@@ -249,21 +249,21 @@ agent_guidance: |
       For each policy document: identify every obligation relevant to the domain.
       Check whether the artifact addresses the obligation.
       Non-conformant obligations become violation findings.
-      Record overall policy conformance status in Constraint Conformance section.
+      Record overall policy conformance status in Guardrail Conformance section.
 
     Standards (if loaded):
       Check artifact structure and decisions against loaded architecture standards.
-      Record conformance status in Constraint Conformance section.
+      Record conformance status in Guardrail Conformance section.
 
     Landscape (if loaded):
       Check for integration conflicts — systems, platforms, infrastructure constraints.
       Integration landscape conflicts are violations.
-      Record conformance status in Constraint Conformance section.
+      Record conformance status in Guardrail Conformance section.
 
     ADRs (if loaded):
       Check whether the artifact's decisions are consistent with prior ADRs.
       A decision contradicting an accepted ADR is a violation.
-      Record conformance status in Constraint Conformance section.
+      Record conformance status in Guardrail Conformance section.
 
   STEP 6 — BUILD THE CLASSIFIED FINDINGS LIST
   Consolidate all non-aligned findings into the Classified Findings section.
@@ -290,7 +290,7 @@ agent_guidance: |
     2. Artifact Under Assessment — artifact name, author, version, date, path
     3. Requirements Baseline  — total count, REQ key range, source artifact path
     4. Per-Requirement Alignment — table of all REQ-* keys with classification
-    5. Constraint Conformance — per-category conformance status and rationale
+    5. Guardrail Conformance — per-category conformance status and rationale
     6. Classified Findings    — consolidated FIND-* list (gaps, violations, risks)
     7. Escalations            — not_assessed findings with rationale; items requiring
                                 human resolution before assessment can be completed
@@ -300,7 +300,7 @@ agent_guidance: |
   STEP 9 — SELF-REVIEW (before presenting for human gate)
   Verify:
     - Every REQ-* key appears in Per-Requirement Alignment
-    - Every loaded constraint category is covered in Constraint Conformance
+    - Every loaded constraint category is covered in Guardrail Conformance
     - Every not_assessed finding has an entry in Escalations
     - Every gap/violation/risk finding has at least one recommendation
     - Assessment Summary counts match the actual finding totals

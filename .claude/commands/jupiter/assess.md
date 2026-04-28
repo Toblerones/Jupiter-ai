@@ -16,19 +16,28 @@ Evaluate an externally-produced artifact against the requirements baseline and p
 
 ## Execution
 
-### Step 1 — Validate artifact
+### Step 1 — Capture engagement brief
+
+Ask:
+> "In one or two sentences, what is this assessment engagement? (e.g. 'Review a SAD submitted by the payments lead against GDPR and internal policy requirements.')"
+
+Write the response to `workspace/INTENT.md` as the Problem Statement (create the file if it does not exist, using the standard INTENT.md format with other sections left as `[To be elaborated.]`). This gives the loop agent framing for the assessment.
+
+If `workspace/INTENT.md` already exists with a non-placeholder Problem Statement, skip the question and use the existing statement.
+
+### Step 2 — Validate artifact
 
 Confirm the artifact exists at the provided path. If not, error:
 > "Artifact not found at {path}. Check the path and try again."
 
 Copy the artifact to `workspace/assessment/inbox/{filename}` so the original is preserved.
 
-### Step 2 — Determine initiative
+### Step 3 — Determine initiative
 
 Load the initiative file for the specified or auto-detected initiative. Verify the requirements artifact exists (the assessment needs a requirements baseline). If no requirements artifact exists, warn:
 > "No requirements artifact found for initiative {id}. Assessment requires a requirements baseline to evaluate against. Run /jupiter:iterate on the requirements phase first, or provide the requirements artifact manually."
 
-### Step 3 — Create or update assessment initiative
+### Step 4 — Create or update assessment initiative
 
 Check if an assessment initiative already exists for this initiative:
 - Look in `workspace/initiatives/` for a file with `type: assessment` and `parent_initiative_id: {id}`
@@ -61,7 +70,7 @@ context_hash: null
 
 Create the output directory `workspace/assessment/{assessment-id}/` if it doesn't exist.
 
-### Step 4 — Delegate to iterate
+### Step 5 — Delegate to iterate
 
 Invoke `/jupiter:iterate` with:
 - `--initiative {assessment-id}`
@@ -69,7 +78,7 @@ Invoke `/jupiter:iterate` with:
 
 The loop agent loads the gate config from `workflow/gates/requirements-assessment.yml`, reads the artifact from the assessment inbox, evaluates it against the requirements baseline and project constraints, and produces the findings report.
 
-### Step 5 — Post-assessment instructions
+### Step 6 — Post-assessment instructions
 
 After `/jupiter:iterate` completes, if the gate report shows status READY FOR REVIEW:
 

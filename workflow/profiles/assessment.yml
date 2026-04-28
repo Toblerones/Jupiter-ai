@@ -22,16 +22,12 @@ gates:
   spec_check_available: false
 
 iteration:
-  budget: 2
-  note: >
-    Assessment typically converges in 1-2 iterations. The first iteration
-    produces the draft findings report. The second (if needed) addresses
-    gaps identified in the auto or AI checks.
-  stuck_threshold: 2
+  budget: unlimited
+  stuck_threshold: 3
   stuck_action: >
-    After {stuck_threshold} iterations with no gate progress, present the
+    After {stuck_threshold} iterations with no gap reduction, present the
     current draft findings report to the architect with an explanation of
-    which checks are not passing and why.
+    which checks are not passing and why. Request guidance before continuing.
 
 context:
   density: full

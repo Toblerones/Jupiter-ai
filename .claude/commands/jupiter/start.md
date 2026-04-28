@@ -21,14 +21,59 @@ On first run it bootstraps the workspace, captures a brief intent seed, scans fo
 
 Check whether `workspace/log.jsonl` exists and contains a `project_initialized` event.
 
-- If **no workspace or no `project_initialized` event** → first-run flow (Step 2)
-- If **workspace exists and initialised** → state detection (Step 6)
+- If **no workspace or no `project_initialized` event** → first-run menu (Step 2)
+- If **workspace exists and initialised** → state detection (Step 8)
 
 ---
 
 ## FIRST-RUN FLOW
 
-### Step 2 — Project identity questions
+### Step 2 — First-run menu
+
+Present four options. Do not show all command details — keep it minimal:
+
+```
+Welcome to Jupiter. What would you like to do?
+
+  1. Start a new architecture initiative
+     — set up workspace, capture intent, begin requirements
+
+  2. Continue existing work
+     — resume from a workspace in another directory
+
+  3. Quick spike or discovery
+     — explore a question or unknown without committing to a full initiative
+
+  4. Assess an existing artifact
+     — evaluate a SAD, requirements doc, or ADR against project constraints
+
+Enter 1, 2, 3, or 4 (or press Enter for 1):
+```
+
+**Option 1 — New initiative**: Proceed to Step 3 (project identity questions). This is the default.
+
+**Option 2 — Continue existing work**: Ask:
+> "Where is the existing workspace? (Enter the path to the directory containing `workspace/log.jsonl`)"
+
+Validate the path exists and contains a `workspace/log.jsonl` with a `project_initialized` event. If valid, load the initiative from that location and proceed to state detection (Step 7) as if the workspace were local. If the path is invalid, error and let the architect try again.
+
+**Option 3 — Quick spike or discovery**: Ask:
+> "Spike or discovery? (spike = answer a specific technical question; discovery = explore an ill-defined problem space)"
+
+Then ask:
+> "In one sentence — what are you investigating?"
+
+Write the answer to `workspace/INTENT.md` Problem Statement. Create a child initiative with the chosen profile (`spike` or `discovery`) using `/jupiter:spawn --type {type}`. Then run `/jupiter:iterate` immediately to begin the first iteration under the time-boxed profile. Do NOT run the full Q1–Q6 identity flow — spike and discovery are lightweight by design. Ask only:
+> "Project name (or press Enter to use the directory name):"
+
+**Option 4 — Assess existing artifact**: Ask:
+> "Path to the artifact to assess: (absolute or relative path)"
+
+Then run `/jupiter:assess --artifact {path}`. If no workspace exists yet, ask Q1 (project name) only to initialise the workspace first. Do not run the full identity flow — assessment is a focused engagement.
+
+---
+
+### Step 3 — Project identity questions
 
 Ask these questions **one at a time**. Accept each answer before asking the next.
 
@@ -51,7 +96,7 @@ Ask these questions **one at a time**. Accept each answer before asking the next
 (This seeds the intent. Don't worry about precision — the loop will elaborate it from your context.
 Example: "Invoice processing is done in spreadsheets — slow, error-prone, and unauditable. We need a digital system.")
 
-### Step 3 — Context scan
+### Step 4 — Context scan
 
 After Q6, scan the current directory and common nearby paths for architecture documents the architect might want to load as guardrails.
 
@@ -82,7 +127,7 @@ or policy documents to load as guardrails?
 
 Accept paths, classify, and copy. If skipped, continue.
 
-### Step 4 — Scaffold workspace
+### Step 5 — Scaffold workspace
 
 Invoke `/jupiter:init` logic:
 - Create the workspace directory structure (as defined in init.md Steps 1 and 3–6)
@@ -109,7 +154,7 @@ Context loaded:
 Running first intent iteration...
 ```
 
-### Step 5 — Run intent iteration
+### Step 6 — Run intent iteration
 
 Invoke `/jupiter:iterate --phase intent`.
 
@@ -127,13 +172,13 @@ Then stop. The architect reads the produced INTENT.md, refines if needed (by run
 
 ## SUBSEQUENT-RUN FLOW
 
-### Step 6 — Load initiative state
+### Step 7 — Load initiative state
 
 Read `workspace/initiatives/{id}.yml` (auto-detect if one initiative exists; use `--initiative` if multiple).
 
 Read the last few events from `workspace/log.jsonl` to understand recent activity.
 
-### Step 7 — Detect state and route
+### Step 8 — Detect state and route
 
 Walk phase states in order. The first matching condition determines the action.
 
@@ -207,9 +252,9 @@ Options:
 Run /jupiter:status for full escalation detail.
 ```
 
-### Step 8 — Stuck detection
+### Step 9 — Stuck detection
 
-Before routing (Step 7), check the last 3 `iteration_completed` events for the current phase. If the same check IDs appear in `failing_checks` across all 3, this is a stuck loop.
+Before routing (Step 8), check the last 3 `iteration_completed` events for the current phase. If the same check IDs appear in `failing_checks` across all 3, this is a stuck loop.
 
 Surface before routing:
 ```
@@ -218,7 +263,7 @@ Surface before routing:
   Run /jupiter:status for details, or continue.
 ```
 
-Then proceed with the normal routing from Step 7.
+Then proceed with the normal routing from Step 8.
 
 ---
 
