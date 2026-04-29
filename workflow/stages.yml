@@ -82,7 +82,7 @@ phases:
     artifact:
       path: "workspace/assessment/{initiative_id}/findings.md"
       type: assessment_findings
-    gates_config: "workflow/gates/requirements-assessment.yml"
+    gates_config: "workflow/gates/assessment-architecture.yml"
     input_from: null
     human_required: false
     outputs_to: []

@@ -1,6 +1,6 @@
 # /jupiter:assess
 
-Evaluate an externally-produced artifact against the requirements baseline and project constraints. Convenience entry point: sets the assessment profile and delegates to `/jupiter:iterate`.
+Evaluate an externally-produced artifact from the perspective of a Domain Solution Architect. Infers the artifact type, confirms with the architect, then routes to the appropriate gate config. Convenience entry point: sets the assessment profile and delegates to `/jupiter:iterate`.
 
 ## Usage
 
@@ -9,8 +9,8 @@ Evaluate an externally-produced artifact against the requirements baseline and p
 ```
 
 **Arguments:**
-- `--artifact <path>` — required. Path to the externally-produced artifact to evaluate. Can be a requirements document, SAD, ADR, or architecture review.
-- `--initiative <id>` — initiative to assess against (auto-detected if only one active exists). Determines which requirements baseline and project constraints are used.
+- `--artifact <path>` — required. Path to the externally-produced artifact to evaluate (architecture design, engineering process document, requirements/analysis document, or similar).
+- `--initiative <id>` — initiative to assess against (auto-detected if only one active exists). Determines which project constraints are used.
 
 ---
 
@@ -32,12 +32,42 @@ Confirm the artifact exists at the provided path. If not, error:
 
 Copy the artifact to `workspace/assessment/inbox/{filename}` so the original is preserved.
 
-### Step 3 — Determine initiative
+### Step 3 — Infer artifact type and confirm
 
-Load the initiative file for the specified or auto-detected initiative. Verify the requirements artifact exists (the assessment needs a requirements baseline). If no requirements artifact exists, warn:
-> "No requirements artifact found for initiative {id}. Assessment requires a requirements baseline to evaluate against. Run /jupiter:iterate on the requirements phase first, or provide the requirements artifact manually."
+Read the artifact. Based on its content, structure, and purpose, infer which of the three assessment types applies:
 
-### Step 4 — Create or update assessment initiative
+- **(A) Architecture/Design** — solution architecture document (SAD), architecture decision record (ADR), component map, technical design, or similar design artifact
+- **(B) Engineering Process** — process definition, procedure, runbook, operating model component, deployment process, or similar procedural document
+- **(C) Requirements/Analysis** — business requirements document (BRD), functional requirements, user stories, analysis document, or similar artifact that specifies what a system must do
+
+Present your inference to the architect:
+
+> "I've read the artifact. Based on [brief evidence — e.g. 'its component diagrams, SAD structure, and architecture decision sections'], this appears to be an **Architecture/Design** document.
+>
+> Please confirm the assessment type:
+> **(A) Architecture/Design** — evaluate design against requirements baseline and constraints
+> **(B) Engineering Process** — evaluate process completeness, roles, compliance, and operational risk
+> **(C) Requirements/Analysis** — evaluate requirements quality (well-formed, testable, tech-agnostic) and coverage"
+
+Wait for the architect's selection before proceeding.
+
+### Step 4 — Resolve gate config path
+
+Map the confirmed type to the gate config:
+- Type A → `workflow/gates/assessment-architecture.yml`
+- Type B → `workflow/gates/assessment-process.yml`
+- Type C → `workflow/gates/assessment-requirements.yml`
+
+### Step 5 — Determine initiative
+
+Load the initiative file for the specified or auto-detected initiative.
+
+If the confirmed type is **Architecture/Design (A)**: verify the requirements artifact exists (the architecture assessment needs a requirements baseline to evaluate against). If no requirements artifact exists, warn:
+> "No requirements artifact found for initiative {id}. Architecture assessment evaluates a design against a requirements baseline. Run /jupiter:iterate on the requirements phase first, or provide the requirements artifact manually."
+
+For types B and C, no requirements baseline is needed — proceed without the warning.
+
+### Step 6 — Create or update assessment initiative
 
 Check if an assessment initiative already exists for this initiative:
 - Look in `workspace/initiatives/` for a file with `type: assessment` and `parent_initiative_id: {id}`
@@ -50,6 +80,8 @@ initiative:
   type: assessment
   title: "Assessment: {artifact filename}"
   profile: assessment
+  artifact_type: "{architecture|process|requirements}"
+  gate_config: "workflow/gates/assessment-{type}.yml"
   parent_initiative_id: "{parent-id}"
   status: not_started
   created: "{ISO-8601 date}"
@@ -70,15 +102,16 @@ context_hash: null
 
 Create the output directory `workspace/assessment/{assessment-id}/` if it doesn't exist.
 
-### Step 5 — Delegate to iterate
+### Step 7 — Delegate to iterate
 
 Invoke `/jupiter:iterate` with:
 - `--initiative {assessment-id}`
 - `--phase assessment`
+- `--gate-config {resolved gate config path from Step 4}`
 
-The loop agent loads the gate config from `workflow/gates/requirements-assessment.yml`, reads the artifact from the assessment inbox, evaluates it against the requirements baseline and project constraints, and produces the findings report.
+The loop agent reads the artifact from the assessment inbox, applies the appropriate gate config for the confirmed artifact type, and produces the findings report.
 
-### Step 6 — Post-assessment instructions
+### Step 8 — Post-assessment instructions
 
 After `/jupiter:iterate` completes, if the gate report shows status READY FOR REVIEW:
 

@@ -5,12 +5,13 @@ Run one loop iteration on the current phase of an initiative.
 ## Usage
 
 ```
-/jupiter:iterate [--initiative <id>] [--phase <phase>]
+/jupiter:iterate [--initiative <id>] [--phase <phase>] [--gate-config <path>]
 ```
 
 **Arguments:**
 - `--initiative <id>` — initiative ID (auto-detected if only one active initiative exists)
 - `--phase <phase>` — override the auto-detected phase (intent | requirements | design | assessment)
+- `--gate-config <path>` — override the gate config file path (used by `/jupiter:assess` to route to the appropriate assessment gate config based on artifact type)
 
 ## What this command does
 
@@ -42,10 +43,12 @@ Determine the current phase:
 
 ### Step 2 — Load gate config
 
-Map the current phase and active profile to the gate config file:
+If `--gate-config <path>` is provided, use that path directly. Skip the phase mapping below.
+
+Otherwise map the current phase and active profile to the gate config file:
 - If current phase is `requirements` → `workflow/gates/intent-requirements.yml`
 - If current phase is `design` → `workflow/gates/requirements-design.yml`
-- If current phase is `assessment` → `workflow/gates/requirements-assessment.yml`
+- If current phase is `assessment` → `workflow/gates/assessment-architecture.yml`
 - If current phase is `intent`:
   - If active profile is `architecture` → `workflow/gates/architecture-intent.yml` (loop agent elaborates full INTENT.md from seed + context)
   - If active profile is `discovery` → `workflow/gates/discovery-intent.yml` (loop agent produces a discovery report)

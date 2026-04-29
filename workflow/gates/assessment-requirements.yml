@@ -1,0 +1,409 @@
+# Jupiter Gate Config — Assessment (Requirements/Analysis Document)
+# Evaluates an externally-produced requirements or business analysis document from
+# the perspective of a Domain Solution Architect. Assesses the quality of each
+# requirement (well-formed, testable, tech-agnostic) and the overall coverage of
+# the requirements set. Produces a structured findings report.
+#
+# Entry point: /jupiter:assess --artifact <path>
+# The agent infers this type from the artifact and confirms before loading this config.
+
+version: "3.0"
+transition: "assessment"
+pattern: requirements_quality_evaluation
+description: >
+  Evaluate an externally-produced requirements or business analysis document.
+  Assesses each requirement for quality attributes (well-formed, testable,
+  tech-agnostic) and assesses the document overall for coverage adequacy and
+  internal consistency. Produces a structured findings report. The loop agent
+  assesses — it does not rewrite the requirements.
+
+# ─── Findings Schema ──────────────────────────────────────────────────────────
+
+findings_report_sections:
+  - "Assessment Summary"
+  - "Architecture Perspective"
+  - "Artifact Under Assessment"
+  - "Requirements Quality Assessment"
+  - "Coverage Assessment"
+  - "Guardrail Conformance"
+  - "Classified Findings"
+  - "Escalations"
+  - "Recommendations"
+  - "Architect Review Record"
+
+# Finding classifications carry slightly different meaning for this artifact type:
+# aligned = requirement meets quality criteria; gap = quality criterion weakly applied;
+# violation = quality principle explicitly broken (e.g. prescribes implementation);
+# risk = technically valid but introduces delivery or compliance risk.
+finding_classifications:
+  aligned: "Requirement meets the quality criteria evaluated; no deficiency detected"
+  gap: "Requirement partially meets a quality criterion or the criterion is weakly applied"
+  violation: "Requirement explicitly breaks a quality principle (e.g. prescribes implementation)"
+  risk: "Requirement is technically valid but introduces delivery or compliance risk"
+  not_assessed: "Evaluation impossible due to ambiguity or missing context"
+
+# Quality criteria applied to each requirement
+requirement_quality_criteria:
+  well_formed: "Specific, unambiguous, bounded — can be understood without the author"
+  testable: "Has acceptance criteria or conditions that confirm it is met"
+  tech_agnostic: "Describes WHAT is needed, not HOW — no implementation prescriptions"
+  consistent: "Does not contradict other requirements in the document"
+
+# Coverage dimensions assessed across the full requirements set (not per requirement)
+coverage_dimensions:
+  - id: functional
+    label: "Functional"
+    description: "What the system must do for users and the business"
+  - id: non_functional
+    label: "Non-Functional"
+    description: "Performance, availability, scalability, maintainability"
+  - id: business_rules
+    label: "Business Rules"
+    description: "Domain constraints, policies, business logic"
+  - id: compliance
+    label: "Compliance"
+    description: "Legal, regulatory, standards obligations"
+  - id: security
+    label: "Security"
+    description: "Authentication, authorisation, data protection"
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-AR-001
+    name: findings_report_complete
+    description: >
+      The findings report contains all required sections listed in
+      findings_report_sections. Each section has substantive content — no section
+      is blank, missing, or contains placeholder text.
+    required: true
+    failure_message: >
+      Findings report is missing one or more required sections, or one or more
+      sections contain placeholder text. All sections must be populated with
+      substantive content before gate review.
+
+  - id: AC-AR-002
+    name: all_requirements_evaluated
+    description: >
+      Every requirement in the document appears in Requirements Quality Assessment
+      with a quality evaluation. No requirement may be skipped. Requirements with
+      classification "not_assessed" must have an explicit rationale in Escalations.
+    required: true
+    failure_message: >
+      One or more requirements are absent from Requirements Quality Assessment,
+      or have classification "not_assessed" without a recorded escalation.
+      Every requirement must be evaluated.
+
+  - id: AC-AR-003
+    name: guardrail_categories_evaluated
+    description: >
+      The Guardrail Conformance section explicitly covers each constraint category
+      that was loaded: policy (required), standards (if loaded), landscape (if loaded),
+      adrs (if loaded). Each category must have a conformance status (conformant,
+      non-conformant, partially-conformant, or not-applicable) with a rationale.
+    required: true
+    failure_message: >
+      The Guardrail Conformance section does not cover all loaded constraint
+      categories. Each loaded category must have an explicit conformance status
+      and rationale.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-AR-001
+    name: requirements_well_formed
+    description: >
+      Each requirement is specific, unambiguous, and bounded. A requirement is
+      well-formed when it can be understood without the author present, cannot be
+      interpreted in more than one way, and has a clear boundary — it says what
+      must be true and what is out of scope. Vague requirements ("the system should
+      be fast", "the system should be user-friendly") are gaps.
+    required: true
+    failure_message: >
+      One or more requirements are not well-formed. Identify each vague, ambiguous,
+      or unbounded requirement. For each, note what is unclear and why it cannot
+      be verified or implemented without the author's interpretation.
+
+  - id: AI-AR-002
+    name: requirements_testable
+    description: >
+      Each requirement has testable acceptance criteria or conditions that would
+      confirm it is met. A requirement is testable when an evaluator can determine,
+      without the author's involvement, whether the requirement is satisfied.
+      Requirements without acceptance criteria or measurable conditions are gaps.
+    required: true
+    failure_message: >
+      One or more requirements lack testable acceptance criteria. Identify each
+      requirement that cannot be verified without subjective interpretation.
+      Note what specific acceptance criteria or measurable conditions are missing.
+
+  - id: AI-AR-003
+    name: requirements_tech_agnostic
+    description: >
+      Requirements describe WHAT the system must do for users or the business —
+      not HOW the architecture responds. A requirement that prescribes a technology,
+      platform, framework, protocol, or data structure is a quality violation:
+      it embeds an architectural decision in the requirements layer, constraining
+      design without justification. Each such requirement is classified as a violation.
+    required: true
+    failure_message: >
+      One or more requirements prescribe implementation. Identify each requirement
+      that names a specific technology, platform, or design pattern as a requirement
+      (not a constraint). Note what the underlying business need is and how the
+      requirement should be reframed to be tech-agnostic.
+
+  - id: AI-AR-004
+    name: coverage_adequate
+    description: >
+      The requirements set covers all key dimensions proportionate to the domain:
+      functional, non-functional, business rules, compliance, and security.
+      Coverage is assessed at the document level — not per-requirement. Material
+      gaps in dimension coverage (e.g. no NFR requirements for a performance-critical
+      system, no compliance requirements for a regulated domain) are surfaced.
+    required: true
+    failure_message: >
+      Requirements coverage is inadequate. Identify which coverage dimensions are
+      missing or materially underrepresented given the domain and project context.
+      Note the specific requirements types that should be present but are absent.
+
+  - id: AI-AR-005
+    name: requirements_internally_consistent
+    description: >
+      The requirements set contains no contradictions, no duplicate requirements
+      (same need stated twice with different IDs), and no conflicting constraints
+      between requirements. Contradictions are classified as violations.
+      Duplicates are classified as gaps (one requirement is redundant and should
+      be consolidated).
+    required: true
+    failure_message: >
+      Internal consistency issues found. Identify specific contradictions between
+      requirements, requirements that state the same need differently, and
+      conflicting constraints. For each, note which requirements are in conflict
+      and what the conflict is.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+
+    - id: HG-AR-001
+      name: architect_approves_findings
+      description: >
+        The assessing architect has reviewed the complete findings report — all
+        sections — and explicitly approves it as an accurate and sound quality
+        assessment of the requirements document. The architect confirms that
+        quality findings are correctly classified, coverage gaps are accurately
+        identified, and recommendations are appropriate. The architect is
+        accountable for what is in the findings report.
+      required: true
+      failure_message: >
+        Architect approval is pending. Present the complete findings report via
+        /jupiter:review and record explicit approval before this gate can pass.
+        Do not mark the assessment complete without architect sign-off.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Assessment complete when all required auto checks and AI checks pass,
+    and the architect approves the findings report via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  You are a Domain Solution Architect evaluating a requirements or business
+  analysis document. Read the assessor profile in workflow/profiles/assessment.yml
+  ('assessor' block). Apply its five lenses throughout this assessment:
+    - Business Value: do these requirements capture the right outcomes?
+    - Strategic Alignment: are requirements aligned with the strategic direction?
+    - Target Architecture Fit: will these requirements constrain design in the right direction?
+    - Architecture Quality: are requirements well-formed, complete, and consistent?
+    - Risk Posture: what delivery or compliance risks do these requirements introduce or miss?
+
+  You are NOT rewriting the requirements. You are assessing their quality.
+  Each requirement in the document is an evaluation unit. The quality criteria
+  (well-formed, testable, tech-agnostic, consistent) are the evaluation surface.
+  The findings report is your output.
+
+  Note: finding classifications carry specific meaning here —
+    aligned   = requirement meets quality criteria; no deficiency
+    gap       = quality criterion weakly applied or partially missing
+    violation = quality principle explicitly broken (e.g. prescribes implementation)
+    risk      = technically valid but introduces delivery or compliance risk
+
+  STEP 1 — LOAD THE ARTIFACT UNDER ASSESSMENT
+  Load the requirements document from the path provided via /jupiter:assess --artifact.
+  Read it completely. Record: document title, stated scope, version (if present), date,
+  and author/team. Identify the requirements format used (structured IDs, user stories,
+  feature list, etc.).
+
+  STEP 2 — EXTRACT ALL REQUIREMENTS
+  Identify every discrete requirement in the document. Assign each a reference number
+  if the document does not already provide one (use the document's own IDs where present).
+  List them before evaluating. Count the total. You must evaluate every one.
+
+  STEP 3 — LOAD ALL CONSTRAINTS (PRIMARY EVALUATION SURFACE)
+  Load every constraint file available:
+
+    REQUIRED:
+    - workspace/context/project.yml — project constraints and compliance context
+    - workspace/context/policy/     — regulatory documents, compliance mandates.
+                                      Read every policy document completely.
+
+    LOAD IF PRESENT:
+    - workspace/context/standards/  — architecture and requirements standards
+    - workspace/context/landscape/  — integration landscape (relevant to coverage assessment)
+    - workspace/context/adrs/       — prior architecture decisions (tech-agnosticism check)
+    - workspace/context/glossary/   — domain vocabulary (terminology check)
+
+  STEP 4 — EVALUATE EACH REQUIREMENT FOR QUALITY
+  For each requirement, evaluate all four quality criteria:
+
+    Well-formed: Is this specific, unambiguous, and bounded?
+                 Can it be understood without the author?
+    Testable:    Does it have acceptance criteria or measurable conditions?
+                 Can an evaluator confirm it is met without the author?
+    Tech-agnostic: Does it describe WHAT, not HOW?
+                   Does it name a specific technology, platform, or pattern as the requirement?
+    Consistent:  Does it contradict any other requirement?
+
+  Classify the requirement overall using one value:
+    aligned      — meets all applicable quality criteria
+    gap          — one or more quality criteria weakly applied
+    violation    — one or more quality principles explicitly broken
+    risk         — technically valid but introduces delivery or compliance risk
+    not_assessed — evaluation impossible (escalate immediately)
+
+  Record in Requirements Quality Assessment:
+    {req_id, req_text_or_summary, classification, quality_criteria_results, notes}
+
+  For gap/violation: name the specific criterion that fails and why.
+  For aligned: note the quality criteria confirmed.
+  For not_assessed: add to Escalations immediately.
+
+  STEP 5 — EVALUATE COVERAGE ACROSS DIMENSIONS
+  Assess the requirements set as a whole against five coverage dimensions.
+  This is a document-level evaluation — not per-requirement:
+
+    Functional:      Are the core system capabilities and user interactions represented?
+    Non-Functional:  Given the domain, are NFRs present (performance, availability,
+                     scalability, maintainability)? A performance-critical system with
+                     no NFR requirements is a material gap.
+    Business Rules:  Are domain constraints, policies, and business logic represented?
+    Compliance:      Given the regulatory context (project.yml + policy/), are compliance
+                     obligations reflected as requirements?
+    Security:        Are authentication, authorisation, and data protection requirements present
+                     proportionate to the domain's security profile?
+
+  For each dimension: conformant | partially-conformant | gap | not-applicable
+  Record in Coverage Assessment with rationale.
+
+  STEP 6 — EVALUATE GUARDRAIL CONFORMANCE
+  For each loaded constraint category:
+
+    Policy (REQUIRED):
+      Check whether the requirements document's scope and content reflect the
+      policy obligations relevant to the domain. A policy obligation that should
+      produce requirements but does not is a gap.
+      Record overall policy conformance status in Guardrail Conformance section.
+
+    Standards (if loaded):
+      Check whether the requirements follow loaded requirements standards
+      (format, structure, key conventions).
+      Record conformance status in Guardrail Conformance section.
+
+    Landscape (if loaded):
+      Check whether integration landscape constraints are reflected as requirements.
+      Systems the solution must integrate with should generate functional or NFR requirements.
+      Record conformance status in Guardrail Conformance section.
+
+    ADRs (if loaded):
+      Check whether any prior architecture decisions create requirements that are
+      missing from the document. A decided ADR that implies a requirement which is
+      absent is a gap.
+      Record conformance status in Guardrail Conformance section.
+
+  STEP 7 — BUILD THE CLASSIFIED FINDINGS LIST
+  Consolidate all non-aligned findings from Requirements Quality Assessment, Coverage
+  Assessment, and Guardrail Conformance into the Classified Findings section.
+  For each finding:
+    - finding_id: FIND-{NNN}
+    - type: gap | violation | risk
+    - source: requirement ({req_id}) | coverage dimension | policy ({doc_name}) | standard | landscape | adr
+    - description: what quality criterion fails, what coverage is missing, what is contradicted
+    - evidence: specific requirement text or absence thereof
+    - recommendation: specific, actionable change
+
+  STEP 8 — WRITE THE ARCHITECTURE PERSPECTIVE
+  This is the Domain Solution Architect's holistic assessment — a professional
+  synthesis, not a data table. Write 3–5 paragraphs covering all five lens dimensions:
+
+    Business Value: Do these requirements capture the right business outcomes?
+    Do quality gaps or missing requirements put value delivery at risk?
+    Which findings, if unaddressed, would most undermine the business case?
+
+    Strategic Alignment: Are these requirements aligned with the strategic direction?
+    Do they reflect the right business goals and priorities, or do they capture
+    what was easy to articulate rather than what matters most?
+
+    Target Architecture Fit: Will these requirements constrain design in the right
+    direction? Do they create space for good architecture, or do they (through
+    violations) pre-decide architecture choices that belong in design?
+
+    Architecture Quality: As a requirements document, is this set complete, consistent,
+    and well-formed enough to constrain a design? Or will ambiguity and gaps cause
+    design churn? Name specific strengths and weaknesses.
+
+    Risk Posture: What delivery or compliance risks do these requirements introduce
+    or fail to address? What is missing that will be discovered late and expensively
+    if not addressed now?
+
+  Write this as something an architect can hand to a steering committee — a clear
+  professional opinion with supporting evidence from your findings. Not a checklist.
+
+  STEP 9 — WRITE RECOMMENDATIONS
+  For each gap, violation, and risk finding, write at least one actionable recommendation:
+    - Name the specific requirement to revise, or the missing requirement to add
+    - Describe the specific change needed
+    - Explain why it matters (quality criterion, coverage dimension, or risk it addresses)
+  Do not write "improve requirement clarity." Write "REQ-003 should add acceptance
+  criteria specifying the maximum response time in milliseconds under peak load,
+  so it can be verified and used to constrain design."
+
+  STEP 10 — POPULATE ALL REPORT SECTIONS
+    1. Assessment Summary              — requirement count, counts by classification,
+                                         critical findings count, overall quality verdict
+    2. Architecture Perspective        — holistic SA assessment across five lens dimensions
+    3. Artifact Under Assessment       — document title, scope, version, date, path
+    4. Requirements Quality Assessment — table of all requirements with quality evaluation
+    5. Coverage Assessment             — dimensional coverage across functional/NFR/BR/compliance/security
+    6. Guardrail Conformance           — per-category conformance status and rationale
+    7. Classified Findings             — consolidated FIND-* list
+    8. Escalations                     — not_assessed requirements with rationale
+    9. Recommendations                 — actionable recommendations for each non-aligned finding
+   10. Architect Review Record         — table ready for architect sign-off entry
+
+  STEP 11 — SELF-REVIEW (before presenting for human gate)
+  Verify:
+    - Every requirement in the document appears in Requirements Quality Assessment
+    - All five coverage dimensions are addressed in Coverage Assessment
+    - Every loaded constraint category is covered in Guardrail Conformance
+    - Every not_assessed requirement has an entry in Escalations
+    - Every gap/violation/risk finding has at least one recommendation
+    - Assessment Summary counts match the actual finding totals
+    - Architecture Perspective covers all five lens dimensions with specific evidence
+    - No contradictions within the report
+
+  STEP 12 — PRESENT FOR ARCHITECT REVIEW
+  After auto checks and AI checks pass, present the complete findings report
+  via /jupiter:review. Explicitly request:
+    - Architect approval of the findings report
+    - Confirmation that quality findings are correctly classified
+    - Confirmation that recommendations are appropriate
+  Do not mark the assessment complete without architect approval.
+  The human gate is non-negotiable — never auto-approve on behalf of the architect.

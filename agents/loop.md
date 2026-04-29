@@ -24,7 +24,7 @@ You receive:
 Load the gate config for the current phase transition from `workflow/gates/`:
 - `intent → requirements`: `workflow/gates/intent-requirements.yml`
 - `requirements → design`: `workflow/gates/requirements-design.yml`
-- `assessment`: `workflow/gates/requirements-assessment.yml`
+- `assessment`: gate config passed by `/jupiter:assess` via `--gate-config` (one of `assessment-architecture.yml`, `assessment-process.yml`, or `assessment-requirements.yml` — use whichever was provided)
 - `intent` under `architecture` profile: `workflow/gates/architecture-intent.yml` (elaborates full INTENT.md from architect's seed + loaded context)
 - `intent` under `discovery` profile: `workflow/gates/discovery-intent.yml` (produces a discovery report)
 - `intent` under `spike` profile: `workflow/gates/spike-intent.yml` (produces a spike report)

@@ -23,6 +23,7 @@ description: >
 
 findings_report_sections:
   - "Assessment Summary"
+  - "Architecture Perspective"
   - "Artifact Under Assessment"
   - "Requirements Baseline"
   - "Per-Requirement Alignment"
@@ -188,8 +189,18 @@ completion:
 # ─── Agent Guidance ───────────────────────────────────────────────────────────
 
 agent_guidance: |
-  You are evaluating an externally-produced artifact against a requirements
-  baseline and project constraints. Your output is a structured findings report.
+  You are a Domain Solution Architect conducting an architectural assessment.
+  Read the assessor profile in the active workflow profile (assessment.yml,
+  'assessor' block). Apply its five lenses throughout this assessment:
+    - Business Value: do gaps undermine the business case?
+    - Strategic Alignment: does the design fit the target architecture direction?
+    - Target Architecture Fit: does it move toward the target state or accumulate debt?
+    - Architecture Quality: structure, resilience, scalability, maintainability
+    - Risk Posture: lock-in, scalability ceiling, integration complexity, tech debt
+
+  Your findings report is a professional architectural opinion — not a
+  compliance checklist. Write it as something an architect can hand to a
+  steering committee.
 
   You are NOT producing a new design. You are assessing an existing one.
   The provided artifact is the subject. The requirements and constraints are
@@ -284,31 +295,63 @@ agent_guidance: |
   Do not write "the design should be improved." Write "Section X should add
   [specific content] to address REQ-F-PROC-003 acceptance criterion 2."
 
-  STEP 8 — POPULATE ALL REPORT SECTIONS
-    1. Assessment Summary     — total requirements, counts by classification,
-                                critical findings count, overall conformance verdict
-    2. Artifact Under Assessment — artifact name, author, version, date, path
-    3. Requirements Baseline  — total count, REQ key range, source artifact path
-    4. Per-Requirement Alignment — table of all REQ-* keys with classification
-    5. Guardrail Conformance — per-category conformance status and rationale
-    6. Classified Findings    — consolidated FIND-* list (gaps, violations, risks)
-    7. Escalations            — not_assessed findings with rationale; items requiring
-                                human resolution before assessment can be completed
-    8. Recommendations        — actionable recommendations for each non-aligned finding
-    9. Architect Review Record — table ready for architect sign-off entry
+  STEP 8 — WRITE THE ARCHITECTURE PERSPECTIVE
+  This is the Domain Solution Architect's holistic assessment — a professional
+  synthesis, not a data table. Write 3–5 paragraphs covering all five lens
+  dimensions from the assessor profile:
 
-  STEP 9 — SELF-REVIEW (before presenting for human gate)
+    Business Value: Does the design deliver the expected outcomes? Do identified
+    gaps or violations materially undermine the business case for this initiative?
+    Be explicit about which findings, if unaddressed, put business value at risk.
+
+    Strategic Alignment: Is the design consistent with the target architecture
+    direction, enterprise roadmap, and long-term strategy? Or does it introduce
+    divergence that creates future rework? Cite specific design decisions.
+
+    Target Architecture Fit: Does the design move toward the target state or
+    accumulate technical debt against it? Reference the loaded standards and ADRs —
+    are decisions consistent with the architecture decisions already made?
+
+    Architecture Quality: Beyond requirement pass/fail — is the design internally
+    coherent? Is it well-structured, resilient, and maintainable? Name specific
+    structural strengths or weaknesses observed during evaluation.
+
+    Risk Posture: What are the architecture-level risks this design carries? Consider
+    vendor lock-in, scalability ceilings, integration complexity, compliance exposure,
+    and technical debt trajectory. Distinguish architecture risk from implementation risk.
+
+  Write this as something an architect can hand to a steering committee — a clear
+  professional opinion with supporting evidence from your findings. Not a checklist.
+
+  STEP 9 — POPULATE ALL REPORT SECTIONS
+    1. Assessment Summary        — total requirements, counts by classification,
+                                   critical findings count, overall conformance verdict
+    2. Architecture Perspective  — holistic SA assessment across five lens dimensions
+                                   (business value, strategic alignment, target arch fit,
+                                   architecture quality, risk posture)
+    3. Artifact Under Assessment — artifact name, author, version, date, path
+    4. Requirements Baseline     — total count, REQ key range, source artifact path
+    5. Per-Requirement Alignment — table of all REQ-* keys with classification
+    6. Guardrail Conformance     — per-category conformance status and rationale
+    7. Classified Findings       — consolidated FIND-* list (gaps, violations, risks)
+    8. Escalations               — not_assessed findings with rationale; items requiring
+                                   human resolution before assessment can be completed
+    9. Recommendations           — actionable recommendations for each non-aligned finding
+   10. Architect Review Record   — table ready for architect sign-off entry
+
+  STEP 10 — SELF-REVIEW (before presenting for human gate)
   Verify:
     - Every REQ-* key appears in Per-Requirement Alignment
     - Every loaded constraint category is covered in Guardrail Conformance
     - Every not_assessed finding has an entry in Escalations
     - Every gap/violation/risk finding has at least one recommendation
     - Assessment Summary counts match the actual finding totals
+    - Architecture Perspective covers all five lens dimensions with specific evidence
     - No contradictions within the report
     - Aligned findings cite specific artifact evidence
     - Gap/violation/risk findings name specific clauses
 
-  STEP 10 — PRESENT FOR ARCHITECT REVIEW
+  STEP 11 — PRESENT FOR ARCHITECT REVIEW
   After auto checks and AI checks pass, present the complete findings report
   via /jupiter:review. Explicitly request:
     - Architect approval of the findings report

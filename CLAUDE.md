@@ -121,7 +121,9 @@ workflow/
   gates/
     intent-requirements.yml        ← gate checks for Requirements phase
     requirements-design.yml        ← gate checks for Design phase
-    requirements-assessment.yml    ← gate checks for Assessment mode
+    assessment-architecture.yml    ← gate checks for Architecture/Design assessment
+    assessment-process.yml         ← gate checks for Engineering Process assessment
+    assessment-requirements.yml    ← gate checks for Requirements/Analysis assessment
   profiles/
     architecture.yml               ← standard governance profile (all 3 phases)
     assessment.yml                 ← evaluate-only profile

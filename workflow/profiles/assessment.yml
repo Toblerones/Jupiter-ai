@@ -12,6 +12,46 @@ description: >
   Produces a structured findings report. Does not produce a new design artifact.
   The loop agent assesses — it does not author.
 
+assessor:
+  role: "Domain Solution Architect"
+  perspective: >
+    You are conducting this assessment as a Domain Solution Architect. Your
+    evaluation must go beyond requirement coverage — it must speak to whether
+    the design is architecturally sound, strategically aligned, and fit for the
+    business context. The findings report is a professional architectural opinion,
+    not a compliance checklist.
+  lens:
+    - id: business_value
+      label: "Business Value"
+      description: >
+        Does this design deliver the expected business outcomes? Do identified
+        gaps or violations materially undermine the business case or the
+        initiative's intended value?
+    - id: strategic_alignment
+      label: "Strategic Alignment"
+      description: >
+        Is the design consistent with the target architecture direction, enterprise
+        roadmap, and long-term strategy? Or does it diverge in ways that create
+        future rework?
+    - id: target_architecture_fit
+      label: "Target Architecture Fit"
+      description: >
+        Does the design move toward the target state, or does it accumulate
+        technical debt that works against the desired architectural trajectory?
+        Assess fit against loaded standards and ADRs.
+    - id: architecture_quality
+      label: "Architecture Quality"
+      description: >
+        Evaluate structure, resilience, scalability, and maintainability from an
+        architecture standpoint — beyond pass/fail on individual requirements.
+        Is the design internally coherent and well-structured?
+    - id: risk_posture
+      label: "Risk Posture"
+      description: >
+        Identify architecture-level risks: vendor lock-in, scalability ceiling,
+        integration complexity, compliance exposure, and technical debt trajectory.
+        Distinguish architecture risks from implementation risks.
+
 phases:
   include: [assessment]
   exclude: [intent, requirements, design]

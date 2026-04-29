@@ -1,0 +1,353 @@
+# Jupiter Gate Config — Assessment (Engineering Process)
+# Evaluates an engineering process document (procedure, runbook, process definition,
+# operating model component) from the perspective of a Domain Solution Architect.
+# Produces a structured findings report covering process completeness, role clarity,
+# compliance, and operational risk.
+#
+# Entry point: /jupiter:assess --artifact <path>
+# The agent infers this type from the artifact and confirms before loading this config.
+
+version: "3.0"
+transition: "assessment"
+pattern: process_evaluation
+description: >
+  Evaluate an externally-produced engineering process document against project
+  constraints and policy obligations. Produces a structured findings report
+  classifying each process element and policy obligation as aligned, gap,
+  violation, or risk. The loop agent assesses — it does not rewrite.
+
+# ─── Findings Schema ──────────────────────────────────────────────────────────
+
+findings_report_sections:
+  - "Assessment Summary"
+  - "Architecture Perspective"
+  - "Artifact Under Assessment"
+  - "Process Scope & Objectives"
+  - "Coverage Assessment"
+  - "Guardrail Conformance"
+  - "Classified Findings"
+  - "Escalations"
+  - "Recommendations"
+  - "Architect Review Record"
+
+finding_classifications:
+  aligned: "Process element fully addressed; no gap or deficiency detected"
+  gap: "Process element partially addressed or missing from the document"
+  violation: "Process element explicitly contradicts a constraint or policy obligation"
+  risk: "Process element addressed but in a way that introduces identifiable operational risk"
+  not_assessed: "Evaluation impossible due to document ambiguity or missing context"
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-AP-001
+    name: findings_report_complete
+    description: >
+      The findings report contains all required sections listed in
+      findings_report_sections. Each section has substantive content — no section
+      is blank, missing, or contains placeholder text.
+    required: true
+    failure_message: >
+      Findings report is missing one or more required sections, or one or more
+      sections contain placeholder text. All sections must be populated with
+      substantive content before gate review.
+
+  - id: AC-AP-002
+    name: all_process_elements_evaluated
+    description: >
+      Every process element identified in Coverage Assessment (steps, roles,
+      triggers, exception paths, integration points, approval gates) has been
+      classified with a valid finding_classification. No element may have
+      classification "not_assessed" unless an explicit rationale is recorded
+      in the Escalations section.
+    required: true
+    failure_message: >
+      One or more identified process elements are absent from Coverage Assessment,
+      or have classification "not_assessed" without a recorded escalation.
+      Every element must be evaluated and classified.
+
+  - id: AC-AP-003
+    name: guardrail_categories_evaluated
+    description: >
+      The Guardrail Conformance section explicitly covers each constraint category
+      that was loaded: policy (required), standards (if loaded), landscape (if loaded),
+      adrs (if loaded). Each category must have a conformance status (conformant,
+      non-conformant, partially-conformant, or not-applicable) with a rationale.
+    required: true
+    failure_message: >
+      The Guardrail Conformance section does not cover all loaded constraint
+      categories. Each loaded category must have an explicit conformance status
+      and rationale.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-AP-001
+    name: process_completeness
+    description: >
+      The process document provides complete coverage of its stated scope.
+      Each step has clear inputs, outputs, and actions. Entry and exit criteria
+      are defined. Exception paths and failure scenarios are addressed.
+      The process can be executed without requiring the author's tacit knowledge
+      or presence.
+    required: true
+    failure_message: >
+      Process document is incomplete. Identify specific steps missing inputs,
+      outputs, or clear actions; exception paths that are undefined; or sections
+      that cannot be followed without the author's tacit knowledge.
+
+  - id: AI-AP-002
+    name: role_and_responsibility_clarity
+    description: >
+      Roles involved in the process are explicitly named. Each step has a clear
+      owner or accountable role. Handoffs between roles are explicit. Approval
+      gates name the approving role and define the approval criteria. Ambiguous
+      ownership ("the team", "someone") is a gap.
+    required: true
+    failure_message: >
+      Role or responsibility gaps identified. Name which steps lack a clear owner,
+      which handoffs are ambiguous, and which approval gates do not identify the
+      approver or define approval criteria.
+
+  - id: AI-AP-003
+    name: compliance_obligations_addressed
+    description: >
+      Policy documents loaded from workspace/context/policy/ have been examined.
+      Each policy obligation relevant to the process domain has been evaluated.
+      Where the process does not address a policy obligation, a gap or violation
+      finding is raised. Absence of a finding implies explicit confirmation of
+      conformance, not a skip.
+    required: true
+    failure_message: >
+      Compliance check incomplete. Not all policy obligations from
+      workspace/context/policy/ have been evaluated against the process.
+      Review the policy documents and complete the evaluation.
+
+  - id: AI-AP-004
+    name: operational_risk_identified
+    description: >
+      The process has been assessed for operational risk. Foreseeable failure
+      modes are identified. Escalation paths are present where needed. Recovery
+      steps exist for scenarios where a step fails. Where risks are identified,
+      they are classified and recommendations are provided.
+    required: true
+    failure_message: >
+      Operational risk assessment incomplete. Identify specific failure modes
+      not addressed by the process, missing escalation paths, and scenarios
+      with no recovery or fallback path.
+
+  - id: AI-AP-005
+    name: process_internally_consistent
+    description: >
+      Steps do not contradict each other. Roles do not have conflicting
+      responsibilities across steps. The stated scope of the process matches
+      what the process actually covers. Terminology is used consistently
+      throughout — the same concept is not called different things in different steps.
+    required: true
+    failure_message: >
+      Internal consistency issues found. Identify specific contradictions between
+      steps, role conflicts, mismatches between stated scope and actual process
+      content, or terminology inconsistencies.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+
+    - id: HG-AP-001
+      name: architect_approves_findings
+      description: >
+        The assessing architect has reviewed the complete findings report — all
+        sections — and explicitly approves it as an accurate and sound assessment.
+        The architect confirms that findings are correctly classified, recommendations
+        are appropriate, and no significant process gap or operational risk has been
+        overlooked. The architect is accountable for what is in the findings report.
+      required: true
+      failure_message: >
+        Architect approval is pending. Present the complete findings report via
+        /jupiter:review and record explicit approval before this gate can pass.
+        Do not mark the assessment complete without architect sign-off.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Assessment complete when all required auto checks and AI checks pass,
+    and the architect approves the findings report via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  You are a Domain Solution Architect evaluating an engineering process document.
+  Read the assessor profile in workflow/profiles/assessment.yml ('assessor' block).
+  Apply its five lenses throughout this assessment:
+    - Business Value: does this process support delivery of expected business outcomes?
+    - Strategic Alignment: is this process consistent with the target operating model?
+    - Target Architecture Fit: does this process align with the architectural direction?
+    - Architecture Quality: is the process well-structured, complete, and executable?
+    - Risk Posture: what failure modes, compliance gaps, or operational risks does it carry?
+
+  You are NOT rewriting the process. You are assessing it.
+  The provided document is the subject. Project constraints and policy are the evaluation surface.
+  The findings report is your output.
+
+  STEP 1 — LOAD THE ARTIFACT UNDER ASSESSMENT
+  Load the process document from the path provided via /jupiter:assess --artifact.
+  Read it completely before evaluating. Record: document title, stated scope, intended
+  audience, version (if present), and date. Do not make assumptions — read it fully.
+
+  STEP 2 — DECOMPOSE THE PROCESS INTO EVALUATION UNITS
+  Identify every process element. These become your Coverage Assessment checklist:
+    - Steps: every named activity or action in the process
+    - Roles: every actor, team, or system referenced
+    - Triggers: what starts the process; what causes each step to execute
+    - Exception paths: what happens when a step fails or a condition is not met
+    - Integration points: systems, other processes, or external parties the process touches
+    - Approval gates: decision points requiring a specific role's sign-off
+
+  List all elements before evaluating. Number them (PE-001, PE-002, ...).
+  Count the total elements. You must classify every one.
+
+  STEP 3 — LOAD ALL CONSTRAINTS (PRIMARY EVALUATION SURFACE)
+  Load every constraint file available:
+
+    REQUIRED:
+    - workspace/context/project.yml — project constraints and compliance context
+    - workspace/context/policy/     — regulatory documents, compliance mandates.
+                                      Read every policy document completely.
+                                      These are the primary evaluation yardstick.
+
+    LOAD IF PRESENT:
+    - workspace/context/standards/  — architecture and process standards
+    - workspace/context/landscape/  — integration landscape, platform constraints
+    - workspace/context/adrs/       — prior architecture decisions (consistency check)
+    - workspace/context/glossary/   — domain vocabulary (terminology alignment)
+
+  Constraints are not supplementary — they drive your findings.
+  An obligation the process does not address is a GAP.
+  A constraint the process contradicts is a VIOLATION.
+
+  STEP 4 — POPULATE PROCESS SCOPE & OBJECTIVES
+  Document what the process claims to do: stated purpose, scope boundaries, trigger
+  conditions, success criteria, and intended audience. This section is descriptive —
+  it records what the document says about itself, not your evaluation of it.
+
+  STEP 5 — EVALUATE EACH PROCESS ELEMENT
+  For each element in your checklist:
+    1. Locate where (if anywhere) the document addresses this element.
+    2. Assess whether the treatment is complete, clear, and executable.
+    3. Classify using exactly one value:
+         aligned      — element fully addressed; no gap detected
+         gap          — element not addressed or only partially addressed
+         violation    — element explicitly contradicts a constraint or policy
+         risk         — element addressed but introduces identifiable operational risk
+         not_assessed — evaluation impossible (escalate immediately)
+    4. Record in Coverage Assessment:
+         {element_id, element_type, description, classification, evidence_or_gap, notes}
+    5. For gap/violation/risk: name the specific deficiency or constraint unmet.
+       For aligned: cite the specific document section that addresses it.
+    6. For not_assessed: add an entry to the Escalations section immediately.
+
+  STEP 6 — EVALUATE GUARDRAIL CONFORMANCE
+  For each loaded constraint category:
+
+    Policy (REQUIRED — examine every obligation):
+      For each policy document: identify every obligation relevant to the process domain.
+      Check whether the process addresses the obligation.
+      Non-conformant obligations become violation findings.
+      Record overall policy conformance status in Guardrail Conformance section.
+
+    Standards (if loaded):
+      Check process structure and decisions against loaded architecture/process standards.
+      Record conformance status in Guardrail Conformance section.
+
+    Landscape (if loaded):
+      Check for integration conflicts — systems the process touches vs. landscape constraints.
+      Record conformance status in Guardrail Conformance section.
+
+    ADRs (if loaded):
+      Check whether the process's decisions are consistent with prior architecture decisions.
+      Record conformance status in Guardrail Conformance section.
+
+  STEP 7 — BUILD THE CLASSIFIED FINDINGS LIST
+  Consolidate all non-aligned findings into the Classified Findings section.
+  For each finding:
+    - finding_id: FIND-{NNN}
+    - type: gap | violation | risk
+    - source: process element ({PE-NNN}) | policy ({doc_name}) | standard | landscape | adr
+    - description: what is missing, contradicted, or at risk
+    - evidence: specific document section or absence thereof
+    - recommendation: specific, actionable change the process author should make
+
+  STEP 8 — WRITE THE ARCHITECTURE PERSPECTIVE
+  This is the Domain Solution Architect's holistic assessment — a professional
+  synthesis, not a data table. Write 3–5 paragraphs covering all five lens dimensions:
+
+    Business Value: Does this process support delivery of expected business outcomes?
+    Do identified gaps or risks put value delivery at risk? Be explicit about which
+    findings, if unaddressed, undermine the business case.
+
+    Strategic Alignment: Is this process consistent with the target operating model
+    and organisational direction? Does it align with how the organisation intends to work,
+    or does it encode patterns that will need to be unwound?
+
+    Target Architecture Fit: Does the process align with the architectural direction?
+    Does it introduce operational patterns that conflict with the target state or
+    accumulate process debt against where the organisation is heading?
+
+    Architecture Quality: Is the process well-structured, complete, and maintainable?
+    Can it be followed without the author present? Will it remain useful as the system
+    it governs evolves? Name specific structural strengths or weaknesses.
+
+    Risk Posture: What operational risks does this process carry? What failure modes
+    are not addressed? What compliance exposures exist? Distinguish process risk
+    from implementation risk.
+
+  Write this as something an architect can hand to a steering committee — a clear
+  professional opinion with supporting evidence from your findings. Not a checklist.
+
+  STEP 9 — WRITE RECOMMENDATIONS
+  For each gap, violation, and risk finding, write at least one actionable recommendation:
+    - Name the specific step, role, exception path, or section to revise
+    - Describe the specific change needed
+    - Explain why the change matters (policy obligation, operational risk, or constraint it addresses)
+  Do not write "the process should be improved." Write "Step 4 should add a named
+  escalation path to {role} when the approval SLA is breached, to address the
+  missing exception path identified in PE-007."
+
+  STEP 10 — POPULATE ALL REPORT SECTIONS
+    1. Assessment Summary        — element count, counts by classification,
+                                   critical findings count, overall conformance verdict
+    2. Architecture Perspective  — holistic SA assessment across five lens dimensions
+    3. Artifact Under Assessment — document title, scope, audience, version, date, path
+    4. Process Scope & Objectives — stated purpose, scope boundaries, triggers, success criteria
+    5. Coverage Assessment       — table of all process elements with classification
+    6. Guardrail Conformance     — per-category conformance status and rationale
+    7. Classified Findings       — consolidated FIND-* list
+    8. Escalations               — not_assessed elements with rationale
+    9. Recommendations           — actionable recommendations for each non-aligned finding
+   10. Architect Review Record   — table ready for architect sign-off entry
+
+  STEP 11 — SELF-REVIEW (before presenting for human gate)
+  Verify:
+    - Every identified process element appears in Coverage Assessment
+    - Every loaded constraint category is covered in Guardrail Conformance
+    - Every not_assessed element has an entry in Escalations
+    - Every gap/violation/risk finding has at least one recommendation
+    - Assessment Summary counts match the actual finding totals
+    - Architecture Perspective covers all five lens dimensions with specific evidence
+    - No contradictions within the report
+
+  STEP 12 — PRESENT FOR ARCHITECT REVIEW
+  After auto checks and AI checks pass, present the complete findings report
+  via /jupiter:review. Explicitly request:
+    - Architect approval of the findings report
+    - Confirmation that findings are correctly classified
+    - Confirmation that recommendations are appropriate
+  Do not mark the assessment complete without architect approval.
+  The human gate is non-negotiable — never auto-approve on behalf of the architect.
