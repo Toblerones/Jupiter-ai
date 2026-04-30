@@ -169,6 +169,44 @@ Field notes:
 - `sub_phase`: only set for the design phase (`component_map` or `sad`); `null` for all other phases.
 - `failing_checks`: the IDs of every required auto check or AI check that returned FAIL in this iteration. Empty list `[]` when gap = 0. Status.md scans consecutive iteration events for the same check ID to detect persistent failures and surface them as escalations.
 
+Write a gate report file to `workspace/artifacts/gate-reports/{id}-{phase}-latest.json` (overwrite on every iteration — always reflects the most recent run):
+```json
+{
+  "initiative": "{id}",
+  "phase": "{phase}",
+  "sub_phase": "{component_map|sad|null}",
+  "iteration": {n},
+  "ts": "{ISO-8601}",
+  "gap": {n},
+  "status": "{looping|ready_for_review|blocked}",
+  "auto_checks": {
+    "total": {count of auto checks in gate config},
+    "passing": {n},
+    "failing": [
+      { "id": "{check-id}", "name": "{check name}", "reason": "{specific failure description}" }
+    ]
+  },
+  "ai_checks": {
+    "total": {count of AI checks in gate config},
+    "passing": {n},
+    "failing": [
+      { "id": "{check-id}", "name": "{check name}", "reason": "{specific failure description}" }
+    ]
+  },
+  "human_gate": "pending|approved|rejected",
+  "narrative": "{the Next: line from the gate report — one to three sentences summarising what changed this iteration and what must happen next}",
+  "source_findings": [
+    { "finding": "{text}", "disposition": "resolve_with_assumption|flag|block", "rationale": "{one-line reason}" }
+  ]
+}
+```
+
+Field notes:
+- `auto_checks.failing` and `ai_checks.failing` capture the specific per-check failure reason, not just the check ID. This is what the web dashboard displays.
+- `narrative` is the plain-text content of the gate report's "Next:" line. Write it as prose (no markdown, no command references).
+- `source_findings` is an empty array `[]` when Step 2 found no issues.
+- This file is overwritten (not appended) on every iteration. Historical gate reports are recoverable from the Claude Code session log if needed.
+
 ---
 
 ## Rules

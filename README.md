@@ -135,6 +135,7 @@ workspace/
     requirements/{id}-requirements.md
     design/{id}-SAD.md
     design/adrs/ADR-{NNN}-{slug}.md
+    gate-reports/{id}-{phase}-latest.json  ← latest gate report (overwritten each iteration)
   assessment/inbox/                ← drop externally-produced artifacts here
 ```
 

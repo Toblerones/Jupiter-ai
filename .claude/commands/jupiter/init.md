@@ -44,6 +44,7 @@ workspace/
     requirements/
     design/
       adrs/
+    gate-reports/
   assessment/
     inbox/
   INTENT.md
