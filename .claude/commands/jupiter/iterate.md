@@ -93,11 +93,17 @@ Invoke `agents/loop.md` with:
 
 The loop agent runs Steps 1–7 as defined in `agents/loop.md` and produces the gate report.
 
-### Step 5b — Write gate report file
+### Step 5b — Verify gate report file
 
-Locate the `gate-report-json` fenced code block in the loop agent's output. Parse it as JSON and write it to `workspace/artifacts/gate-reports/{id}-{phase}-latest.json`, overwriting any existing file. Create the `gate-reports/` directory if it does not exist.
+After the loop agent completes, check whether `workspace/artifacts/gate-reports/{id}-{phase}-latest.json` was written (the loop agent's Step 7a writes it directly using the Write tool).
 
-If no `gate-report-json` block appears in the output (e.g., the loop was blocked before Step 6 completed), skip this step.
+If the file does not exist or its `iteration` field does not match the current iteration, the loop agent skipped Step 7a. In that case, construct and write a minimal gate report from the data now available:
+- Read `workspace/initiatives/{id}.yml` for: gap, status, iteration count, gate_result
+- Read the last `iteration_completed` line from `workspace/log.jsonl` for: ts, phase, sub_phase, failing_checks (IDs only)
+- Read the gate config to look up check names for the failing IDs
+- Write the file with empty `reason` strings for failing checks, empty `narrative`, and `source_findings: []`
+
+This minimal fallback allows the web dashboard to display basic status even if per-check failure reasons are unavailable.
 
 ### Step 6 — Print output
 

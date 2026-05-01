@@ -140,9 +140,15 @@ Status values:
 - **BLOCKED**: a source finding or constraint conflict makes progress impossible without architect input.
 - **BUDGET_EXPIRED**: only emitted by the iterate command (Step 4 budget check), not by the loop agent. The loop agent never returns this status from a normal run; it is set by iterate when the iteration count reaches `iteration.budget` (discovery/spike profiles) before the loop agent is invoked.
 
-After printing the human-readable gate report, append the machine-readable gate report as a fenced code block with the language tag `gate-report-json`. The `/jupiter:iterate` command reads this block and writes the gate report file — do not call the Write tool for the gate report file yourself.
+### Step 7 — Update initiative state and log
 
-```gate-report-json
+**Do these three writes in order. Do not skip any.**
+
+**7a — Write the gate report file first.**
+
+Call the Write tool now to write `workspace/artifacts/gate-reports/{id}-{phase}-latest.json` (overwrite on every iteration):
+
+```json
 {
   "initiative": "{id}",
   "phase": "{phase}",
@@ -174,11 +180,12 @@ After printing the human-readable gate report, append the machine-readable gate 
 ```
 
 Field notes:
-- `auto_checks.failing` and `ai_checks.failing` capture the specific per-check failure reason. This is what the web dashboard displays.
-- `narrative` is the plain-text content of the gate report's "Next:" line. Write it as prose (no markdown, no command references).
-- `source_findings` is an empty array `[]` when Step 2 found no issues.
+- `auto_checks.failing` and `ai_checks.failing` include the specific per-check failure reason. This is what the web dashboard displays.
+- `narrative` is the plain-text content of the gate report's "Next:" line. No markdown, no command references.
+- `source_findings` is `[]` when Step 2 found no issues.
+- The `gate-reports/` directory already exists (created by `/jupiter:init`).
 
-### Step 7 — Update initiative state and log
+**7b — Update the initiative file.**
 
 Update `workspace/initiatives/{id}.yml`:
 - Increment the iteration count for the current phase
@@ -186,6 +193,8 @@ Update `workspace/initiatives/{id}.yml`:
 - Update the artifact path if this iteration produced one
 
 Note: `budget_expired` is set on `phases.{phase}.status` by the iterate command's Step 4, not by the loop agent. The loop agent only writes the four statuses above.
+
+**7c — Append the log event.**
 
 Append an event to `workspace/log.jsonl`:
 ```json
@@ -205,9 +214,7 @@ Append an event to `workspace/log.jsonl`:
 
 Field notes:
 - `sub_phase`: only set for the design phase (`component_map` or `sad`); `null` for all other phases.
-- `failing_checks`: the IDs of every required auto check or AI check that returned FAIL in this iteration. Empty list `[]` when gap = 0. Status.md scans consecutive iteration events for the same check ID to detect persistent failures and surface them as escalations.
-
-The gate report file (`workspace/artifacts/gate-reports/{id}-{phase}-latest.json`) is written by the `/jupiter:iterate` command from the `gate-report-json` block you output in Step 6. Do not call the Write tool for this file.
+- `failing_checks`: IDs of every required check that returned FAIL. Empty list `[]` when gap = 0.
 
 ---
 
