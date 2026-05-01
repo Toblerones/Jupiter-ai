@@ -93,6 +93,12 @@ Invoke `agents/loop.md` with:
 
 The loop agent runs Steps 1–7 as defined in `agents/loop.md` and produces the gate report.
 
+### Step 5b — Write gate report file
+
+Locate the `gate-report-json` fenced code block in the loop agent's output. Parse it as JSON and write it to `workspace/artifacts/gate-reports/{id}-{phase}-latest.json`, overwriting any existing file. Create the `gate-reports/` directory if it does not exist.
+
+If no `gate-report-json` block appears in the output (e.g., the loop was blocked before Step 6 completed), skip this step.
+
 ### Step 6 — Print output
 
 Print the gate report from the loop agent exactly as produced. Do not summarise or reformat.
