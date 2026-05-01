@@ -82,10 +82,22 @@ export interface Project {
   created: string;
 }
 
+export interface ContextFile {
+  category: string;
+  name: string;
+}
+
+export interface ArtifactContent {
+  path: string;
+  content: string;
+}
+
 export interface WorkspaceState {
   project: Project | null;
   initiatives: Initiative[];
   activeInitiative: Initiative | null;
   gateReport: GateReport | null;
   recentLog: LogEvent[];
+  contextFiles: ContextFile[];
+  artifact: ArtifactContent | null;
 }

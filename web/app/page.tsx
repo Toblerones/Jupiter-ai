@@ -1,54 +1,70 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import TopBar from '@/components/TopBar';
 import Sidebar from '@/components/Sidebar';
 import PhaseBar from '@/components/PhaseBar';
 import GateReport from '@/components/GateReport';
+import ArtifactView from '@/components/ArtifactView';
 import LiveLog from '@/components/LiveLog';
-import type { WorkspaceState } from '@/lib/types';
+import type { Initiative, WorkspaceState } from '@/lib/types';
+
+function computeCurrentPhase(phases: Initiative['phases'] | null | undefined): string {
+  if (!phases) return 'intent';
+  if (!phases.intent || phases.intent.status !== 'complete') return 'intent';
+  if (!phases.requirements || phases.requirements.status !== 'complete') return 'requirements';
+  return 'design';
+}
 
 export default function Dashboard() {
   const [state, setState] = useState<WorkspaceState | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   const [live, setLive] = useState(false);
 
-  // Keep a ref so the SSE callback always reads the current activeId
+  // Refs so SSE callback always reads current values without stale closures
   const activeIdRef = useRef<string | null>(null);
+  const selectedPhaseRef = useRef<string | null>(null);
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+  useEffect(() => { selectedPhaseRef.current = selectedPhase; }, [selectedPhase]);
 
-  const fetchState = useCallback(async (id: string | null) => {
-    const url = id ? `/api/workspace?initiative=${encodeURIComponent(id)}` : '/api/workspace';
+  const fetchState = useCallback(async (id: string | null, phase: string | null) => {
+    let url = id ? `/api/workspace?initiative=${encodeURIComponent(id)}` : '/api/workspace';
+    if (phase) url += `&phase=${encodeURIComponent(phase)}`;
     try {
       const res = await fetch(url);
       if (!res.ok) return;
       const data: WorkspaceState = await res.json();
       setState(data);
-      // Auto-select on first load
       if (!id && data.activeInitiative) {
         setActiveId(data.activeInitiative.initiative.id);
       }
     } catch {}
   }, []);
 
-  // SSE connection — runs once, uses ref to stay current on activeId
+  // Initial fetch + SSE connection (runs once)
   useEffect(() => {
-    fetchState(null);
-
+    fetchState(null, null);
     const es = new EventSource('/api/stream');
     es.onopen  = () => setLive(true);
     es.onerror = () => setLive(false);
-    es.onmessage = () => fetchState(activeIdRef.current);
-
+    es.onmessage = () => fetchState(activeIdRef.current, selectedPhaseRef.current);
     return () => es.close();
   }, [fetchState]);
 
-  // Refetch when user switches initiative
+  // Refetch when initiative or selected phase changes
   useEffect(() => {
-    if (activeId) fetchState(activeId);
-  }, [activeId, fetchState]);
+    if (activeId) fetchState(activeId, selectedPhase);
+  }, [activeId, selectedPhase, fetchState]);
+
+  // Reset selected phase when switching initiative
+  const handleSelectInitiative = useCallback((id: string) => {
+    setSelectedPhase(null);
+    setActiveId(id);
+  }, []);
 
   const ini = state?.activeInitiative ?? null;
+  const displayedPhase = state?.gateReport?.phase ?? (ini ? computeCurrentPhase(ini.phases) : null);
 
   return (
     <div className="shell">
@@ -57,11 +73,16 @@ export default function Dashboard() {
       <Sidebar
         initiatives={state?.initiatives ?? []}
         activeId={activeId}
-        onSelect={setActiveId}
+        onSelect={handleSelectInitiative}
+        contextFiles={state?.contextFiles ?? []}
       />
 
       <main className="main">
-        <PhaseBar phases={ini?.phases ?? null} />
+        <PhaseBar
+          phases={ini?.phases ?? null}
+          displayedPhase={displayedPhase}
+          onPhaseSelect={setSelectedPhase}
+        />
         <div className="main-body">
           {!ini ? (
             <div className="empty-state">
@@ -79,7 +100,10 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <GateReport report={state.gateReport} />
+            <>
+              <GateReport report={state.gateReport} />
+              {state.artifact && <ArtifactView artifact={state.artifact} />}
+            </>
           )}
         </div>
       </main>
