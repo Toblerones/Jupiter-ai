@@ -187,10 +187,11 @@ Field notes:
 
 **7b — Update the initiative file.**
 
-Update `workspace/initiatives/{id}.yml`:
-- Increment the iteration count for the current phase
-- Record the gate result: `{auto_pass: bool, ai_pass: bool, gap: n, status: looping|ready_for_review|blocked}`
-- Update the artifact path if this iteration produced one
+Use the Edit tool to update only the following fields inside `phases.{phase}` in `workspace/initiatives/{id}.yml`. Do not rewrite the file — patch only these lines, preserving all other content and the nested `initiative:` structure:
+- `status`: set to `looping`, `ready_for_review`, or `blocked`
+- `iteration_count`: increment by 1
+- `gate_result`: set to `{auto_pass: bool, ai_pass: bool, gap: n, status: looping|ready_for_review|blocked}`
+- `artifact`: update path if this iteration produced a new artifact
 
 Note: `budget_expired` is set on `phases.{phase}.status` by the iterate command's Step 4, not by the loop agent. The loop agent only writes the four statuses above.
 

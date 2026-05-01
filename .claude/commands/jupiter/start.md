@@ -129,12 +129,16 @@ Accept paths, classify, and copy. If skipped, continue.
 
 ### Step 5 — Scaffold workspace
 
-Invoke `/jupiter:init` logic:
-- Create the workspace directory structure (as defined in init.md Steps 1 and 3–6)
-- Write `workspace/context/project.yml` using Q1–Q5 answers
-- Write `workspace/INTENT.md` with the Q6 answer in the Problem Statement section, and the Q4/Q5 answers synthesised into the Known Constraints section. Leave Business Context and Desired Outcomes for the loop agent to produce from context.
-- Create the initiative file
-- Emit `project_initialized` event
+Run `/jupiter:init` passing the answers from Q1–Q5 as arguments. Init owns all workspace creation logic — do not duplicate it here.
+
+After init completes, validate:
+- `workspace/log.jsonl` exists and contains a `project_initialized` event
+- `workspace/initiatives/` contains exactly one `.yml` file
+- That file has a nested `initiative:` object with an `id` field (not a flat structure)
+
+If validation fails, surface the specific problem and stop — do not proceed to Step 6.
+
+Then write `workspace/INTENT.md`: place the Q6 answer in the Problem Statement section, synthesise Q4/Q5 into the Known Constraints section, and leave Business Context and Desired Outcomes as `[To be elaborated by the loop agent from project context.]`
 
 The INTENT.md at this point will have:
 - Problem Statement: Q6 answer (architect's seed)
