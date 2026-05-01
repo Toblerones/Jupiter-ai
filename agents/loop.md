@@ -146,7 +146,7 @@ Status values:
 
 **7a — Write the gate report file first.**
 
-Call the Write tool now to write `workspace/artifacts/gate-reports/{id}-{phase}-latest.json` (overwrite on every iteration):
+Call the Write tool now to write `workspace/artifacts/gate-reports/{initiative-id}-{phase}-latest.json`, where `{initiative-id}` is the exact value of the `initiative.id` field from the initiative YAML file (e.g. `myproject-001`), and `{phase}` is the current phase name (e.g. `intent`, `requirements`, `design`). Overwrite on every iteration:
 
 ```json
 {

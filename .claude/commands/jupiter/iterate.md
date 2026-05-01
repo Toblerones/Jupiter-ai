@@ -95,7 +95,7 @@ The loop agent runs Steps 1–7 as defined in `agents/loop.md` and produces the 
 
 ### Step 5b — Verify gate report file
 
-After the loop agent completes, check whether `workspace/artifacts/gate-reports/{id}-{phase}-latest.json` was written (the loop agent's Step 7a writes it directly using the Write tool).
+After the loop agent completes, check whether `workspace/artifacts/gate-reports/{initiative-id}-{phase}-latest.json` was written (the loop agent's Step 7a writes it directly using the Write tool).
 
 If the file does not exist or its `iteration` field does not match the current iteration, the loop agent skipped Step 7a. In that case, construct and write a minimal gate report from the data now available:
 - Read `workspace/initiatives/{id}.yml` for: gap, status, iteration count, gate_result
