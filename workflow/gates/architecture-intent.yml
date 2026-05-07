@@ -73,12 +73,18 @@ ai_checks:
       solution or an architecture decision. "We need a microservices architecture"
       is a solution. "Invoice approvals take 15 days and the error rate is 12%"
       is a problem. The intent statement must state what is wrong or needed,
-      not how to fix it.
+      not how to fix it. The Problem Statement must not contain technology terms
+      (API, microservice, database, platform, service, component, integration
+      layer, architecture, system, pipeline, cloud, middleware, REST, message
+      queue). Observable business facts — delays, error rates, staff hours,
+      regulatory deadlines — are appropriate. System names are not.
     required: true
     failure_message: >
-      Problem Statement frames the issue as a solution or architecture decision
-      rather than a business problem. Rewrite to describe the observable gap,
-      failure, or opportunity — what is wrong or needed from the business perspective.
+      Problem Statement frames the issue as a solution, contains architecture
+      decisions, or uses technology vocabulary. Rewrite to describe the
+      observable gap, failure, or opportunity in business terms only — what is
+      wrong or needed from the business perspective, with no reference to
+      how it will be solved.
 
   - id: AI-AI-002
     name: outcomes_are_not_solutions
@@ -87,12 +93,15 @@ ai_checks:
       after this initiative — not what the system will implement. Outcomes should
       be measurable or at least verifiable. "A REST API for invoice submission"
       is a solution. "Invoice clerks can submit invoices digitally with full
-      audit trail" is an outcome.
+      audit trail" is an outcome. If an outcome requires a technology term to
+      express, it is describing a deliverable, not a capability — rewrite it
+      as what a person or the business can do as a result.
     required: true
     failure_message: >
-      One or more Desired Outcomes are expressed as technical solutions or system
-      features rather than business outcomes. Rewrite in terms of what the business
-      or its users will be able to do, not what will be built.
+      One or more Desired Outcomes are expressed as technical solutions, system
+      features, or deliverables rather than business capabilities. Rewrite each
+      outcome as: "The business / [role] can now [do something] [with some
+      measurable quality]." Technology terms must not appear in this section.
 
   - id: AI-AI-003
     name: intent_internally_consistent
@@ -177,6 +186,14 @@ agent_guidance: |
   - glossary/: What domain terms apply? Use the project's own vocabulary.
   - standards/: What architecture standards will the design need to conform to?
 
+  EXTRACTION RULE: When reading technical context (adrs/, standards/,
+  landscape/), extract the BUSINESS IMPLICATION — what obligation, limitation,
+  or urgency does it create for the business? Do not carry technical vocabulary
+  into the Problem Statement, Business Context, or Desired Outcomes sections.
+  Technical terms belong only in Known Constraints, and even there as a
+  constraint ("must comply with GDPR") not as a solution ("requires an
+  event-driven integration layer").
+
   STEP 3 — ELABORATE BUSINESS CONTEXT
   Write the Business Context section. Describe the situation that makes this
   initiative necessary: operational reality, business pressure, regulatory
@@ -217,8 +234,17 @@ agent_guidance: |
 
   STEP 6 — WRITE THE FULL INTENT.MD
   Write all four sections using the insights from Steps 1-5. Keep the tone
-  architectural — precise, not verbose. Each section should be 2-5 sentences
-  or a short bulleted list. Do not pad with generic filler.
+  business-facing — written for a business owner reading it for the first time,
+  not for an architect. Each section should be 2-5 sentences or a short
+  bulleted list. Do not pad with generic filler.
+
+  LANGUAGE RULE: Problem Statement and Desired Outcomes must contain no
+  technology terms. No APIs, microservices, databases, platforms, services,
+  components, integration patterns, architecture styles, or system names. If a
+  sentence could appear in a design document, it does not belong in these two
+  sections — rewrite it in terms of what people do, what breaks, or what the
+  business needs. Known Constraints is the only section permitted to name
+  systems, standards, or prior architecture decisions.
 
   Format:
   ```markdown
@@ -250,6 +276,13 @@ agent_guidance: |
   - Known Constraints: all project.yml compliance + landscape constraints reflected
   - All four sections: internally consistent, no contradictions
   - Vocabulary: matches glossary/ terms where applicable
+
+  LANGUAGE CHECK: Scan Problem Statement and Desired Outcomes for technology
+  terms (API, microservice, database, event-driven, integration layer, platform,
+  service, component, infrastructure, architecture, system, pipeline, middleware,
+  cloud, REST, message queue). If any appear in these two sections, rewrite
+  them in business language before proceeding. This check must pass before
+  the gate report is produced.
 
   STEP 8 — PRESENT FOR HUMAN GATE
   After auto and AI checks pass, present the complete intent statement.
