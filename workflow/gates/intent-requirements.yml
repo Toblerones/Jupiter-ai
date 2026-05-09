@@ -81,6 +81,60 @@ auto_checks:
 
 ai_checks:
 
+  # ─── Source analysis (backward gap detection) ──────────────────────────────
+  # Verify the agent analysed the intent itself before generating requirements.
+  # This prevents silent agent disambiguation, undisclosed assumptions, and
+  # speculative intent content being force-fit as requirements. The bar is not
+  # "intent must be perfect" — it is "analysis was done and documented".
+
+  - id: AI-IR-SA-001
+    name: intent_ambiguities_documented
+    description: >
+      The artifact contains an "Ambiguities" subsection under "Source Analysis".
+      Each ambiguity in the intent (terms with multiple interpretations,
+      undefined concepts, vague scope language) is listed with the
+      interpretation the agent chose and why. If genuinely none were found,
+      the subsection states "None identified" explicitly. Silent agent
+      interpretation of vague intent is the failure mode this prevents.
+    required: true
+    failure_message: >
+      Source Analysis → Ambiguities subsection is missing, empty, or omits
+      the agent's chosen interpretations. Either list ambiguities with
+      disposition or state "None identified" explicitly.
+
+  - id: AI-IR-SA-002
+    name: intent_gaps_documented
+    description: >
+      The artifact contains a "Gaps" subsection under "Source Analysis"
+      listing information the intent should contain but does not (missing
+      stakeholder roles, unstated NFRs, implied integrations, missing success
+      criteria). Each gap has a disposition — assumed-here with the
+      assumption stated, will-ask-architect, or defer-to-design. If
+      genuinely none, the subsection states "None identified" explicitly.
+    required: true
+    failure_message: >
+      Source Analysis → Gaps subsection is missing or omits dispositions.
+      Either list gaps with disposition or state "None identified" explicitly.
+
+  - id: AI-IR-SA-003
+    name: intent_speculative_content_documented
+    description: >
+      The artifact contains a "Speculative Content" subsection under "Source
+      Analysis" listing exploratory or research-oriented intent content
+      ("investigate whether", "explore options", "evaluate feasibility").
+      Each item has a recommendation — spawn-discovery, defer, or
+      drop-as-non-actionable. Speculative content has not been converted
+      into requirements. If genuinely none, the subsection states "None
+      identified" explicitly.
+    required: true
+    failure_message: >
+      Source Analysis → Speculative Content subsection is missing, or
+      speculative intent content was force-fit as a requirement instead
+      of being flagged. Either list items with recommendation or state
+      "None identified" explicitly.
+
+  # ─── Forward checks (per-requirement and set-level quality) ──────────────────
+
   - id: AI-IR-001
     name: problem_statement_coherent
     description: >
@@ -154,6 +208,63 @@ ai_checks:
       must include traces_to referencing its initiating intent. Untraceable
       requirements indicate scope creep — verify origin before proceeding.
 
+  - id: AI-IR-007
+    name: intent_aspects_covered
+    description: >
+      Every distinct aspect of the intent — each Desired Outcome, each declared
+      Known Constraint requiring active treatment, each problem named in the
+      Problem Statement — has at least one requirement covering it. This is the
+      backward direction of traceability: not "does each REQ trace to intent"
+      (AI-IR-006) but "does each intent aspect produce a REQ". Aspects with no
+      REQ must be either listed under out-of-scope with a reason, or flagged
+      as a coverage gap to the architect.
+    required: true
+    failure_message: >
+      One or more intent aspects (Desired Outcomes, active Known Constraints,
+      or problems named in the Problem Statement) have no corresponding
+      requirement. Either add covering requirements, move the aspect to
+      out-of-scope with a documented reason, or flag the gap. Silent dropping
+      of intent content is not acceptable.
+
+  - id: AI-IR-008
+    name: nfr_acceptance_measurable
+    description: >
+      Every REQ-NFR-* requirement has at least one acceptance criterion that
+      is measurable — a numeric threshold, a defined unit, a falsifiable
+      condition, or a referenced standard with quantitative criteria. A
+      constraint without a tolerance is a wish, not a requirement: it cannot
+      drive design decisions, cannot become a downstream evaluator, cannot
+      detect drift in production. Examples — Acceptable: "p99 latency < 200ms
+      under 1000 req/s", "99.9% monthly availability", "complies with WCAG
+      2.1 AA". Unacceptable: "fast", "responsive", "highly available",
+      "reasonable performance".
+    required: true
+    failure_message: >
+      One or more REQ-NFR-* requirements have no measurable acceptance
+      criterion. Rewrite to include a specific threshold, unit, or
+      falsifiable condition. Vague NFRs cannot be satisfied or verified.
+
+  - id: AI-IR-009
+    name: language_discipline
+    description: >
+      Requirement statements use precise modal verbs: "must" or "shall" for
+      mandatory behaviour, "may" for explicitly optional behaviour. They do
+      not use vague modals ("should", "might", "could") or subjective
+      qualifiers ("appropriate", "reasonable", "adequate", "user-friendly")
+      without a measurable criterion attached. Each requirement describes
+      one obligation: compound requirements joined by "and" combining two
+      distinct behaviours must be split into separate REQ keys. (BR-type
+      requirements expressing a logical conjunction as a single rule —
+      "approver must be different from submitter AND from preparer" — are
+      not compound and are exempt.)
+    required: true
+    failure_message: >
+      One or more requirements use vague modal verbs ("should", "might",
+      "could"), subjective qualifiers without measurable criteria, or
+      compound "and" combining two distinct behaviours. Rewrite using
+      "must"/"shall"/"may" and split compound requirements into separate
+      REQ keys. Each REQ key represents one atomic obligation.
+
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 # Requires explicit human confirmation. The loop agent never auto-approves these.
 # Run /jupiter:review after auto checks and AI checks pass.
@@ -215,6 +326,29 @@ agent_guidance: |
   business context, and any constraints already stated. Do not invent requirements
   that have no basis in the intent.
 
+  STEP 1B — ANALYSE THE SOURCE (BACKWARD GAP DETECTION)
+  Before extracting requirements, analyse the intent statement itself for
+  quality issues. Produce a "Source Analysis" section in the requirements
+  artifact with three sub-sections, even if a sub-section is empty:
+
+    Ambiguities — terms with multiple interpretations, undefined concepts,
+    vague scope language. For each: state the ambiguity, the interpretation
+    you chose, and why. If you cannot resolve it, flag it for the architect
+    rather than picking arbitrarily.
+
+    Gaps — information the intent should contain but does not (missing
+    stakeholder roles, unstated NFRs, implied integrations, missing success
+    criteria). For each: state the gap and the disposition (assumed-here
+    with assumption stated, will-ask-architect, or defer-to-design).
+
+    Speculative content — phrases like "investigate whether", "explore",
+    "evaluate feasibility of". For each: state the content and recommend
+    spawn-discovery, defer, or drop-as-non-actionable. Do not produce a
+    requirement against speculative content; flag it instead.
+
+  If a sub-section has no findings, write "None identified" — silence is
+  not acceptable, the analysis must have been done.
+
   STEP 2 — EXTRACT AND STRUCTURE REQUIREMENTS
   Extract requirements from the intent. Classify each as one of:
     F   — Functional: what the system must do for users or the business.
@@ -246,6 +380,21 @@ agent_guidance: |
   Good: "Invoice submission completes within 3 seconds for files up to 10MB at p99."
   Bad:  "The system should be fast."
 
+  LANGUAGE RULES (enforced by AI-IR-009):
+    - Use "must" or "shall" for mandatory behaviour, "may" for optional.
+    - Do not use "should", "might", "could", "appropriate", "reasonable",
+      "adequate", "user-friendly" without a measurable criterion attached.
+    - One obligation per requirement. If a statement combines two distinct
+      behaviours with "and" ("clerks can submit invoices and approve them"),
+      split into two REQ keys. Logical conjunctions in business rules
+      ("approver must differ from submitter and preparer") are not compound.
+
+  NFR MEASURABILITY (enforced by AI-IR-008):
+    Every REQ-NFR-* must have a numeric threshold, defined unit, falsifiable
+    condition, or referenced standard with quantitative criteria. "Fast",
+    "responsive", "highly available" are wishes, not requirements. A constraint
+    without a tolerance cannot drive design or detect production drift.
+
   STEP 5 — ADD INTENT TRACEABILITY
   Every requirement must include: traces_to: [intent origin]
   If a requirement relates to multiple intent items, list all.
@@ -265,10 +414,19 @@ agent_guidance: |
 
   STEP 8 — SELF-REVIEW (before presenting for human gate)
   Verify:
+    - Source Analysis section present with all three sub-sections populated
+      (or "None identified" stated explicitly)
     - Problem statement: no contradictions
     - All requirements: consistent as a set — no two conflict
     - All F-type requirements: expressed in business/user terms, not architecture terms
     - All traces_to fields: reference a valid intent origin
+    - Every intent aspect (Desired Outcome, active Known Constraint,
+      problem named in Problem Statement) has at least one covering REQ,
+      OR is listed under out-of-scope with a documented reason
+    - Every REQ-NFR-* has a measurable acceptance criterion (threshold,
+      unit, falsifiable condition, or standard reference)
+    - No requirement uses "should/might/could" or unqualified subjective terms
+    - No requirement combines two distinct behaviours with "and"
     - No requirement missing: key, type, acceptance criteria, or traces_to
     - All BR-type requirements: domain constraints, not implementation choices
 
