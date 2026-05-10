@@ -1,4 +1,4 @@
-# /jupiter:gaps
+# /jupiter:gaps — REQ key traceability check across requirements and design
 
 Traceability gap analysis. Checks REQ key coverage across the requirements artifact, SAD, and ADRs. Identifies requirements with no corresponding design coverage.
 

@@ -1,4 +1,4 @@
-# /jupiter:start
+# /jupiter:start — Primary entry point: bootstrap or continue an initiative
 
 State-detecting entry point for Jupiter. Run this instead of remembering which command comes next.
 

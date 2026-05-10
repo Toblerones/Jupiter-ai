@@ -1,4 +1,4 @@
-# /jupiter:status
+# /jupiter:status — Show phase progress, gate status, and next action
 
 Show the current state of an initiative: phase progress, gate check status, pending escalations, and next action.
 
