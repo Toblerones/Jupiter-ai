@@ -1,0 +1,582 @@
+# Integration Landscape — Macquarie Group Finance Management
+# Domain: Finance, Tax, Treasury
+# Maintained by: Finance Architecture
+# Last reviewed: 2026-03-01
+
+# This file describes the systems, data flows, and integration constraints
+# that any Finance Management initiative must account for.
+
+landscape:
+  organisation: Macquarie Group Limited
+  division: Finance Management
+  domains: [Finance, Tax, Treasury]
+  primary_erp_vendor: Oracle
+  erp_strategy: >
+    Macquarie Finance Management has standardised on the Oracle Cloud ecosystem
+    for financial operations. Core platforms (GL, consolidation, planning,
+    reconciliation, tax provision) run on Oracle Cloud ERP and EPM. Oracle
+    Integration Cloud (OIC) is the preferred middleware for Oracle-to-Oracle
+    and Oracle-to-external integrations. Azure remains the Group enterprise
+    data platform for analytics, regulatory reporting, and data lake capabilities.
+
+# ---------------------------------------------------------------------------
+# ORACLE CORE FINANCE SYSTEMS
+# ---------------------------------------------------------------------------
+systems:
+
+  - id: ORACLE_FUSION_GL
+    name: Oracle Fusion Cloud Financials (ERP)
+    owner: Group Finance — GL Operations
+    category: General Ledger / Financial Accounting
+    description: >
+      Primary general ledger and financial accounting platform hosted on Oracle
+      Cloud Infrastructure. Covers AP, AR, fixed assets, expenses, cash
+      management, intercompany, period close, and statutory reporting subledgers.
+      All financial transactions are ultimately posted and reconciled here.
+    version: "Oracle Fusion Cloud ERP (quarterly update cycle)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_1
+    data_classification: confidential
+    integration_protocols: [Oracle REST APIs (BICC/BIP), Oracle Integration Cloud (OIC), FBDI (File-Based Data Import), ADFdi]
+    golden_source_for: [general_ledger, cost_centres, chart_of_accounts, entity_master, accounts_payable, accounts_receivable, fixed_assets]
+    key_interfaces:
+      - target: ORACLE_FCCS
+        direction: outbound
+        frequency: daily_batch
+        data: trial_balance_by_entity, actuals
+      - target: ORACLE_PLANNING
+        direction: bidirectional
+        frequency: monthly
+        data: actuals_for_variance_analysis
+      - target: ORACLE_ARCS
+        direction: outbound
+        frequency: daily
+        data: account_balances_for_reconciliation
+      - target: MUREX
+        direction: bidirectional
+        frequency: real_time_and_batch
+        data: treasury_accounting_entries, nostro_entries
+      - target: ORACLE_TRCS
+        direction: outbound
+        frequency: monthly_batch
+        data: entity_financials_for_tax_provision
+      - target: CDH_AWS
+        direction: outbound
+        frequency: daily_batch
+        data: subledger_detail, journal_lines, payment_data
+    constraints:
+      - All GL postings must carry a valid cost centre, GL account (CoA), and entity segment
+      - Period close lock enforced at T+3 business days; no backdated postings after lock
+      - Oracle Fusion is SaaS; no server-side customisation; use Oracle extension framework (Application Composer, BPM) only
+      - Quarterly Oracle Cloud updates must be regression-tested in OCI test environment before production cutover
+      - FBDI templates must be validated against current Oracle schema before use; schema versions can change post-update
+      - Direct database (schema) access is prohibited; all integrations must use published Oracle REST APIs or OIC adapters
+
+  - id: ORACLE_FCCS
+    name: Oracle Financial Consolidation and Close Cloud (FCCS)
+    owner: Group Finance — Consolidation & Reporting
+    category: Financial Consolidation / Reporting
+    description: >
+      Group consolidation and statutory reporting platform. Receives trial
+      balances from Oracle Fusion GL, applies intercompany eliminations,
+      currency translations, and ownership adjustments to produce consolidated
+      Group financials under IFRS. Replaced legacy Hyperion HFM.
+    version: "Oracle FCCS (OCI SaaS, quarterly updates)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_1
+    data_classification: confidential
+    integration_protocols: [Oracle Data Management (ODM), Oracle Integration Cloud (OIC), EPM REST API]
+    golden_source_for: [consolidated_financials, statutory_accounts, group_eliminations]
+    key_interfaces:
+      - target: ORACLE_FUSION_GL
+        direction: inbound
+        frequency: daily_batch
+        data: trial_balance_by_entity
+      - target: ORACLE_PLANNING
+        direction: bidirectional
+        frequency: monthly
+        data: budget_vs_actuals, plan_data
+      - target: ORACLE_TRCS
+        direction: inbound
+        frequency: monthly
+        data: consolidated_pre_tax_profit
+      - target: ORACLE_NARR
+        direction: outbound
+        frequency: quarterly
+        data: financial_statements_for_disclosure
+      - target: CDH_AWS
+        direction: outbound
+        frequency: monthly
+        data: consolidated_group_financials
+    constraints:
+      - FCCS metadata changes (entities, accounts, consolidation rules) require CAB approval and go through Oracle metadata migration process
+      - Intercompany elimination rules maintained by the Consolidation team; no ad-hoc rule changes outside change process
+      - All data loads must reconcile to Oracle Fusion GL trial balance before consolidation runs
+      - FCCS and ORACLE_PLANNING share the EPM Cloud subscription; metadata alignment between the two is mandatory
+
+  - id: ORACLE_PLANNING
+    name: Oracle Enterprise Planning and Budgeting Cloud (EPBCS)
+    owner: FP&A — Planning & Performance
+    category: Budgeting / Forecasting / Planning
+    description: >
+      Cloud-based planning, budgeting, and forecasting platform. Used for the
+      annual operating plan (AOP), rolling forecasts, and scenario modelling.
+      Includes Oracle Financials Reporting (FR Studio) for management pack production.
+    version: "Oracle EPBCS (OCI SaaS, quarterly updates)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_2
+    data_classification: internal
+    integration_protocols: [EPM REST API, Oracle Integration Cloud (OIC), EPM Automate]
+    golden_source_for: [budget, forecast, annual_operating_plan]
+    key_interfaces:
+      - target: ORACLE_FCCS
+        direction: bidirectional
+        frequency: monthly
+        data: actuals_for_variance_analysis
+      - target: ORACLE_FUSION_GL
+        direction: inbound
+        frequency: daily
+        data: actuals_to_plan_comparison
+      - target: CDH_AWS
+        direction: outbound
+        frequency: on_demand
+        data: plan_and_forecast_datasets
+    constraints:
+      - SaaS platform; no server-side customisation; use Groovy rules and EPM REST API only
+      - Shared EPM Cloud environment with FCCS; metadata governance council approves structural changes
+      - Data residency: all plan data must remain within Oracle AU OCI region
+      - User provisioning via Azure AD SSO using Oracle Identity Cloud Service (IDCS) federation
+
+  - id: ORACLE_ARCS
+    name: Oracle Account Reconciliation Cloud (ARCS)
+    owner: Group Finance — GL Operations
+    category: Account Reconciliation / Close Management
+    description: >
+      Automated account reconciliation and period-close management platform.
+      Manages balance sheet account reconciliations, intercompany matching,
+      and close task workflow for the monthly close cycle.
+    version: "Oracle ARCS (OCI SaaS, quarterly updates)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_2
+    data_classification: confidential
+    integration_protocols: [EPM REST API, Oracle Integration Cloud (OIC), CSV import via SFTP]
+    golden_source_for: [reconciliation_status, close_task_status, reconciliation_workpapers]
+    key_interfaces:
+      - target: ORACLE_FUSION_GL
+        direction: inbound
+        frequency: daily
+        data: account_balances
+      - target: MUREX
+        direction: inbound
+        frequency: daily
+        data: treasury_system_balances_for_recon
+      - target: CDH_AWS
+        direction: outbound
+        frequency: monthly
+        data: reconciliation_completion_metrics
+    constraints:
+      - Reconciliation templates and risk ratings are owned by GL Operations; changes require Finance Controller approval
+      - Outstanding reconciliation items must be cleared or signed off before period close lock
+      - Reconciliation evidence (supporting documents) must be attached within ARCS; external email attachments not accepted as evidence
+
+  - id: ORACLE_PCM
+    name: Oracle Profitability and Cost Management Cloud (PCM Cloud)
+    owner: Finance — Management Accounting
+    category: Cost Allocation / Profitability Reporting
+    description: >
+      Manages the allocation of shared costs (technology, operations, HR, property)
+      across business units, entities, and products using configurable allocation
+      rules. Produces fully loaded cost views for management reporting and
+      product profitability analysis.
+    version: "Oracle PCM Cloud (OCI SaaS, quarterly updates)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_2
+    data_classification: internal
+    integration_protocols: [EPM REST API, Oracle Integration Cloud (OIC)]
+    golden_source_for: [cost_allocation_results, management_accounting_outputs]
+    key_interfaces:
+      - target: ORACLE_FUSION_GL
+        direction: inbound
+        frequency: monthly
+        data: actual_costs_by_cost_centre
+      - target: ORACLE_PLANNING
+        direction: bidirectional
+        frequency: monthly
+        data: allocated_budget_by_business_unit
+      - target: CDH_AWS
+        direction: outbound
+        frequency: monthly
+        data: allocated_costs, management_reporting_views
+    constraints:
+      - Allocation rules (drivers, pools, sequences) require Management Accounting sign-off before change
+      - Circular allocations must be detected and rejected; Oracle PCM validates this natively
+      - Allocation results must reconcile to total GL costs before management reporting is published
+
+  - id: ORACLE_NARR
+    name: Oracle Narrative Reporting Cloud (NARR)
+    owner: Group Finance — External Reporting
+    category: Financial Disclosure / Narrative Reporting
+    description: >
+      Financial statement disclosure and narrative reporting platform. Used to
+      produce the Annual Report, half-year investor report, and regulatory
+      financial disclosures with embedded financials from FCCS.
+    version: "Oracle Narrative Reporting (OCI SaaS)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_2
+    data_classification: confidential
+    integration_protocols: [EPM REST API, direct FCCS data link]
+    golden_source_for: [annual_report_financials, investor_disclosures]
+    constraints:
+      - Report packages require dual sign-off (Group Financial Controller + Group General Counsel) before publication
+      - Embedded financial tables must be linked directly to FCCS; no manual keying of financial figures into narrative reports
+      - XBRL tagging for ASIC lodgement must be reviewed by external auditors before lodgement
+
+  - id: ORACLE_OIC
+    name: Oracle Integration Cloud (OIC)
+    owner: Finance Architecture — Integration
+    category: Enterprise Integration Platform
+    description: >
+      Oracle's managed integration platform for connecting Oracle Cloud applications
+      to each other and to external systems. Preferred middleware for all Oracle-to-Oracle
+      integrations and for Oracle-to-external integrations where an Oracle adapter exists.
+      Houses financial integration flows: GL→FCCS, GL→ARCS, GL→TRCS, Murex→GL.
+    version: "Oracle OIC Generation 3 (OCI SaaS)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_1
+    data_classification: varies_by_payload
+    integration_protocols: [REST, SOAP, FTP/SFTP, Database, ERP Cloud Adapter, EPM Adapter, Kafka]
+    constraints:
+      - OIC is the mandatory integration platform for all new Oracle Cloud to Oracle Cloud integrations
+      - Non-Oracle integrations may use OIC or Azure Data Factory/Event Hubs — Finance Architecture decides per case
+      - All OIC integrations must implement error notification and dead-letter handling
+      - OIC integration flows must be version-controlled in the Finance Architecture GitLab repository
+      - Payload containing Restricted data must use encryption at the OIC message level (not just TLS)
+
+  - id: ORACLE_OAC
+    name: Oracle Analytics Cloud (OAC)
+    owner: Finance Architecture — BI & Reporting
+    category: Business Intelligence / Reporting
+    description: >
+      Oracle's cloud analytics and BI platform. Used for Finance, Tax, and Treasury
+      operational reporting and self-service analytics. Connects natively to Oracle
+      Fusion GL, FCCS, Planning, and ARCS. Complements the Group MGDP/Power BI
+      platform for Oracle-native datasets requiring deep ERP drill-through.
+    version: "Oracle Analytics Cloud (OCI SaaS)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_2
+    data_classification: internal
+    integration_protocols: [Oracle Analytics Publisher, REST API, JDBC (Oracle DB Adapter)]
+    constraints:
+      - OAC is the preferred tool for reports requiring drill-through into Oracle Fusion GL subledger detail
+      - Enterprise-wide management pack and board reporting remains on Power BI via MGDP
+      - Row-level security (RLS) must be configured for any OAC report containing entity-level P&L data
+      - OAC user provisioning via Oracle IDCS federated with Azure AD
+
+# ---------------------------------------------------------------------------
+# TAX SYSTEMS
+# ---------------------------------------------------------------------------
+  - id: ORACLE_TRCS
+    name: Oracle Tax Reporting Cloud (TRCS)
+    owner: Group Tax
+    category: Tax Provision / Compliance Reporting
+    description: >
+      Tax provision calculation and reporting platform within the Oracle EPM suite.
+      Calculates current and deferred tax (AASB 112 / IAS 12), effective tax rate
+      (ETR), and supports tax footnote disclosures and CbCR. Integrated with FCCS
+      for pre-tax profit and with Oracle Fusion GL for entity-level trial balances.
+    version: "Oracle TRCS (OCI SaaS, quarterly updates)"
+    hosting: Oracle Cloud Infrastructure (OCI) — Australia region
+    criticality: tier_2
+    data_classification: confidential
+    integration_protocols: [EPM REST API, Oracle Integration Cloud (OIC), Oracle Data Management (ODM)]
+    golden_source_for: [tax_provision, deferred_tax, ETR, tax_effect_accounting, CbCR_data]
+    key_interfaces:
+      - target: ORACLE_FUSION_GL
+        direction: inbound
+        frequency: monthly_batch
+        data: entity_trial_balance_for_tax_calc
+      - target: ORACLE_FCCS
+        direction: inbound
+        frequency: monthly
+        data: consolidated_pre_tax_profit
+      - target: CDH_AWS
+        direction: outbound
+        frequency: monthly
+        data: tax_provision_outputs, ETR_data
+    constraints:
+      - TRCS is part of the shared Oracle EPM Cloud environment; metadata changes go through EPM governance council
+      - Data residency: tax data must not leave approved jurisdictions (AU, US, UK, SG, HK)
+      - User access to TRCS is restricted to Group Tax team; quarterly recertification required
+
+  - id: ALPHATAX
+    name: Alphatax
+    owner: Group Tax — Australian Compliance
+    category: Tax Return Preparation
+    description: >
+      Tax return preparation software for Australian consolidated group and
+      individual entity income tax returns lodged with the ATO. Receives trial
+      balance and TRCS outputs via structured import; produces ATO SBR2 lodgement files.
+    hosting: On-premise (managed by Group Tax IT)
+    criticality: tier_2
+    data_classification: confidential
+    integration_protocols: [Structured CSV/XML import from TRCS, ATO SBR2 for e-lodgement]
+    golden_source_for: [australian_income_tax_returns]
+    constraints:
+      - ATO lodgement via Standard Business Reporting 2 (SBR2); credentials managed by Group Tax
+      - Version upgrades must align with ATO legislative update schedule each July
+
+# ---------------------------------------------------------------------------
+# TREASURY SYSTEMS
+# ---------------------------------------------------------------------------
+  - id: MUREX
+    name: Murex MX.3
+    owner: Treasury — Markets Technology
+    category: Treasury Management System / Trading
+    description: >
+      Primary treasury and trading system. Covers front-to-back processing of
+      interest rate derivatives, FX, repo, fixed income, and money market
+      instruments. Source of record for all treasury trades and MTM valuations.
+      Posts accounting entries to Oracle Fusion GL via Oracle OIC integration.
+    version: "Murex MX.3 (latest certified)"
+    hosting: On-premise (Sydney primary, Hong Kong DR)
+    criticality: tier_1
+    data_classification: restricted
+    integration_protocols: [MxML, REST API, Kafka (MQ internal broker), Oracle OIC Adapter]
+    golden_source_for: [treasury_trades, mtm_valuations, risk_positions, collateral_calls, intraday_liquidity]
+    key_interfaces:
+      - target: ORACLE_FUSION_GL
+        direction: outbound
+        frequency: real_time_and_batch
+        data: treasury_accounting_entries
+      - target: ORACLE_ARCS
+        direction: outbound
+        frequency: daily
+        data: treasury_system_balances_for_recon
+      - target: BLOOMBERG
+        direction: inbound
+        frequency: real_time
+        data: market_data, reference_rates, yield_curves
+      - target: SWIFT_NETWORK
+        direction: bidirectional
+        frequency: real_time
+        data: payment_confirmations, settlement_messages
+      - target: CDH_AWS
+        direction: outbound
+        frequency: real_time_stream
+        data: trade_events, position_snapshots, VaR_data
+    constraints:
+      - Murex is a vendor platform; all customisations must be documented and version-controlled in the Murex config repo
+      - Market data feeds from Bloomberg are licensed; downstream consumers must not re-publish raw data
+      - Any new Murex integration requires sign-off from Treasury Technology and Group Risk Technology
+      - Trade-level data is classified as restricted; encryption in transit (TLS 1.3) is mandatory
+      - Murex-to-GL accounting entries must reconcile to Murex MTM positions daily; breaks > AUD 10k escalate to Treasury Operations
+
+  - id: BLOOMBERG
+    name: Bloomberg Terminal / BLPAPI
+    owner: Group Markets — Market Data
+    category: Market Data
+    description: >
+      External market data provider. Bloomberg Terminal for analyst access;
+      BLPAPI for system-to-system real-time and reference data feeds into Murex,
+      Oracle Fusion GL (FX rates), and TRCS (yield curves for tax calculations).
+    hosting: External SaaS (Bloomberg LP)
+    criticality: tier_2
+    data_classification: restricted
+    integration_protocols: [BLPAPI (proprietary), Bloomberg SFTP for bulk data]
+    golden_source_for: [market_prices, reference_rates, FX_rates, yield_curves]
+    constraints:
+      - Bloomberg data is licensed; redistribution or re-publishing outside approved systems is prohibited
+      - API access requires a Bloomberg B-Unit credential managed by Market Data team
+      - Fallback to Refinitiv/LSEG data feed if Bloomberg unavailable (failover managed by Market Data)
+
+  - id: SWIFT_NETWORK
+    name: SWIFT / SWIFTNet
+    owner: Treasury Operations
+    category: Payment Messaging Network
+    description: >
+      International payment and financial messaging network. Used for cross-border
+      payment instructions, confirmations, and securities settlement messages.
+      Payments originate in Oracle Fusion GL (AP payments) and Murex (treasury settlements).
+    hosting: External (SWIFT co-operative)
+    criticality: tier_1
+    data_classification: restricted
+    integration_protocols: [ISO 20022, MT messages (legacy), SWIFT Alliance Gateway]
+    golden_source_for: [payment_instructions, settlement_confirmations]
+    constraints:
+      - SWIFT connectivity managed by Treasury Operations; new message types require SWIFT onboarding process
+      - ISO 20022 migration mandatory by SWIFT global deadline; all new integrations must use ISO 20022
+      - SWIFT CSP (Customer Security Programme) annual attestation required
+
+# ---------------------------------------------------------------------------
+# ENTERPRISE DATA AND ANALYTICS
+# ---------------------------------------------------------------------------
+  - id: CDH_AWS
+    name: Corporate Data House (CDH)
+    owner: Group Technology — Data Engineering
+    category: Enterprise Data Platform / Analytics
+    description: >
+      Centralised enterprise data platform built on AWS with Amazon S3 as the
+      primary storage layer (data lake). Provides data ingestion, medallion
+      architecture (Bronze / Silver / Gold), data warehouse (Amazon Redshift),
+      and serving capabilities for analytics, regulatory reporting, and BI.
+      Finance, Tax, and Treasury data from Oracle Cloud systems and Murex flows
+      here via Amazon MSK, AWS Glue, and OIC outbound adapters.
+    hosting: AWS (ap-southeast-2 Sydney primary; ap-southeast-1 Singapore DR)
+    criticality: tier_1
+    data_classification: varies_by_domain
+    integration_protocols: [Amazon MSK (Kafka-compatible), AWS Glue (ETL), Amazon S3, Amazon Redshift, AWS Lake Formation, REST API]
+    golden_source_for: [enterprise_reporting_datasets, regulatory_reporting_inputs, cross_domain_analytics, data_lake]
+    key_interfaces:
+      - target: POWER_BI
+        direction: outbound
+        frequency: real_time_and_scheduled
+        data: finance_dashboards, board_management_reporting
+      - target: ORACLE_OAC
+        direction: inbound
+        frequency: daily
+        data: cross_system_datasets_for_oracle_analytics
+      - target: APRA_CONNECT
+        direction: outbound
+        frequency: monthly_quarterly
+        data: ARS_regulatory_returns_XBRL
+    constraints:
+      - Data classification tagging mandatory for all datasets; enforced by AWS Lake Formation tag-based access control
+      - PII data must be masked or tokenised before landing in the Silver layer; Bronze layer is raw ingestion only
+      - All new data pipelines require Data Governance approval (Group Data Office) before production deployment
+      - AWS regions locked to ap-southeast-2 and ap-southeast-1 for Finance data; cross-region replication requires approval
+      - Oracle Cloud to CDH pipelines must use OIC outbound REST to Amazon API Gateway or direct Amazon MSK Kafka topic
+      - All S3 buckets must have server-side encryption (SSE-KMS) with customer-managed keys via AWS KMS
+      - Data lake schema changes must be registered in the AWS Glue Data Catalog; no schema changes without catalog update
+
+  - id: POWER_BI
+    name: Microsoft Power BI (Fabric)
+    owner: Finance Architecture — BI & Reporting
+    category: Business Intelligence / Board Reporting
+    description: >
+      Enterprise BI platform for board, senior management, and cross-business reporting.
+      Consumes CDH-certified datasets from Amazon Redshift via DirectQuery or scheduled
+      import. Oracle-native operational reports use OAC; enterprise management pack and
+      board reporting use Power BI.
+    hosting: Microsoft Fabric (AU region)
+    criticality: tier_2
+    data_classification: internal
+    integration_protocols: [Power BI REST API, Azure AD SSO, Amazon Redshift connector, CDH certified datasets]
+    constraints:
+      - Only CDH-certified datasets (published via Redshift Gold layer) may be used for board or external reporting
+      - Row-level security (RLS) must be configured for any report containing entity-level P&L or tax data
+      - Reports with restricted data must not be shared outside the Macquarie tenant
+      - Power BI gateway deployed in AWS VPC for secure Redshift connectivity; no public internet exposure
+
+# ---------------------------------------------------------------------------
+# IDENTITY AND ACCESS
+# ---------------------------------------------------------------------------
+  - id: AZURE_AD
+    name: Azure Active Directory (Entra ID)
+    owner: Group Technology — Identity
+    category: Identity & Access Management
+    description: >
+      Centralised identity provider. Federated to Oracle IDCS for all Oracle Cloud
+      applications (Fusion GL, FCCS, Planning, ARCS, PCM, TRCS, OAC). Manages
+      SSO, MFA, and group-based access control across all Finance Management systems.
+    hosting: Azure (global)
+    criticality: tier_1
+    data_classification: restricted
+    integration_protocols: [OAuth2 / OIDC, SAML 2.0, SCIM, Oracle IDCS federation]
+    golden_source_for: [user_identity, group_membership, service_principals]
+    constraints:
+      - All applications must integrate via Azure AD SSO; no local user accounts in Oracle Cloud or other Finance systems
+      - Oracle Cloud applications authenticate via Oracle IDCS federated to Azure AD; IDCS is a pass-through, not a second IdP
+      - MFA mandatory for all users (enforced via Conditional Access)
+      - Service-to-service authentication: managed identities (Azure) or Oracle service accounts with OCI IAM policies; no shared passwords
+      - Privileged access requires PIM just-in-time activation with approved change record
+
+# ---------------------------------------------------------------------------
+# REGULATORY REPORTING
+# ---------------------------------------------------------------------------
+  - id: APRA_CONNECT
+    name: APRA Connect
+    owner: Regulatory Reporting — Finance
+    category: Regulatory Submission Portal
+    description: >
+      APRA's regulatory data collection portal. Macquarie Bank Limited and other
+      APRA-regulated entities submit ARS forms for capital, liquidity, credit risk,
+      and market risk. Data sourced from MGDP; XBRL files prepared by the
+      Regulatory Reporting team before submission.
+    hosting: External (APRA)
+    criticality: tier_1
+    data_classification: restricted
+    integration_protocols: [XBRL, Web portal upload]
+    constraints:
+      - Submissions are legally binding; dual sign-off required (Finance Controller + Risk)
+      - Data must be validated against APRA taxonomy before submission
+      - Submission windows are fixed; late submissions trigger regulatory breach notifications
+
+# ---------------------------------------------------------------------------
+# INTEGRATION CONSTRAINTS (GLOBAL)
+# ---------------------------------------------------------------------------
+integration_constraints:
+
+  oracle_cloud_standards:
+    erp_customisation: >
+      Oracle Fusion Cloud Financials is SaaS. No server-side customisation.
+      Use Oracle-approved extension patterns: Application Composer, Page Composer,
+      BPM Workflow customisation, BI Publisher reports, OTBI analyses, and FRS reports.
+      New extension requests require Finance Architecture approval.
+    quarterly_updates: >
+      Oracle releases quarterly cloud updates. All Finance Management integrations
+      must be regression-tested in the OCI test environment before each production update.
+      Finance Architecture owns the update readiness checklist.
+    api_preference: >
+      Oracle REST APIs (Fusion REST, EPM REST) are preferred over FBDI for real-time
+      and near-real-time integrations. FBDI is accepted for bulk data loads only.
+
+  integration_platform:
+    oracle_to_oracle: Oracle Integration Cloud (OIC) mandatory
+    oracle_to_cdh: Oracle OIC outbound REST to Amazon API Gateway, or direct Amazon MSK Kafka topic via OIC Kafka adapter
+    oracle_to_external: Oracle OIC where adapter exists; otherwise direct REST or file-based
+
+  data_sovereignty:
+    description: >
+      Financial data must not transit or rest outside approved jurisdictions.
+      Approved jurisdictions for Finance Management: Australia, United States,
+      United Kingdom, Singapore, Hong Kong.
+    enforcement: OCI tenancy policy, AWS IAM + Lake Formation policies, network egress controls (AWS Transit Gateway, OCI Security Zones)
+
+  encryption:
+    in_transit: TLS 1.2 minimum; TLS 1.3 for all new integrations
+    at_rest: AES-256 for all tier_1 systems; AES-128 minimum for tier_2
+    oracle_cloud: Oracle-managed encryption at rest is default; customer-managed keys (BYOK via OCI Vault) required for Restricted data
+
+  authentication:
+    human_access: Azure AD SSO + MFA mandatory; Oracle IDCS as federation layer for Oracle apps
+    service_to_service: >
+      Oracle apps: OCI IAM service accounts with resource principal policies.
+      Azure apps: Azure Managed Identities.
+      Cross-cloud: OAuth2 client credentials with secret stored in OCI Vault or Azure Key Vault.
+      API keys: 90-day rotation; automated rotation via OCI Vault where possible.
+
+  change_management:
+    tier_1_systems: CAB approval + regression testing in OCI/Azure test environments before production
+    tier_2_systems: Standard change with peer review; quarterly Oracle update regression included
+    oracle_metadata: EPM Cloud metadata changes (entities, accounts, dimensions) require EPM Governance Council approval
+
+  api_standards:
+    style: REST (JSON); Oracle SOAP accepted only for legacy OIC-SOAP adapters
+    versioning: URI versioning (e.g. /v1/, /v2/)
+    pagination: Cursor-based for large datasets; offset acceptable for small datasets
+    error_format: RFC 7807 Problem Details
+    oracle_erp_api_base: "https://[tenant].oraclecloud.com/fscmRestApi/resources/[version]/"
+    oracle_epm_api_base: "https://[tenant].epm.us6.oraclecloud.com/HyperionPlanning/rest/[version]/"
+
+  event_streaming:
+    platform: Amazon MSK (Kafka-compatible) for CDH-bound events; Oracle OIC event routing for Oracle Cloud internal events
+    schema_registry: AWS Glue Schema Registry (Avro schemas mandatory for financial events)
+    retention: 7 days default on MSK; 90 days in S3 archive for audit-relevant financial events
+    topic_naming: "{domain}.{subdomain}.{entity}.{event-type}.{version}" (e.g. finance.gl.journal.posted.v1)
+
+  batch_integration:
+    file_format: Parquet preferred on CDH (S3); Oracle FBDI format for Oracle Cloud bulk loads; CSV accepted with explicit schema in Glue Catalog
+    landing_zone: S3 Bronze bucket per domain (s3://cdh-{env}-bronze/{domain}/{system}/{date}/)
+    transfer: AWS Glue job or OIC outbound to S3 (no SFTP for new integrations; SFTP only for Alphatax ATO lodgement)
+    reconciliation: All batch loads must produce a control total record; reconciliation checked by AWS Glue quality job before Silver promotion
+    orchestration: Amazon MWAA (Managed Apache Airflow) for cross-system batch orchestration; OIC schedules for Oracle-internal batch
