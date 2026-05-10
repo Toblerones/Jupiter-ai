@@ -17,10 +17,11 @@ Initialise a new Jupiter workspace for an architecture initiative.
 1. If no workspace exists, scaffold the workspace directory structure.
 2. Run a guided 5-question setup to establish project identity.
 3. Create `workspace/context/project.yml` from answers.
-4. Create `workspace/INTENT.md` as the starting point for the intent phase.
-5. Create the first initiative file at `workspace/initiatives/{initiative-id}.yml`.
-6. Emit a `project_initialized` event to `workspace/log.jsonl`.
-7. Print a summary: project identity, profile, first command to run.
+4. Seed `workspace/context/constraint-dimensions.yml` from the standard template.
+5. Create `workspace/INTENT.md` as the starting point for the intent phase.
+6. Create the first initiative file at `workspace/initiatives/{initiative-id}.yml`.
+7. Emit a `project_initialized` event to `workspace/log.jsonl`.
+8. Print a summary: project identity, profile, first command to run.
 
 ---
 
@@ -91,6 +92,12 @@ constraints:
   compliance: {parse Q4 answer into a list, or []}
   existing: {parse Q5 answer into a list, or []}
 ```
+
+### Step 3b — Seed constraint-dimensions.yml
+
+Copy `workflow/templates/constraint-dimensions.yml` to `workspace/context/constraint-dimensions.yml`. This file declares the architecture constraint dimensions every design must explicitly resolve. Do not modify the template values — the architect populates `current_binding` and `resolved_by` per project later, before the first design iteration.
+
+If the workspace already has `workspace/context/constraint-dimensions.yml` (re-init), do not overwrite it.
 
 ### Step 4 — Create INTENT.md
 
@@ -185,6 +192,12 @@ Context files to add (optional — place in workspace/context/ before iterating)
   workspace/context/landscape/  ← integration landscape constraints
   workspace/context/adrs/       ← prior ADRs as guardrails
   workspace/context/glossary/   ← domain vocabulary
+
+Constraint-dimensions file (seeded — fill in before first design iteration):
+  workspace/context/constraint-dimensions.yml
+    Populate current_binding and resolved_by for each mandatory dimension
+    (ecosystem, deployment, security, build_system) with the project's existing
+    standards or prior ADR ids. The design loop reads this file every iteration.
 
 Next step:
   1. Edit workspace/INTENT.md with the initiating problem statement.

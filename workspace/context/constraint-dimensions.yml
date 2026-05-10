@@ -1,0 +1,106 @@
+# Jupiter — Constraint Dimensions
+#
+# This file defines the architecture constraint dimensions every Jupiter design
+# must explicitly resolve. It is loaded as context at every design iteration.
+#
+# Mandatory dimensions MUST be resolved in the SAD as one of:
+#   1. Decided   — a new ADR in this initiative resolves it
+#   2. Inherited — already resolved by a prior ADR or by the current_binding below
+#   3. Untouched — this initiative does not affect this dimension (state explicitly)
+#
+# Advisory dimensions SHOULD be acknowledged. They may be resolved via a design
+# section rather than an ADR.
+#
+# Architect: edit current_binding and resolved_by per project. Add or remove
+# dimensions to match your organisation's standards. The taxonomy itself is
+# editable — `mandatory: true|false` controls whether it blocks the gate.
+#
+# AI-RD-008 in workflow/gates/requirements-design.yml reads this file.
+
+version: "1.0"
+
+dimensions:
+
+  ecosystem_compatibility:
+    description: "Runtime platform, language version, framework versions, dependency compatibility"
+    mandatory: true
+    resolves_via: adr
+    examples:
+      - "Python 3.12 + Django 5.0"
+      - "Scala 2.13 + Spark 3.5"
+      - "Node 20 + React 18 + Next.js 14"
+    current_binding: ""        # populated by architect — current org/project standard
+    resolved_by: ""            # populated by architect — ADR id or "project_constraint"
+
+  deployment_target:
+    description: "Where and how the system runs, infrastructure assumptions"
+    mandatory: true
+    resolves_via: adr
+    examples:
+      - "Kubernetes on AWS EKS"
+      - "Serverless (Lambda + API Gateway)"
+      - "On-premise Docker Compose"
+    current_binding: ""
+    resolved_by: ""
+
+  security_model:
+    description: "Authentication, authorisation, data protection, threat model"
+    mandatory: true
+    resolves_via: adr
+    examples:
+      - "OAuth2 + RBAC, mTLS between services"
+      - "API key + rate limiting"
+      - "JWT + row-level security"
+    current_binding: ""
+    resolved_by: ""
+
+  build_system:
+    description: "Build tool, module structure, dependency management, CI integration"
+    mandatory: true
+    resolves_via: adr_or_design_section
+    examples:
+      - "sbt multi-module with dependency DAG"
+      - "npm workspaces monorepo"
+      - "Gradle with convention plugins"
+    current_binding: ""
+    resolved_by: ""
+
+  data_governance:
+    description: "Privacy, lineage, retention, compliance frameworks"
+    mandatory: false
+    resolves_via: adr_or_design_section
+    examples:
+      - "GDPR compliant, data classification, 7-year retention"
+      - "SOC2 audit trail required"
+    current_binding: ""
+    resolved_by: ""
+
+  performance_envelope:
+    description: "Latency, throughput, resource bounds, scaling strategy"
+    mandatory: false
+    resolves_via: design_section
+    examples:
+      - "p99 < 200ms, 10k RPS, horizontal scaling"
+      - "Batch processing: 1M records/hour"
+    current_binding: ""
+    resolved_by: ""
+
+  observability:
+    description: "Logging, metrics, tracing, alerting strategy"
+    mandatory: false
+    resolves_via: design_section
+    examples:
+      - "OpenTelemetry, structured JSON logging, REQ-key tagging"
+      - "Prometheus + Grafana, ELK stack"
+    current_binding: ""
+    resolved_by: ""
+
+  error_handling:
+    description: "Failure modes, retry strategy, circuit breaking, degradation"
+    mandatory: false
+    resolves_via: design_section
+    examples:
+      - "Fail-fast with structured error types"
+      - "Retry with exponential backoff, circuit breaker on external calls"
+    current_binding: ""
+    resolved_by: ""

@@ -52,9 +52,28 @@ sad_required_sections:
   - "Current State (As-Is)"
   - "Target State (To-Be)"
   - "Architecture Decisions (ADR Index)"
+  - "Constraint Dimension Resolution"
   - "Risk Register"
   - "Open Issues and Assumptions"
   - "Stakeholder Approval Record"
+
+# ─── Constraint Dimension Resolution Template ─────────────────────────────────
+# Each mandatory dimension declared in workspace/context/constraint-dimensions.yml
+# must appear as a row in the Constraint Dimension Resolution section of the SAD,
+# with a resolution state and a reference. Three valid states:
+#
+#   Decided   — a new ADR in this initiative resolves it
+#   Inherited — already resolved by a prior ADR (loaded in workspace/context/adrs/)
+#               or by current_binding in workspace/context/constraint-dimensions.yml
+#   Untouched — this initiative does not change this dimension (explicit acknowledgement)
+#
+# Reference must be: ADR id (Decided/Inherited), context binding (Inherited),
+# or "—" with a one-line rationale (Untouched).
+
+constraint_dimension_resolution_template: |
+  | Dimension | State | Reference | Rationale (Untouched only) |
+  |-----------|-------|-----------|----------------------------|
+  | {dimension_name} | Decided \| Inherited \| Untouched | {ADR-NNN or context binding} | {one-line rationale if Untouched} |
 
 # ─── Auto Checks ──────────────────────────────────────────────────────────────
 
@@ -77,15 +96,15 @@ auto_checks:
   - id: AC-RD-002
     name: sad_sections_complete
     description: >
-      The SAD contains all twelve required sections listed in sad_required_sections.
+      The SAD contains all required sections listed in sad_required_sections.
       Each section has substantive content — no section is blank, missing, or still
       contains placeholder text (e.g. [REPLACE WITH ...], [TODO], TBD). The Solution
       Component Map section must contain the full component map from Phase 1.
     required: true
     failure_message: >
       SAD is missing one or more required sections, or one or more sections still
-      contain placeholder text. All twelve sections must be populated with
-      substantive content before gate review.
+      contain placeholder text. All sections in sad_required_sections must be
+      populated with substantive content before gate review.
 
   - id: AC-RD-003
     name: req_coverage_in_sad
@@ -199,6 +218,27 @@ ai_checks:
       a corresponding ADR. Identify every significant decision (including design
       questions from the component map) and generate the missing ADRs.
 
+  - id: AI-RD-008
+    name: mandatory_constraint_dimensions_resolved
+    description: >
+      Every mandatory constraint dimension declared in
+      workspace/context/constraint-dimensions.yml is explicitly resolved in the
+      Constraint Dimension Resolution section of the SAD. Each mandatory dimension
+      has a state of Decided, Inherited, or Untouched, with a valid reference:
+        - Decided   — a new ADR in this initiative (must exist in the ADR Index)
+        - Inherited — a prior ADR loaded from workspace/context/adrs/, or the
+                      current_binding declared in constraint-dimensions.yml
+        - Untouched — this initiative does not change the dimension; the row
+                      must include a one-line rationale explaining why
+      Silent omission of any mandatory dimension fails this check.
+    required: true
+    failure_message: >
+      One or more mandatory constraint dimensions are not explicitly resolved in
+      the Constraint Dimension Resolution section. For each mandatory dimension
+      in workspace/context/constraint-dimensions.yml, the SAD must record a
+      state of Decided, Inherited, or Untouched with a valid reference. A
+      missing or unreferenced row fails this gate.
+
   - id: AI-RD-006
     name: risks_credible
     description: >
@@ -299,12 +339,25 @@ agent_guidance: |
   This phase runs in two sub-phases. Do not begin SAD writing until Phase 1
   is complete and the component coverage check (AC-RD-001) passes.
 
+  ─── HOW TECH-STACK CONTEXT SHAPES THE DESIGN ──────────────────────
+  The architecture you produce is fundamentally shaped by the technology context
+  loaded from workspace/context/. The same requirements with different stack
+  bindings produce different architectures — Spark vs dbt, Kafka vs Pulsar,
+  Django vs FastAPI all impose different decompositions, different integration
+  patterns, and different ADRs. Treat the loaded standards, landscape constraints,
+  and prior ADRs not just as boundaries to avoid violating, but as design-shaping
+  inputs to read carefully. If the loaded context is thin or contradictory, flag
+  it via the source-finding mechanism before generating a design.
+
   ═══ PHASE 1: SOLUTION COMPONENT MAP ═══════════════════════════════
 
   STEP 1 — LOAD CONTEXT
   Load and read before starting:
     - The ratified requirements artifact (all REQ-* requirements)
     - workspace/context/project.yml (constraints, compliance context)
+    - workspace/context/constraint-dimensions.yml (architecture constraint
+      dimensions — mandatory dimensions must be resolved by the SAD)
+    - workspace/context/adrs/ (prior ADRs that may already resolve dimensions)
     - Any prior architecture documents listed in the project configuration
   Do not begin component mapping until you have read all requirements in full.
 
@@ -368,6 +421,29 @@ agent_guidance: |
   consequences, and alternatives_considered (at least two alternatives).
   Do not leave significant decisions as implicit prose in the SAD.
 
+  STEP 6b — RESOLVE CONSTRAINT DIMENSIONS
+  Read workspace/context/constraint-dimensions.yml. For every dimension marked
+  mandatory, the SAD's Constraint Dimension Resolution section must record one
+  resolution row per dimension with:
+    - State: Decided | Inherited | Untouched
+    - Reference: ADR-NNN (Decided/Inherited), context binding (Inherited),
+                 or "—" (Untouched, with one-line rationale)
+  Resolution states:
+    - Decided   — this initiative produces a new ADR that resolves the dimension.
+                  The ADR must appear in the ADR Index and be addressed in the SAD.
+    - Inherited — the dimension is already resolved by a prior ADR (loaded from
+                  workspace/context/adrs/) or by current_binding declared in
+                  constraint-dimensions.yml. Reference the inherited decision; no
+                  new ADR is required. The SAD must briefly state why the
+                  inherited decision still applies.
+    - Untouched — this initiative does not affect the dimension. State this
+                  explicitly with a one-line rationale (e.g. "New reporting
+                  endpoints sit under existing OAuth2/RBAC."). Do not silently
+                  omit the dimension.
+  Advisory dimensions should also be acknowledged but may use any state. Failing
+  AI-RD-008 means a mandatory dimension is silently absent — fix by adding the
+  missing row before requesting human gate approval.
+
   STEP 7 — BUILD THE REQUIREMENTS TRACEABILITY TABLE
   For each REQ-* key record:
     req_key | description | type | component (COMP-NNN) | addressed_in (SAD section or ADR)
@@ -385,9 +461,11 @@ agent_guidance: |
     7.  Current State (As-Is) — current architecture, pain points, constraints
     8.  Target State (To-Be) — proposed architecture (from Step 5)
     9.  Architecture Decisions (ADR Index) — table of all ADRs with status
-    10. Risk Register — risks with likelihood, impact, mitigation, owner
-    11. Open Issues and Assumptions — items with owners or resolved-by statements
-    12. Stakeholder Approval Record — table ready for human sign-off entries
+    10. Constraint Dimension Resolution — table from Step 6b: every mandatory
+        dimension with state (Decided | Inherited | Untouched) and reference
+    11. Risk Register — risks with likelihood, impact, mitigation, owner
+    12. Open Issues and Assumptions — items with owners or resolved-by statements
+    13. Stakeholder Approval Record — table ready for human sign-off entries
 
   STEP 9 — CHECK AGAINST PROJECT CONSTRAINTS
   Re-read workspace/context/project.yml. Verify the SAD does not contradict:
@@ -399,6 +477,10 @@ agent_guidance: |
   If a conflict exists: resolve it in the design or raise it as an open issue.
 
   STEP 10 — SELF-REVIEW (before presenting for human gate)
+  Verify (in addition to the per-check items below):
+    - Every mandatory constraint dimension has a row in the resolution section
+      with a valid state and reference (AI-RD-008)
+  Then verify the standard items:
   Verify:
     - Component map: coherent, non-overlapping, complete coverage
     - All SAD sections: populated with substantive content

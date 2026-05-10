@@ -33,6 +33,7 @@ All three profiles have loop-produced intent. The seed (one or two sentences wri
 
 Load project context from `workspace/context/project.yml`. Per the active profile's context density setting, also load:
 - Required: `workspace/context/policy/` (always load all files)
+- Required for design phase: `workspace/context/constraint-dimensions.yml` (read by AI-RD-008; mandatory dimensions must be resolved in the SAD)
 - Optional (load if present): `workspace/context/standards/`, `workspace/context/landscape/`, `workspace/context/adrs/`, `workspace/context/glossary/`
 
 Record which context files were loaded (paths and presence). Run `engine/context.py scan` if you need an aggregate hash for the iteration record.
@@ -47,6 +48,7 @@ Before producing or refining the current artifact, check the source artifact (th
 For each finding, decide a disposition:
 - **Resolve with assumption**: the finding is low-risk and a stated assumption covers it. Document the assumption in the current artifact.
 - **Flag**: the finding is a risk but does not block progress. Note it in the Open Issues section.
+- **Spawn**: the finding is bounded enough that a focused discovery investigation would resolve it. The recommended action is `/jupiter:spawn --type discovery`. The architect can downgrade to Flag if they prefer not to spawn.
 - **Block**: the finding makes the current phase incoherent or undeliverable. Surface the blocker clearly and do not produce a draft that papers over it.
 
 If the current phase is `intent` and there is no source artifact, skip this step.
@@ -88,6 +90,29 @@ AI checks require judgment — evaluate coherence, consistency, completeness, an
 
 Be honest. Do not manufacture passes. If a check is failing, say what specifically needs to change.
 
+### Step 5b — Evaluate the evaluation (inward gap detection)
+
+After running auto and AI checks, evaluate the evaluation itself. Ask: did the gate config + loaded context + agent guidance give you what you needed to produce a high-quality artifact, and to judge it accurately? Surface any methodology gaps so the architect can refine the gate config, context, or guidance.
+
+This step does NOT block the loop. Process gaps are advisory signals. The architect decides whether to act on them.
+
+Classify each finding as one of four types:
+
+| Type | Meaning | Example |
+|------|---------|---------|
+| `EVALUATOR_MISSING` | A quality dimension that no current check covers | "No check verifies that interface contracts between components are typed" |
+| `EVALUATOR_VAGUE` | A check that passed too easily because the criterion is too loose | "AI-RD-005 'covers significant decisions' — significance is undefined; passes trivially when no obvious gap exists" |
+| `CONTEXT_MISSING` | Context that would have improved the artifact wasn't loaded | "No prior ADR for the integration partner's API was loaded; design relies on assumptions" |
+| `GUIDANCE_MISSING` | The agent_guidance didn't cover a relevant pattern | "Guidance does not address how to design for a partial migration with parallel old/new systems" |
+
+Discipline:
+- Report at most three process gaps per iteration.
+- Only report findings with a *specific* gap. "Could be more thorough" is not a process gap; "the gate config has no check for component interface contracts" is.
+- Do not report a process gap if the issue is just that the architect hasn't yet loaded an obviously relevant file — that's a workspace state issue, not a methodology gap.
+- A process gap that recurs across iterations is the strongest signal: prefer reporting persistent gaps over speculative ones.
+
+Record process gaps in the gate report and in the iteration event. The architect reads these and decides whether to refine `workflow/gates/{phase-transition}.yml`, `workspace/context/`, or the loop agent guidance.
+
 ### Step 6 — Produce the gate report
 
 Format:
@@ -115,9 +140,15 @@ Status: LOOPING | READY FOR REVIEW | BLOCKED
 Source findings:
   (only shown when Step 2 found issues; omit the section entirely if none)
   "{finding}"
-    Disposition:        Resolve with assumption | Flag | Block
+    Disposition:        Resolve with assumption | Flag | Spawn | Block
     Rationale:          {one-line reason — what's wrong with the source artifact, or what assumption resolved it}
     Recommended action: {disposition-specific next step, see table below}
+
+Process gaps:
+  (only shown when Step 5b found issues; omit the section entirely if none)
+  "{finding}"
+    Type:               EVALUATOR_MISSING | EVALUATOR_VAGUE | CONTEXT_MISSING | GUIDANCE_MISSING
+    Recommended action: {specific change to gate config, context, or guidance}
 
 Next: {one specific action — what changes in the next iteration, or what the
       architect should do now}
@@ -129,9 +160,12 @@ Next: {one specific action — what changes in the next iteration, or what the
 |-------------|--------------------|
 | Resolve with assumption | No action required. The assumption is documented in the artifact's Assumptions section; the loop continues. |
 | Flag | Architect reviews the flag at the next `/jupiter:review`. The loop continues; the issue is logged in the artifact's Open Issues section. No upstream rework yet. |
+| Spawn | The gap is bounded enough that a focused discovery investigation would resolve it. Architect runs `/jupiter:spawn --type discovery` to investigate; the parent initiative folds back the result. Status remains LOOPING; the architect can downgrade to Flag if they prefer not to spawn. |
 | Block | Loop cannot produce a coherent draft. Architect must either: (a) edit the upstream artifact directly and re-run the previous phase via `/jupiter:iterate --phase <upstream>`, (b) `/jupiter:spawn --type discovery` to investigate the gap, or (c) explicitly downgrade the finding to Flag and re-run this phase. Status is BLOCKED; the loop agent will not be invoked again until the architect acts. |
 
 If any source finding's disposition is `Block`, the iteration status MUST be `BLOCKED` and the Next line MUST cite the specific architect action required (option a, b, or c from the table).
+
+Process gaps never block the loop or change status — they are advisory signals to the architect. They appear in the gate report and the iteration event so the architect can refine the methodology over time.
 
 
 Status values:
@@ -174,7 +208,10 @@ Call the Write tool now to write `workspace/artifacts/gate-reports/{initiative-i
   "human_gate": "pending|approved|rejected",
   "narrative": "{plain-text content of the Next: line — one to three sentences, no markdown, no command references}",
   "source_findings": [
-    { "finding": "{text}", "disposition": "resolve_with_assumption|flag|block", "rationale": "{one-line reason}" }
+    { "finding": "{text}", "disposition": "resolve_with_assumption|flag|spawn|block", "rationale": "{one-line reason}" }
+  ],
+  "process_gaps": [
+    { "finding": "{text}", "type": "EVALUATOR_MISSING|EVALUATOR_VAGUE|CONTEXT_MISSING|GUIDANCE_MISSING", "recommended_action": "{specific change to gate config, context, or guidance}" }
   ]
 }
 ```
@@ -183,6 +220,7 @@ Field notes:
 - `auto_checks.failing` and `ai_checks.failing` include the specific per-check failure reason. This is what the web dashboard displays.
 - `narrative` is the plain-text content of the gate report's "Next:" line. No markdown, no command references.
 - `source_findings` is `[]` when Step 2 found no issues.
+- `process_gaps` is `[]` when Step 5b found no issues. Cap at three entries per iteration.
 - The `gate-reports/` directory already exists (created by `/jupiter:init`).
 
 **7b — Update the initiative file.**
@@ -209,6 +247,7 @@ Append an event to `workspace/log.jsonl`:
   "gap": {n},
   "status": "{status}",
   "failing_checks": ["{check-id}", "..."],
+  "process_gap_types": ["EVALUATOR_MISSING", "..."],
   "context_hash": "{aggregate_hash}"
 }
 ```
@@ -216,6 +255,7 @@ Append an event to `workspace/log.jsonl`:
 Field notes:
 - `sub_phase`: only set for the design phase (`component_map` or `sad`); `null` for all other phases.
 - `failing_checks`: IDs of every required check that returned FAIL. Empty list `[]` when gap = 0.
+- `process_gap_types`: type tags for any process gaps found in Step 5b (deduplicated). Empty list `[]` when no process gaps. The full descriptions live in the gate-report JSON; the log event records only the types so external monitors can detect recurring gap categories without parsing every report.
 
 ---
 
