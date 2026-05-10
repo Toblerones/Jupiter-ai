@@ -1,4 +1,4 @@
-# /jupiter:init
+# /jupiter:init — Scaffold a new Jupiter workspace
 
 Initialise a new Jupiter workspace for an architecture initiative.
 

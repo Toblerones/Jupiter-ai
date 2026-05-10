@@ -1,4 +1,4 @@
-# /jupiter:iterate
+# /jupiter:iterate — Run one iteration on the active phase
 
 Run one loop iteration on the current phase of an initiative.
 

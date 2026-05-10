@@ -1,4 +1,4 @@
-# /jupiter:handoff
+# /jupiter:handoff — Generate the architecture handoff package
 
 Generate an architecture handoff package. Runs readiness checks, produces a coverage report, and emits a handoff manifest.
 

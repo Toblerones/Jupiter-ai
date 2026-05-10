@@ -1,4 +1,4 @@
-# /jupiter:assess
+# /jupiter:assess — Evaluate an externally-produced artifact
 
 Evaluate an externally-produced artifact from the perspective of a Domain Solution Architect. Infers the artifact type, confirms with the architect, then routes to the appropriate gate config. Convenience entry point: sets the assessment profile and delegates to `/jupiter:iterate`.
 

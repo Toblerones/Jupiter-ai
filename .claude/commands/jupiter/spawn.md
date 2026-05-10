@@ -1,4 +1,4 @@
-# /jupiter:spawn
+# /jupiter:spawn — Create a time-boxed child initiative (poc / discovery / spike)
 
 Create a child initiative with a time-boxed profile to investigate a specific question. Child initiatives run independently via `/jupiter:iterate`. Findings are folded back to the parent manually.
 

@@ -1,4 +1,4 @@
-# /jupiter:review
+# /jupiter:review — Record a human gate decision (approve / reject / refine)
 
 Human gate decision point. Records the architect's approval, rejection, or refinement request for the current phase. Optionally invokes the reviewer panel and/or runs a spec boundary check before the decision.
 
