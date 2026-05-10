@@ -220,7 +220,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
 }
 .ai-text { font-size: 13px; color: var(--text2); line-height: 1.65; }
 
-/* ── Artifact view ── */
+/* ── Artifact view — plain fallback ── */
 .artifact-content {
   font-family: var(--mono);
   font-size: 12px;
@@ -232,6 +232,87 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); font
   max-height: 560px;
   overflow-y: auto;
 }
+
+/* ── Artifact view — rendered markdown ── */
+.md-body {
+  padding: 18px 20px;
+  max-height: 600px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text2);
+}
+.md-body > *:first-child { margin-top: 0 !important; }
+.md-body > *:last-child  { margin-bottom: 0 !important; }
+
+.md-body h1 {
+  font-size: 17px; font-weight: 600; color: var(--text);
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.2px;
+}
+.md-body h2 {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin: 22px 0 8px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.md-body h3 {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  margin: 16px 0 6px;
+}
+.md-body h4, .md-body h5, .md-body h6 {
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  margin: 12px 0 4px;
+}
+
+.md-body p { margin: 0 0 10px; }
+.md-body p:last-child { margin-bottom: 0; }
+
+.md-body ul, .md-body ol { padding-left: 22px; margin: 0 0 10px; }
+.md-body li { margin: 4px 0; line-height: 1.65; }
+.md-body li > ul, .md-body li > ol { margin: 4px 0; }
+.md-body li > p { margin: 0; }
+
+.md-body strong { color: var(--text); font-weight: 600; }
+.md-body em { font-style: italic; }
+
+.md-body code {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 3px; padding: 1px 5px; color: var(--accent);
+}
+.md-body pre {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 14px; margin: 0 0 12px;
+  overflow-x: auto; line-height: 1.55;
+}
+.md-body pre code {
+  background: none; border: none; padding: 0;
+  color: var(--text); font-size: 12px;
+}
+
+.md-body blockquote {
+  border-left: 3px solid var(--border2); padding: 2px 0 2px 12px;
+  color: var(--text2); margin: 0 0 10px; font-style: italic;
+}
+
+.md-body table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 0 0 14px; }
+.md-body thead th {
+  background: var(--bg3); color: var(--text); font-weight: 600;
+  text-align: left; padding: 7px 10px; border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; white-space: nowrap;
+}
+.md-body tbody td {
+  padding: 6px 10px; border: 1px solid var(--border); color: var(--text2);
+  vertical-align: top;
+}
+.md-body tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
+.md-body tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+.md-body hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+.md-body a { color: var(--accent); text-decoration: none; }
+.md-body a:hover { text-decoration: underline; }
 
 /* ── Right panel ── */
 .panel {
