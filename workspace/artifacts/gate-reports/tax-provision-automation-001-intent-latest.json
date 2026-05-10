@@ -1,0 +1,39 @@
+{
+  "initiative": "tax-provision-automation-001",
+  "phase": "intent",
+  "sub_phase": null,
+  "iteration": 2,
+  "ts": "2026-05-10T00:02:00Z",
+  "gap": 0,
+  "status": "ready_for_review",
+  "auto_checks": {
+    "total": 4,
+    "passing": 4,
+    "failing": []
+  },
+  "ai_checks": {
+    "total": 4,
+    "passing": 4,
+    "failing": []
+  },
+  "human_gate": "pending",
+  "narrative": "Artifact unchanged from iteration 1 — no failing checks to address. All four auto checks and all four AI checks pass. The intent statement is stable and ready for architect sign-off. Run /jupiter:review to approve and begin requirements.",
+  "source_findings": [],
+  "process_gaps": [
+    {
+      "finding": "AI-AI-001 does not distinguish product names from functional role names (e.g. 'general ledger') — the check boundary is ambiguous",
+      "type": "EVALUATOR_VAGUE",
+      "recommended_action": "Add a note to AI-AI-001 clarifying that domain vocabulary terms from the project glossary (general ledger, tax provision, cost centre) are permitted in the Problem Statement; only product/platform names (Oracle, SAP, AWS, Murex) are prohibited."
+    },
+    {
+      "finding": "No check verifies that project.yml scope.in_scope / scope.out_of_scope are populated before the intent phase completes",
+      "type": "EVALUATOR_MISSING",
+      "recommended_action": "Add an auto check AC-AI-005 to architecture-intent.yml: project.yml scope.in_scope must contain at least one entry, or the artifact must include an explicit in-scope statement. Prevents scope ambiguity propagating into requirements."
+    },
+    {
+      "finding": "workspace/context/adrs/ is empty — no prior ADRs loaded (recurs from iteration 1)",
+      "type": "CONTEXT_MISSING",
+      "recommended_action": "If prior ADRs ratifying Oracle TRCS, CDH, or the Oracle Cloud platform selection exist in the enterprise ADR repository, add them to workspace/context/adrs/ before the design phase. They will tighten the Known Constraints and reduce design decision space."
+    }
+  ]
+}

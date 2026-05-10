@@ -1,0 +1,50 @@
+{
+  "initiative": "tax-provision-automation-001",
+  "phase": "requirements",
+  "sub_phase": null,
+  "iteration": 1,
+  "ts": "2026-05-10T00:10:00Z",
+  "gap": 0,
+  "status": "ready_for_review",
+  "auto_checks": {
+    "total": 5,
+    "passing": 5,
+    "failing": []
+  },
+  "ai_checks": {
+    "total": 14,
+    "passing": 14,
+    "failing": []
+  },
+  "human_gate": "pending",
+  "narrative": "All 19 required checks pass on the first requirements iteration. The artifact contains 28 requirements across 5 types (11F, 4NFR, 4BR, 5C, 4S), covering all 5 Desired Outcomes, all active Known Constraints, and all Problem Statement aspects. Four open issues remain for business owner confirmation before or during the human gate review.",
+  "source_findings": [
+    {
+      "finding": "'All Macquarie entities' is undefined — entity perimeter not specified in intent",
+      "disposition": "flag",
+      "rationale": "Interpreted as Macquarie Tax Consolidation Group + designated material foreign subsidiaries in TRCS; architect must confirm entity perimeter before design phase"
+    },
+    {
+      "finding": "CbCR scope ambiguity — intent does not distinguish data production from ATO e-lodgement",
+      "disposition": "flag",
+      "rationale": "Interpreted as data extract + schema validation only; ATO lodgement placed out of scope; business owner must confirm"
+    },
+    {
+      "finding": "'Monthly close window' not numerically defined in intent",
+      "disposition": "resolve_with_assumption",
+      "rationale": "T+3 business days derived from integration landscape constraint on the general ledger; assumption documented in §1.1 A-002"
+    }
+  ],
+  "process_gaps": [
+    {
+      "finding": "No check verifies that Open Issues in §10 are resolved before human gate approval",
+      "type": "EVALUATOR_MISSING",
+      "recommended_action": "Add advisory note to human gate guidance: lead architect should confirm all Open Issues are resolved or explicitly deferred to design before approving the requirements phase"
+    },
+    {
+      "finding": "AI-IR-007 does not distinguish between Known Constraints requiring REQ-C/S treatment vs design-phase-only constraints",
+      "type": "EVALUATOR_VAGUE",
+      "recommended_action": "Refine AI-IR-007 guidance: classify each Known Constraint as 'requires requirements treatment' vs 'design-phase constraint only' before checking coverage"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+initiative:
+  id: "tax-provision-automation-001"
+  title: "Tax Provision Automation"
+  profile: architecture
+  status: not_started
+  created: "2026-05-10"
+
+phases:
+  intent:
+    status: complete
+    artifact: workspace/INTENT.md
+    iteration_count: 2
+    gate_result: {auto_pass: true, ai_pass: true, gap: 0, status: ready_for_review}
+
+  requirements:
+    status: ready_for_review
+    artifact: "workspace/artifacts/requirements/tax-provision-automation-001-requirements.md"
+    iteration_count: 1
+    gate_result: {auto_pass: true, ai_pass: true, gap: 0, status: ready_for_review}
+
+  design:
+    status: not_started
+    sub_phase: component_map
+    artifact: "workspace/artifacts/design/tax-provision-automation-001-SAD.md"
+    iteration_count: 0
+    gate_result: null
+    human_gate_status:
+      HG-RD-001: pending
+      HG-RD-002: pending
+      HG-RD-003: pending
+      HG-RD-004: pending
+
+context_hash: null
