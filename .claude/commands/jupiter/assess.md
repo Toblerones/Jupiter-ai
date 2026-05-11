@@ -30,7 +30,7 @@ If `workspace/INTENT.md` already exists with a non-placeholder Problem Statement
 Confirm the artifact exists at the provided path. If not, error:
 > "Artifact not found at {path}. Check the path and try again."
 
-Copy the artifact to `workspace/assessment/inbox/{filename}` so the original is preserved.
+Copy the artifact to `workspace/artifacts/assessment/inbox/{filename}` so the original is preserved.
 
 ### Step 3 — Infer artifact type and confirm
 
@@ -87,20 +87,20 @@ initiative:
   created: "{ISO-8601 date}"
 
 assessment:
-  artifact_path: "workspace/assessment/inbox/{filename}"
+  artifact_path: "workspace/artifacts/assessment/inbox/{filename}"
   artifact_original_path: "{original path provided}"
 
 phases:
   assessment:
     status: not_started
-    artifact: "workspace/assessment/{parent-id}-assessment-001/findings.md"
+    artifact: "workspace/artifacts/assessment/{parent-id}-assessment-001/findings.md"
     iteration_count: 0
     gate_result: null
 
 context_hash: null
 ```
 
-Create the output directory `workspace/assessment/{assessment-id}/` if it doesn't exist.
+Create the output directory `workspace/artifacts/assessment/{assessment-id}/` if it doesn't exist.
 
 ### Step 7 — Delegate to iterate
 
@@ -117,7 +117,7 @@ After `/jupiter:iterate` completes, if the gate report shows status READY FOR RE
 
 ```
 Assessment iteration complete.
-Findings report: workspace/assessment/{assessment-id}/findings.md
+Findings report: workspace/artifacts/assessment/{assessment-id}/findings.md
 
 When you have reviewed the findings report, run:
   /jupiter:review --initiative {assessment-id}

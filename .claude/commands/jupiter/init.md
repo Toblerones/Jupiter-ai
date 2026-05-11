@@ -41,13 +41,16 @@ workspace/
     standards/
     adrs/
   initiatives/
+  state/
+    gate-reports/
   artifacts/
     requirements/
     design/
       adrs/
-    gate-reports/
-  assessment/
-    inbox/
+    spawn/
+    assessment/
+      inbox/
+    handoff/
   INTENT.md
   log.jsonl
 ```

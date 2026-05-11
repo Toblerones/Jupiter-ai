@@ -57,7 +57,7 @@ purpose:
 phases:
   intent:
     status: not_started
-    artifact: "workspace/artifacts/requirements/{child-id}-{type}.md"
+    artifact: "workspace/artifacts/spawn/{child-id}-{type}.md"
     iteration_count: 0
     gate_result: null
 
@@ -66,7 +66,7 @@ context_hash: null
 
 ### Step 4 — Create a starter artifact
 
-Create a starter document at the artifact path:
+Create a starter document at `workspace/artifacts/spawn/{child-id}-{type}.md`:
 
 For **discovery**:
 ```markdown

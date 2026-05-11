@@ -180,7 +180,7 @@ Status values:
 
 **7a — Write the gate report file first.**
 
-Call the Write tool now to write `workspace/artifacts/gate-reports/{initiative-id}-{phase}-latest.json`, where `{initiative-id}` is the exact value of the `initiative.id` field from the initiative YAML file (e.g. `myproject-001`), and `{phase}` is the current phase name (e.g. `intent`, `requirements`, `design`). Overwrite on every iteration:
+Call the Write tool now to write `workspace/state/gate-reports/{initiative-id}-{phase}-latest.json`, where `{initiative-id}` is the exact value of the `initiative.id` field from the initiative YAML file (e.g. `myproject-001`), and `{phase}` is the current phase name (e.g. `intent`, `requirements`, `design`). Overwrite on every iteration:
 
 ```json
 {
@@ -221,7 +221,7 @@ Field notes:
 - `narrative` is the plain-text content of the gate report's "Next:" line. No markdown, no command references.
 - `source_findings` is `[]` when Step 2 found no issues.
 - `process_gaps` is `[]` when Step 5b found no issues. Cap at three entries per iteration.
-- The `gate-reports/` directory already exists (created by `/jupiter:init`).
+- The `state/gate-reports/` directory already exists (created by `/jupiter:init`).
 
 **7b — Update the initiative file.**
 

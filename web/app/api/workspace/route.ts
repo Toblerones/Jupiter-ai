@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     const phase = requestedPhase ?? currentPhase(activeInitiative);
 
     gateReport = readJson<GateReport>(
-      path.join(WORKSPACE, 'artifacts', 'gate-reports',
+      path.join(WORKSPACE, 'state', 'gate-reports',
         `${activeInitiative.initiative.id}-${phase}-latest.json`)
     );
 

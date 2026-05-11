@@ -97,6 +97,9 @@ workspace/
     glossary/                      ← domain vocabulary
   initiatives/
     {id}.yml                       ← one file per initiative (machine-readable state)
+  state/
+    gate-reports/
+      {id}-{phase}-latest.json     ← latest gate report per initiative+phase (overwritten each iteration)
   artifacts/
     requirements/
       {id}-requirements.md         ← requirements artifact
@@ -104,13 +107,14 @@ workspace/
       {id}-SAD.md                  ← Solution Architecture Document
       adrs/
         ADR-{NNN}-{slug}.md        ← Architecture Decision Records
-    gate-reports/
-      {id}-{phase}-latest.json     ← latest gate report per initiative+phase (overwritten each iteration)
-  assessment/
-    inbox/                         ← drop externally-produced artifacts here
-    {assessment-id}/
-      findings.md                  ← assessment findings report
-  handoff-{version}.yml            ← handoff manifest (produced by /jupiter:handoff)
+    spawn/
+      {child-id}-{type}.md         ← spike / discovery / poc reports
+    assessment/
+      inbox/                       ← drop externally-produced artifacts here
+      {assessment-id}/
+        findings.md                ← assessment findings report
+    handoff/
+      handoff-{version}.yml        ← handoff manifest (produced by /jupiter:handoff)
 ```
 
 ---

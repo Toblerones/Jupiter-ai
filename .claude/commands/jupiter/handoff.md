@@ -55,7 +55,7 @@ If any check fails, stop here. Do not produce the handoff package until all chec
 
 ### Step 3 — Produce handoff manifest
 
-Write `workspace/handoff-{version}.yml`:
+Write `workspace/artifacts/handoff/handoff-{version}.yml`:
 
 ```yaml
 handoff:
@@ -118,7 +118,7 @@ Artifacts:
 Coverage:   100% ({n}/{n} requirements)
 ADRs:       {n} ratified
 
-Handoff manifest: workspace/handoff-{version}.yml
+Handoff manifest: workspace/artifacts/handoff/handoff-{version}.yml
 
 The architecture handoff package is complete. Share the artifacts listed above
 with the delivery team. The handoff manifest documents what was produced and
