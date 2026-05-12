@@ -30,7 +30,7 @@ Check whether `workspace/log.jsonl` exists and contains a `project_initialized` 
 
 ### Step 2 — First-run menu
 
-Present four options. Do not show all command details — keep it minimal:
+Present five options. Do not show all command details — keep it minimal:
 
 ```
 Welcome to Jupiter. What would you like to do?
@@ -47,7 +47,10 @@ Welcome to Jupiter. What would you like to do?
   4. Assess an existing artifact
      — evaluate a SAD, requirements doc, or ADR against project constraints
 
-Enter 1, 2, 3, or 4 (or press Enter for 1):
+  5. Import existing requirements
+     — normalise a business requirements document; intent derived automatically
+
+Enter 1, 2, 3, 4, or 5 (or press Enter for 1):
 ```
 
 **Option 1 — New initiative**: Proceed to Step 3 (project identity questions). This is the default.
@@ -70,6 +73,59 @@ Write the answer to `workspace/INTENT.md` Problem Statement. Create a child init
 > "Path to the artifact to assess: (absolute or relative path)"
 
 Then run `/jupiter:assess --artifact {path}`. If no workspace exists yet, ask Q1 (project name) only to initialise the workspace first. Do not run the full identity flow — assessment is a focused engagement.
+
+**Option 5 — Import existing requirements**: Proceed to Step 2b (requirements-first flow).
+
+---
+
+### Step 2b — Requirements-first flow (Option 5)
+
+Ask:
+> "Path to the business requirements document: (absolute or relative path to your BRD, user story set, or equivalent)"
+
+Validate the path. If the file does not exist or cannot be read, error and let the architect try again.
+
+Then ask Q1–Q5 from Step 3 (project identity questions). Skip Q6 — the source document replaces it. After Q5, print:
+```
+Problem statement will be derived from: {filename}
+The loop agent will extract intent and normalise requirements in the first iteration.
+```
+
+Run the context scan (Step 4) as normal.
+
+Then scaffold the workspace with the `requirements-first` profile:
+- Run `/jupiter:init --profile requirements-first` passing Q1–Q5 answers
+- After init completes, write `source_document: {absolute path}` to the initiative YAML under `initiative:`
+- Do NOT write a Q6 seed to INTENT.md — the loop agent will produce INTENT.md from the source document during iteration. Leave the placeholder content that init wrote as-is.
+
+Print:
+```
+Workspace initialised.
+Project:    {project name}
+Profile:    requirements-first
+Initiative: {initiative-id}
+Source doc: {path}
+
+Running first requirements iteration...
+```
+
+Run `/jupiter:iterate --phase requirements`.
+
+After the gate report prints, show:
+```
+Next: Run /jupiter:review to approve the requirements and derived intent, or
+      /jupiter:iterate to address gaps found in the gate report.
+```
+
+If the gate report shows `intent_derivation: inferred`, also show:
+```
+! Intent was inferred from the source document, not directly derived.
+  Review the confidence note in workspace/initiatives/{id}.yml and confirm
+  the inferred intent with the business owner before approving.
+  HG-IG-001 will block the human gate until this is recorded.
+```
+
+Then stop.
 
 ---
 
@@ -190,7 +246,7 @@ Walk phase states in order. The first matching condition determines the action.
 |-------|-----------|--------|
 | `INTENT_LOOPING` | `phases.intent.status == in_progress` | Run `/jupiter:iterate --phase intent` |
 | `INTENT_READY` | `phases.intent.status == ready_for_review` | Prompt: "Intent is ready for review." → Run `/jupiter:review` |
-| `REQUIREMENTS_NOT_STARTED` | `phases.intent.status == complete` AND `phases.requirements.status == not_started` | Run `/jupiter:iterate --phase requirements` |
+| `REQUIREMENTS_NOT_STARTED` | (`phases.intent.status == complete` AND `phases.requirements.status == not_started`) OR (`profile == requirements-first` AND `phases.requirements.status == not_started`) | Run `/jupiter:iterate --phase requirements` |
 | `REQUIREMENTS_LOOPING` | `phases.requirements.status == in_progress` | Run `/jupiter:iterate --phase requirements` |
 | `REQUIREMENTS_READY` | `phases.requirements.status == ready_for_review` | Prompt: "Requirements are ready for review." → Run `/jupiter:review` |
 | `DESIGN_IN_PROGRESS` | `phases.requirements.status == complete` AND `phases.design.status == in_progress` OR `phases.design.status == not_started` | Run `/jupiter:iterate --phase design` |

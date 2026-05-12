@@ -24,12 +24,15 @@ You receive:
 Load the gate config for the current phase transition from `workflow/gates/`:
 - `intent → requirements`: `workflow/gates/intent-requirements.yml`
 - `requirements → design`: `workflow/gates/requirements-design.yml`
+- `requirements` under `requirements-first` profile: `workflow/gates/ingest-requirements.yml` (reads raw source doc, derives intent, normalises requirements)
 - `assessment`: gate config passed by `/jupiter:assess` via `--gate-config` (one of `assessment-architecture.yml`, `assessment-process.yml`, or `assessment-requirements.yml` — use whichever was provided)
 - `intent` under `architecture` profile: `workflow/gates/architecture-intent.yml` (elaborates full INTENT.md from architect's seed + loaded context)
 - `intent` under `discovery` profile: `workflow/gates/discovery-intent.yml` (produces a discovery report)
 - `intent` under `spike` profile: `workflow/gates/spike-intent.yml` (produces a spike report)
 
 All three profiles have loop-produced intent. The seed (one or two sentences written to INTENT.md's Problem Statement by `/jupiter:start`) is the input artifact for the first intent iteration.
+
+**Requirements-first profile:** When the active profile is `requirements-first` and the current phase is `requirements`, use `workflow/gates/ingest-requirements.yml`. The source artifact is the raw business requirements document at `initiative.source_document` — not a Jupiter INTENT.md. The loop agent derives INTENT.md as a by-product of the first iteration (see Step 3 below).
 
 Load project context from `workspace/context/project.yml`. Per the active profile's context density setting, also load:
 - Required: `workspace/context/policy/` (always load all files)
@@ -53,6 +56,8 @@ For each finding, decide a disposition:
 - **Block**: the finding makes the current phase incoherent or undeliverable. Surface the blocker clearly and do not produce a draft that papers over it.
 
 If the current phase is `intent` and there is no source artifact, skip this step.
+
+**Requirements-first exception:** When the active profile is `requirements-first` and the current phase is `requirements` and `iteration_count == 0` (first iteration), the source artifact is the raw business document at `initiative.source_document` — not a Jupiter INTENT.md. Read that document as the backward check input. The agent guidance in `ingest-requirements.yml` (STEP 0 and STEP 0B) directs how to handle it. If the source document is missing or unreadable, this is a Block — surface the error and stop.
 
 ### Step 3 — Produce or refine the artifact
 
@@ -250,6 +255,8 @@ Field notes:
 ## Rules
 
 1. **Never auto-approve the human gate.** You can declare status READY FOR REVIEW, but you cannot approve the human gate yourself. That decision belongs to the architect.
+
+1a. **Conditional gate checks.** Some checks carry a `condition` field (e.g. `condition: "phases.requirements.intent_derivation == inferred"`). Evaluate the condition against the current initiative state before running the check. If the condition is false, mark the check as `N/A` — skip it, do not count it in the gap, do not list it as passing or failing. If the condition is true, evaluate it normally. Record N/A checks separately in the gate report under "Conditional checks (not applicable)".
 
 2. **Never rewrite what is passing.** If a section of the artifact already passes its gate checks, do not modify it in subsequent iterations. Only change what is failing.
 

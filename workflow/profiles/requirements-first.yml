@@ -1,0 +1,72 @@
+# Jupiter Profile — Requirements-First
+# For initiatives where the business has provided an existing requirements document.
+# Phases: Requirements → Design. Intent is derived from the source document — not authored.
+# Use this when you have a BRD, user story set, or any business requirements doc to start from.
+
+version: "3.0"
+id: requirements-first
+label: "Requirements-First Architecture"
+description: >
+  Architecture governance workflow for initiatives starting from an existing business
+  requirements document (BRD, user story set, or equivalent). The loop agent reads the
+  raw document, derives the intent statement, normalises requirements to Jupiter format,
+  and runs gate checks to surface gaps. Human gate required at every phase transition.
+  Produces a ratified SAD and a set of accepted ADRs.
+
+phases:
+  include: [requirements, design]
+  exclude: [intent]
+  requirements_variant: requirements-first   # loop agent reads raw source doc + derives intent
+
+gates:
+  human_required_on_all_phases: true
+  reviewer_panel_available: true
+  spec_check_available: true
+
+reviewer_panel:
+  enabled: true
+  default_roster: [ea, ba, da, sa, eng]
+  invocation: "/jupiter:review --panel"
+
+iteration:
+  budget: unlimited
+  stuck_threshold: 3
+  stuck_action: >
+    After {stuck_threshold} iterations with no gap reduction, surface a status
+    report to the architect identifying the specific checks that are not passing
+    and requesting guidance. Do not continue looping without direction.
+
+source:
+  type: business_document       # the raw business requirements document
+  path_field: source_document   # field in initiative YAML that holds the doc path
+
+intent:
+  mode: derived                 # loop agent writes INTENT.md as a by-product of ingest
+  derivation_field: phases.requirements.intent_derivation   # 'derived' or 'inferred'
+  confidence_field: phases.requirements.intent_confidence_note
+
+context:
+  density: standard
+  required:
+    - workspace/context/project.yml
+  optional:
+    - workspace/context/policy/
+    - workspace/context/standards/
+    - workspace/context/landscape/
+    - workspace/context/adrs/
+    - workspace/context/glossary/
+
+output:
+  intent:
+    artifact: workspace/INTENT.md
+    note: >
+      Derived by the loop agent from the source document during the first requirements
+      iteration. Not a governed phase — INTENT.md is a by-product, not the phase artifact.
+  requirements:
+    artifact: "workspace/artifacts/requirements/{initiative_id}-requirements.md"
+    template: templates/requirements_template.md
+  design:
+    artifact: "workspace/artifacts/design/{initiative_id}-SAD.md"
+    adrs: "workspace/artifacts/design/adrs/"
+    template_sad: templates/SAD_template.md
+    template_adr: templates/ADR_template.md

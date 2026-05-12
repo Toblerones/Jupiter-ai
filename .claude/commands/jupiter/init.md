@@ -5,12 +5,13 @@ Initialise a new Jupiter workspace for an architecture initiative.
 ## Usage
 
 ```
-/jupiter:init [--project <name>] [--profile <profile>]
+/jupiter:init [--project <name>] [--profile <profile>] [--source-document <path>]
 ```
 
 **Arguments:**
 - `--project <name>` — project name (prompted if omitted)
-- `--profile <profile>` — workflow profile: `architecture` (default), `assessment`, `discovery`, `spike`
+- `--profile <profile>` — workflow profile: `architecture` (default), `assessment`, `discovery`, `spike`, `requirements-first`
+- `--source-document <path>` — path to the raw business requirements document (required when profile is `requirements-first`)
 
 ## What this command does
 
@@ -171,6 +172,41 @@ context_hash: null
 
 (Omit the requirements and design phases if the profile is `assessment`, `discovery`, or `spike`.)
 
+**Requirements-first variant:** When profile is `requirements-first`, use this structure instead:
+
+```yaml
+initiative:
+  id: "{initiative-id}"
+  title: "{Q1 answer}"
+  profile: "requirements-first"
+  status: not_started
+  created: "{ISO-8601 date}"
+  source_document: "{absolute path to raw business requirements document}"
+
+phases:
+  # intent phase is omitted — INTENT.md is derived by the loop agent, not a governed phase
+
+  requirements:
+    status: not_started
+    artifact: "workspace/artifacts/requirements/{initiative-id}-requirements.md"
+    iteration_count: 0
+    gate_result: null
+    intent_derivation: null          # set by loop agent: 'derived' or 'inferred'
+    intent_confidence_note: null     # set by loop agent when intent_derivation == inferred
+
+  design:
+    status: not_started
+    artifact: "workspace/artifacts/design/{initiative-id}-SAD.md"
+    iteration_count: 0
+    gate_result: null
+    human_gate_status:
+      HG-RD-002: pending
+      HG-RD-003: pending
+      HG-RD-004: pending
+
+context_hash: null
+```
+
 ### Step 6 — Emit event
 
 Append to `workspace/log.jsonl`:
@@ -203,4 +239,12 @@ Constraint-dimensions file (seeded — fill in before first design iteration):
 Next step:
   1. Edit workspace/INTENT.md with the initiating problem statement.
   2. Run /jupiter:iterate to begin the requirements phase.
+```
+
+For `requirements-first` profile, print instead:
+```
+Next step:
+  Run /jupiter:iterate --phase requirements to begin.
+  The loop agent will read {source_document}, derive the intent statement,
+  and normalise requirements to Jupiter format in the first iteration.
 ```
