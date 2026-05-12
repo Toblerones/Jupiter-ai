@@ -193,10 +193,8 @@ Walk phase states in order. The first matching condition determines the action.
 | `REQUIREMENTS_NOT_STARTED` | `phases.intent.status == complete` AND `phases.requirements.status == not_started` | Run `/jupiter:iterate --phase requirements` |
 | `REQUIREMENTS_LOOPING` | `phases.requirements.status == in_progress` | Run `/jupiter:iterate --phase requirements` |
 | `REQUIREMENTS_READY` | `phases.requirements.status == ready_for_review` | Prompt: "Requirements are ready for review." → Run `/jupiter:review` |
-| `DESIGN_COMPONENT_MAP` | `phases.requirements.status == complete` AND `phases.design.sub_phase == component_map` | Run `/jupiter:iterate --phase design` |
-| `DESIGN_SAD` | `phases.design.sub_phase == sad` AND `phases.design.status == in_progress` | Run `/jupiter:iterate --phase design` |
-| `DESIGN_COMPONENT_MAP_READY` | `phases.design.status == ready_for_review` AND `phases.design.sub_phase == component_map` | Prompt: "Component Map is ready for review." → Run `/jupiter:review` |
-| `DESIGN_SAD_READY` | `phases.design.status == ready_for_review` AND `phases.design.sub_phase == sad` | Prompt: "SAD is ready for panel review." → Run `/jupiter:review --panel` |
+| `DESIGN_IN_PROGRESS` | `phases.requirements.status == complete` AND `phases.design.status == in_progress` OR `phases.design.status == not_started` | Run `/jupiter:iterate --phase design` |
+| `DESIGN_READY` | `phases.design.status == ready_for_review` | Prompt: "SAD is ready for panel review." → Run `/jupiter:review --panel` |
 | `DESIGN_COMPLETE` | `phases.design.status == complete` | Show completion → suggest `/jupiter:gaps` then `/jupiter:handoff` |
 | `BLOCKED` | Any phase `status == blocked` | Surface the blocker from the last gate report. Do not auto-iterate. |
 | `BUDGET_EXPIRED` | Any phase `status == budget_expired` | Prompt: "Time-box reached." → Run `/jupiter:review` to record findings |

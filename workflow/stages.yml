@@ -43,10 +43,8 @@ phases:
     label: Design
     description: >
       Produce the Solution Architecture Document (SAD) and Architecture Decision Records (ADRs).
-      Phase 1: Solution Component Map — map every REQ key to an architecture building block (COMP-NNN),
-      identify Architecturally Significant Requirements (ASRs), surface design questions.
-      Phase 2: Write the full SAD using the component map as §4.
-      The component map must be architect-approved before SAD writing begins.
+      The SAD structure is defined by templates/SAD_template.md, loaded as context.
+      The loop agent writes every section with substantive content in one flow.
     artifact:
       path: "workspace/artifacts/design/{initiative_id}-SAD.md"
       type: solution_architecture_document
@@ -59,17 +57,6 @@ phases:
     input_from: requirements
     human_required: true
     outputs_to: []
-    design_phases:
-      component_map:
-        sequence: 1
-        label: "Solution Component Map"
-        description: "Map REQ keys to COMP-NNN building blocks. Gate: every REQ key assigned."
-        gate_check: "component_coverage"
-      sad:
-        sequence: 2
-        label: "Solution Architecture Document"
-        description: "Full SAD using the component map as §4. Requires component map approval."
-        prerequisite: "component_map"
 
   assessment:
     id: assessment

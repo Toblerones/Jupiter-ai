@@ -43,10 +43,10 @@ consistent across all sections?}
 
 ── Component Design Quality ──────────────────────────────────────────────────
 
-{Assessment of the component decomposition (Solution Component Map and Target
-State): Are boundaries clear? Are responsibilities non-overlapping? Are there
-components that are too large, too small, or poorly named? Are ASR justifications
-credible?}
+{Assessment of the component decomposition (Target State and any component
+structure defined in the SAD): Are boundaries clear? Are responsibilities
+non-overlapping? Are there components that are too large, too small, or
+poorly named?}
 
 ── NFR Coverage ─────────────────────────────────────────────────────────────
 

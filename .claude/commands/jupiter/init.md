@@ -158,12 +158,10 @@ phases:
 
   design:
     status: not_started
-    sub_phase: component_map     # component_map | sad — which sub-phase the loop produces next
     artifact: "workspace/artifacts/design/{initiative-id}-SAD.md"
     iteration_count: 0
     gate_result: null
     human_gate_status:           # tracks each design human gate independently
-      HG-RD-001: pending         # component map approved
       HG-RD-002: pending         # SAD approved
       HG-RD-003: pending         # ADRs ratified
       HG-RD-004: pending         # stakeholder review complete

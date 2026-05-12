@@ -22,7 +22,6 @@ export interface Initiative {
     intent: PhaseState;
     requirements: PhaseState;
     design: PhaseState & {
-      sub_phase: 'component_map' | 'sad';
       human_gate_status: Record<string, string>;
     };
   };
@@ -37,7 +36,6 @@ export interface CheckFinding {
 export interface GateReport {
   initiative: string;
   phase: string;
-  sub_phase: string | null;
   iteration: number;
   ts: string;
   gap: number;
@@ -66,7 +64,6 @@ export interface LogEvent {
   ts: string;
   initiative?: string;
   phase?: string;
-  sub_phase?: string | null;
   iteration?: number;
   gap?: number;
   status?: string;

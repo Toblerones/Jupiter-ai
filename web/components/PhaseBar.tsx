@@ -23,9 +23,7 @@ export default function PhaseBar({ phases, displayedPhase, onPhaseSelect }: Prop
   const reqCls    = phaseClass(phases.requirements?.status);
   const desCls    = phaseClass(phases.design?.status);
 
-  const designLabel = phases.design?.sub_phase === 'sad'
-    ? 'Design · SAD + ADRs'
-    : 'Design · Component Map';
+  const designLabel = 'Design · SAD + ADRs';
 
   const iterLabel = (count?: number) =>
     count ? <span style={{ color: 'var(--text3)', fontSize: 10, marginLeft: 4 }}>iter {count}</span> : null;

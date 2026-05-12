@@ -35,6 +35,7 @@ Load project context from `workspace/context/project.yml`. Per the active profil
 - Required: `workspace/context/policy/` (always load all files)
 - Required for design phase: `workspace/context/constraint-dimensions.yml` (read by AI-RD-008; mandatory dimensions must be resolved in the SAD)
 - Optional (load if present): `workspace/context/standards/`, `workspace/context/landscape/`, `workspace/context/adrs/`, `workspace/context/glossary/`
+- Optional (load if present): `templates/` (artifact templates — ADR_template.md, SAD_template.md, requirements_template.md)
 
 Record which context files were loaded (paths and presence). Run `engine/context.py scan` if you need an aggregate hash for the iteration record.
 
@@ -59,16 +60,6 @@ Using the gate config's `agent_guidance` section as your working instructions:
 
 - If this is the **first iteration**: produce a complete draft of the phase artifact from scratch.
 - If this is a **subsequent iteration**: take the existing artifact and address the gaps identified in the previous gate report. Do not rewrite sections that already pass — only fix what is failing.
-
-For the **design phase**: follow the two sub-phase structure. Read `phases.design.sub_phase` and `phases.design.human_gate_status.HG-RD-001` from the initiative file:
-
-- If `sub_phase == component_map` (HG-RD-001 still `pending`): produce or refine the Solution Component Map only. Write only §4 of the SAD template. Do not begin SAD writing for the other sections. The architect approves the component map via `/jupiter:review` before SAD writing begins — at which point `sub_phase` flips to `sad`.
-- If `sub_phase == sad` (HG-RD-001 is `approved`): produce or refine the full SAD using the approved component map as §4. Generate ADRs for every significant decision.
-
-When updating the initiative file in Step 7, set `phases.design.sub_phase` correctly:
-- The first time you produce a substantive SAD draft after component map approval, set `sub_phase = sad`. (The review command also sets this when approving the component map — be idempotent.)
-- If a `reject` or `refine` review for the SAD comes back, leave `sub_phase = sad` (continue refining the SAD, do not regress to component map).
-- If the architect explicitly returns work to the component map sub-phase by resetting `human_gate_status.HG-RD-001` to `pending`, switch back to producing the component map.
 
 Follow the gate config's agent guidance precisely. It is your step-by-step for this phase.
 
@@ -186,7 +177,6 @@ Call the Write tool now to write `workspace/state/gate-reports/{initiative-id}-{
 {
   "initiative": "{id}",
   "phase": "{phase}",
-  "sub_phase": "{component_map|sad|null}",
   "iteration": {n},
   "ts": "{ISO-8601}",
   "gap": {n},
@@ -242,7 +232,6 @@ Append an event to `workspace/log.jsonl`:
   "ts": "{ISO-8601}",
   "initiative": "{id}",
   "phase": "{phase}",
-  "sub_phase": "{component_map|sad|null}",
   "iteration": {n},
   "gap": {n},
   "status": "{status}",
@@ -253,7 +242,6 @@ Append an event to `workspace/log.jsonl`:
 ```
 
 Field notes:
-- `sub_phase`: only set for the design phase (`component_map` or `sad`); `null` for all other phases.
 - `failing_checks`: IDs of every required check that returned FAIL. Empty list `[]` when gap = 0.
 - `process_gap_types`: type tags for any process gaps found in Step 5b (deduplicated). Empty list `[]` when no process gaps. The full descriptions live in the gate-report JSON; the log event records only the types so external monitors can detect recurring gap categories without parsing every report.
 
@@ -267,9 +255,7 @@ Field notes:
 
 3. **Be specific about gaps.** A failing check must have a specific gap description — not "this needs improvement" but "Section 3 Scope is missing the out-of-scope list required by AC-IR-003".
 
-4. **Follow the two sub-phases in design.** Do not produce SAD content before the component map is architect-approved (HG-RD-001 recorded in the initiative file).
-
-5. **Context hash every iteration.** Record the aggregate context hash in the iteration event so context drift is detectable across iterations.
+4. **Context hash every iteration.** Record the aggregate context hash in the iteration event so context drift is detectable across iterations.
 
 6. **Log is append-only.** Never modify existing lines in `workspace/log.jsonl`. Always append.
 

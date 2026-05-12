@@ -1,61 +1,16 @@
 # Jupiter Gate Config — Requirements → Design
 # Defines the checks the loop agent runs when producing the Solution Architecture Document.
 #
-# This phase runs in two sub-phases:
-#   Phase 1 — Solution Component Map: map every REQ key to architecture building blocks
-#             (COMP-NNN), identify Architecturally Significant Requirements (ASRs),
-#             surface design questions. A coverage gate blocks SAD writing until every
-#             REQ key is assigned to at least one component.
-#   Phase 2 — SAD + ADRs: write the full SAD using the component map as §4,
-#             generate ADRs for every significant decision.
-# The component map must be architect-approved before Phase 2 begins.
+# The design phase produces:
+#   - A Solution Architecture Document (SAD) following templates/SAD_template.md
+#   - Architecture Decision Records (ADRs) for every significant architectural decision
 
 version: "3.0"
 transition: "requirements → design"
 description: >
-  Produce a Solution Component Map, Solution Architecture Document (SAD), and
-  Architecture Decision Records (ADRs) from the ratified requirements artifact.
-
-# ─── Solution Component Map Template ──────────────────────────────────────────
-# Each component in the map follows this structure.
-# The component map is §4 of the SAD.
-
-solution_component_template: |
-  ### COMP-{NNN}: {Component Name}
-
-  **Responsibility**: {One sentence: what this component does in the system}
-
-  **Satisfies**:
-    - REQ-{TYPE}-{DOMAIN}-{SEQ}: {brief requirement title}
-
-  **Architecturally Significant**: true | false
-
-  **ASR Justification**: {If true: why this component has structural impact —
-    affects system structure, constrains technology choices, has cross-cutting
-    impact, or is difficult to change after design is committed.
-    If false: omit this field.}
-
-  **Design Questions**:
-    - {Unresolved decision this component raises — each is a candidate ADR}
-
-# ─── SAD Required Sections ────────────────────────────────────────────────────
-# Every section must have substantive content. Referenced by auto check AC-RD-002.
-# Authoritative template: templates/SAD_template.md
-
-sad_required_sections:
-  - "Executive Summary"
-  - "Business Context and Drivers"
-  - "Scope and Boundaries"
-  - "Solution Component Map"
-  - "Requirements Traceability"
-  - "Architecture Principles"
-  - "Current State (As-Is)"
-  - "Target State (To-Be)"
-  - "Architecture Decisions (ADR Index)"
-  - "Constraint Dimension Resolution"
-  - "Risk Register"
-  - "Open Issues and Assumptions"
-  - "Stakeholder Approval Record"
+  Produce a Solution Architecture Document (SAD) and Architecture Decision Records
+  (ADRs) from the ratified requirements artifact. The SAD structure is defined by
+  templates/SAD_template.md, loaded as context.
 
 # ─── Constraint Dimension Resolution Template ─────────────────────────────────
 # Each mandatory dimension declared in workspace/context/constraint-dimensions.yml
@@ -79,45 +34,29 @@ constraint_dimension_resolution_template: |
 
 auto_checks:
 
-  - id: AC-RD-001
-    name: component_coverage_complete
-    description: >
-      Every REQ-* key from the ratified requirements artifact appears in the
-      Satisfies list of at least one solution component in the component map.
-      No requirement is left unaddressed. This is a Phase 1 gate — the SAD must
-      not be started until this passes.
-    required: true
-    failure_message: >
-      One or more REQ-* keys are not assigned to any solution component.
-      Every requirement must be addressed by at least one architecture building
-      block before the SAD is written. Identify the gap and assign each uncovered
-      requirement to an existing or new component.
-
   - id: AC-RD-002
     name: sad_sections_complete
     description: >
-      The SAD contains all required sections listed in sad_required_sections.
-      Each section has substantive content — no section is blank, missing, or still
-      contains placeholder text (e.g. [REPLACE WITH ...], [TODO], TBD). The Solution
-      Component Map section must contain the full component map from Phase 1.
+      The SAD has substantive content in every section — no section is blank,
+      missing, or still contains placeholder text (e.g. [REPLACE WITH ...], [TODO], TBD).
     required: true
     failure_message: >
-      SAD is missing one or more required sections, or one or more sections still
-      contain placeholder text. All sections in sad_required_sections must be
-      populated with substantive content before gate review.
+      One or more SAD sections still contain placeholder text or lack substantive
+      content. Replace all [REPLACE WITH ...] placeholders and fill every section
+      before requesting human gate approval.
 
   - id: AC-RD-003
     name: req_coverage_in_sad
     description: >
       Every REQ-* key from the ratified requirements artifact appears in the
       Requirements Traceability section of the SAD. The traceability table must
-      include: req_key, description, type, component (COMP-NNN), addressed_in
-      (SAD section or ADR ID). No requirement is unaddressed.
+      include: req_key, description, type, addressed_in (SAD section or ADR ID).
+      No requirement is unaddressed.
     required: true
     failure_message: >
       One or more REQ-* keys from the requirements artifact are absent from the
-      SAD Requirements Traceability table. Every requirement must be traced through
-      a component to a SAD section or ADR. Identify and cover all missing keys.
+      SAD Requirements Traceability table. Every requirement must be traced to a
+      SAD section or ADR. Identify and cover all missing keys.
 
   - id: AC-RD-004
     name: adrs_have_status
@@ -130,38 +69,9 @@ auto_checks:
       an invalid status. Valid values: proposed, accepted, superseded.
       Set the correct status on every ADR.
 
-  - id: AC-RD-005
-    name: asr_components_addressed
-    description: >
-      Every solution component flagged as architecturally significant (true) in
-      the component map is explicitly addressed in the Target State (To-Be) section
-      or in a named ADR. ASR components must receive a specific architectural
-      response, not merely a mention.
-    required: true
-    failure_message: >
-      One or more ASR-flagged components have no explicit architectural response
-      in the SAD. Each ASR component must be addressed in the Target State or a
-      specific ADR. Identify uncovered ASR components and add the corresponding
-      architectural responses.
-
 # ─── AI Checks ────────────────────────────────────────────────────────────────
 
 ai_checks:
-
-  - id: AI-RD-001
-    name: component_map_coherent
-    description: >
-      The solution component map is internally coherent. Components have clear,
-      non-overlapping responsibilities. No two components have identical or
-      substantially duplicated responsibilities. Every component has a credible
-      reason to exist. ASR justifications explain structural impact, not just
-      assert it.
-    required: true
-    failure_message: >
-      Solution component map has coherence problems. Check for: overlapping
-      responsibilities, duplicate components, components with no clear responsibility,
-      or ASR justifications that assert significance without explaining structural
-      impact. Resolve before proceeding to SAD.
 
   - id: AI-RD-002
     name: sad_internally_coherent
@@ -169,8 +79,7 @@ ai_checks:
       Design decisions across all SAD sections are internally consistent.
       The Target State does not contradict the Architecture Principles. The Risk
       Register does not describe risks that are ignored in the Target State. ADRs
-      do not contradict each other or the overall design. The Target State is
-      consistent with the Solution Component Map.
+      do not contradict each other or the overall design.
     required: true
     failure_message: >
       The SAD contains internal contradictions between sections. Identify and
@@ -191,32 +100,19 @@ ai_checks:
       documented in the SAD. A SAD that violates declared constraints cannot
       be approved.
 
-  - id: AI-RD-004
-    name: asr_components_substantively_addressed
-    description: >
-      Every component flagged as architecturally significant has a specific,
-      substantive architectural response in the SAD — not merely a mention. The
-      response must explain the design decision made in response to the component's
-      structural impact. "This will be handled" is not a response.
-    required: true
-    failure_message: >
-      One or more ASR components have only nominal coverage — mentioned but not
-      substantively addressed. Each ASR component requires a concrete architectural
-      response explaining the design decision made in response to its structural
-      constraint.
-
   - id: AI-RD-005
     name: adrs_cover_significant_decisions
     description: >
       All significant technology choices, pattern selections, and architectural
       trade-offs have corresponding ADRs. A decision is significant if it has
-      long-term consequences, affects multiple components, or constrains future
-      options. Design questions identified per component should each have an ADR.
+      long-term consequences, affects multiple parts of the architecture, or
+      constrains future options. Significant decisions must not remain as implicit
+      prose in the SAD.
     required: true
     failure_message: >
       One or more significant architectural decisions are made in the SAD without
-      a corresponding ADR. Identify every significant decision (including design
-      questions from the component map) and generate the missing ADRs.
+      a corresponding ADR. Identify every significant decision and generate the
+      missing ADRs.
 
   - id: AI-RD-008
     name: mandatory_constraint_dimensions_resolved
@@ -271,27 +167,13 @@ human_gate:
   required: true
   checks:
 
-    - id: HG-RD-001
-      name: architect_approves_component_map
-      description: >
-        The lead architect has reviewed the Solution Component Map and confirmed:
-        (a) the components are the right decomposition of the problem,
-        (b) no significant component is missing,
-        (c) the ASR flags and justifications are correct and complete.
-        This is the Phase 1 gate — must pass before SAD writing begins.
-      required: true
-      failure_message: >
-        Lead architect component map approval is pending. Present the Solution
-        Component Map via /jupiter:review and record explicit approval — including
-        confirmation that ASR coverage is complete — before proceeding to SAD.
-
     - id: HG-RD-002
       name: architect_approves_sad
       description: >
-        The lead architect has reviewed the complete SAD — all twelve sections —
-        and explicitly approves it as an accurate and sound architectural design.
-        This is a substantive review, not a formality. The lead architect is
-        accountable for what is in the SAD.
+        The lead architect has reviewed the complete SAD and explicitly approves
+        it as an accurate and sound architectural design. This is a substantive
+        review, not a formality. The lead architect is accountable for what is
+        in the SAD.
       required: true
       failure_message: >
         Lead architect SAD approval is pending. Present the complete SAD via
@@ -328,16 +210,16 @@ completion:
   human_required: true
   description: >
     Phase complete when all required auto checks and AI checks pass,
-    and all four human gate checks are approved via /jupiter:review.
+    and all three human gate checks are approved via /jupiter:review.
 
 # ─── Agent Guidance ───────────────────────────────────────────────────────────
 
 agent_guidance: |
-  You are producing a Solution Component Map, a Solution Architecture Document
-  (SAD), and Architecture Decision Records (ADRs) from the ratified requirements.
-
-  This phase runs in two sub-phases. Do not begin SAD writing until Phase 1
-  is complete and the component coverage check (AC-RD-001) passes.
+  You are producing a Solution Architecture Document (SAD) and Architecture
+  Decision Records (ADRs) from the ratified requirements. Load and follow the
+  SAD template from templates/SAD_template.md — it defines the required sections.
+  Write every section with substantive content and replace all [REPLACE WITH ...]
+  placeholders.
 
   ─── HOW TECH-STACK CONTEXT SHAPES THE DESIGN ──────────────────────
   The architecture you produce is fundamentally shaped by the technology context
@@ -349,8 +231,6 @@ agent_guidance: |
   inputs to read carefully. If the loaded context is thin or contradictory, flag
   it via the source-finding mechanism before generating a design.
 
-  ═══ PHASE 1: SOLUTION COMPONENT MAP ═══════════════════════════════
-
   STEP 1 — LOAD CONTEXT
   Load and read before starting:
     - The ratified requirements artifact (all REQ-* requirements)
@@ -358,70 +238,31 @@ agent_guidance: |
     - workspace/context/constraint-dimensions.yml (architecture constraint
       dimensions — mandatory dimensions must be resolved by the SAD)
     - workspace/context/adrs/ (prior ADRs that may already resolve dimensions)
+    - templates/SAD_template.md (the authoritative SAD structure)
     - Any prior architecture documents listed in the project configuration
-  Do not begin component mapping until you have read all requirements in full.
+  Do not begin SAD writing until you have read all requirements in full.
 
-  STEP 2 — IDENTIFY SOLUTION COMPONENTS
-  Read every requirement. Group related requirements into natural architecture
-  building blocks — solution components. A component is a distinct, named part
-  of the architecture with a clear, bounded responsibility.
+  STEP 2 — PRODUCE THE SAD
+  Follow templates/SAD_template.md. Write every section with substantive content.
+  No section may be empty or contain placeholder text ([REPLACE WITH...], [TODO], TBD).
 
-  For each component, produce:
-    COMP-{NNN}: {Name}
-    Responsibility: {one sentence — what this component does}
-    Satisfies: [list of REQ-* keys this component addresses]
-    Architecturally Significant: true | false
-    ASR Justification: {if true — why this component has structural impact:
-      - Affects overall system structure or component decomposition
-      - Constrains technology choices
-      - Has cross-cutting impact (affects multiple components)
-      - Is difficult or costly to change after design is committed
-      - Has regulatory or compliance implications}
-    Design Questions: [unresolved decisions this component raises — each is a
-                       candidate ADR]
+  For the requirements traceability section: produce a table covering every REQ-*
+  key from the requirements artifact. For each key record:
+    req_key | description | type | addressed_in (SAD section or ADR ID)
+  Every REQ-* key must appear. Count both totals and verify they match.
 
-  Components should be:
-    - Independently identifiable (a name and a boundary)
-    - Non-overlapping (clear separation of responsibility)
-    - Complete (collectively address all requirements)
-
-  STEP 3 — VERIFY REQUIREMENT COVERAGE
-  For every REQ-* key in the requirements artifact, confirm it appears in at
-  least one component's Satisfies list. Count the REQ keys — every one must
-  appear. If any key is uncovered: create or expand a component to address it.
-  Do not proceed to Phase 2 until AC-RD-001 passes.
-
-  STEP 4 — PRESENT COMPONENT MAP FOR ARCHITECT APPROVAL (Human Gate Phase 1)
-  Present the completed component map via /jupiter:review.
-  The architect must confirm:
-    - The component decomposition is correct
-    - No significant component is missing
-    - ASR flags and justifications are correct and complete
-  Do not begin SAD writing until HG-RD-001 is confirmed.
-
-  ═══ PHASE 2: SAD + ADRs ════════════════════════════════════════════
-
-  STEP 5 — DRAFT THE TARGET STATE
-  Using the approved component map, produce the Target State (To-Be) architecture.
-  Each component becomes a section of the Target State. For every ASR component,
-  explicitly state the architectural decision made in response to its structural
-  constraint. The Target State must be coherent with the Architecture Principles.
-  Describe component responsibilities, interactions, and data flows.
-
-  STEP 6 — GENERATE ADRs FOR SIGNIFICANT DECISIONS
-  For every design question raised in the component map, generate an ADR.
-  Also generate ADRs for any significant decision identified during Target State
-  drafting. A decision is significant if it:
+  STEP 3 — GENERATE ADRs FOR SIGNIFICANT DECISIONS
+  Generate ADRs for every significant architectural decision in the SAD.
+  A decision is significant if it:
     - Selects a technology, platform, or framework
     - Chooses an architectural pattern
     - Resolves a trade-off with long-term consequences
     - Constrains future options
-    - Addresses an ASR component
-  ADRs must have: id, title, status (proposed initially), context, decision,
-  consequences, and alternatives_considered (at least two alternatives).
-  Do not leave significant decisions as implicit prose in the SAD.
+  Follow the ADR template loaded from templates/ADR_template.md.
+  Set Status to "Proposed" initially. Do not leave significant decisions as
+  implicit prose in the SAD.
 
-  STEP 6b — RESOLVE CONSTRAINT DIMENSIONS
+  STEP 3b — RESOLVE CONSTRAINT DIMENSIONS
   Read workspace/context/constraint-dimensions.yml. For every dimension marked
   mandatory, the SAD's Constraint Dimension Resolution section must record one
   resolution row per dimension with:
@@ -444,30 +285,7 @@ agent_guidance: |
   AI-RD-008 means a mandatory dimension is silently absent — fix by adding the
   missing row before requesting human gate approval.
 
-  STEP 7 — BUILD THE REQUIREMENTS TRACEABILITY TABLE
-  For each REQ-* key record:
-    req_key | description | type | component (COMP-NNN) | addressed_in (SAD section or ADR)
-  After building: count = REQ keys in requirements artifact. Every key must appear.
-  If any key is missing: find where it is addressed and add the row.
-
-  STEP 8 — POPULATE ALL SAD SECTIONS
-  Fill every section. No section may be empty or contain placeholder text.
-    1.  Executive Summary — what was decided and why, for stakeholders
-    2.  Business Context and Drivers — why this initiative exists
-    3.  Scope and Boundaries — in-scope, out-of-scope
-    4.  Solution Component Map — the full component map from Phase 1
-    5.  Requirements Traceability — the table from Step 7
-    6.  Architecture Principles — guiding principles this design follows
-    7.  Current State (As-Is) — current architecture, pain points, constraints
-    8.  Target State (To-Be) — proposed architecture (from Step 5)
-    9.  Architecture Decisions (ADR Index) — table of all ADRs with status
-    10. Constraint Dimension Resolution — table from Step 6b: every mandatory
-        dimension with state (Decided | Inherited | Untouched) and reference
-    11. Risk Register — risks with likelihood, impact, mitigation, owner
-    12. Open Issues and Assumptions — items with owners or resolved-by statements
-    13. Stakeholder Approval Record — table ready for human sign-off entries
-
-  STEP 9 — CHECK AGAINST PROJECT CONSTRAINTS
+  STEP 4 — CHECK AGAINST PROJECT CONSTRAINTS
   Re-read workspace/context/project.yml. Verify the SAD does not contradict:
     - compliance obligations (must be addressed in the design)
     - integration landscape (integration constraints must be respected)
@@ -476,24 +294,22 @@ agent_guidance: |
     - performance targets (must be credibly addressed in NFR coverage)
   If a conflict exists: resolve it in the design or raise it as an open issue.
 
-  STEP 10 — SELF-REVIEW (before presenting for human gate)
+  STEP 5 — SELF-REVIEW (before presenting for human gate)
   Verify (in addition to the per-check items below):
     - Every mandatory constraint dimension has a row in the resolution section
       with a valid state and reference (AI-RD-008)
   Then verify the standard items:
   Verify:
-    - Component map: coherent, non-overlapping, complete coverage
-    - All SAD sections: populated with substantive content
-    - Requirements Traceability: covers every REQ-* key with component column
-    - Every ASR component: has a specific architectural response
-    - Every design question: has a corresponding ADR
+    - All SAD sections: populated with substantive content, no placeholders
+    - Requirements Traceability: covers every REQ-* key
+    - Every significant decision: has a corresponding ADR
     - All ADRs: have a valid status field
     - Risk Register: entries complete and credible
     - Open issues: have owners or resolved-by statements
     - No contradictions between SAD sections
     - No violations of project constraints
 
-  STEP 11 — PRESENT FOR HUMAN GATE REVIEW
+  STEP 6 — PRESENT FOR HUMAN GATE REVIEW
   After auto checks and AI checks pass, present the complete SAD and ADR set
   via /jupiter:review. Explicitly request:
     - Lead architect approval of the SAD (HG-RD-002)

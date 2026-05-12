@@ -89,20 +89,7 @@ Panel Summary:
 After printing all five reports and the summary, present to the architect:
 > "Panel review complete. What is your decision? (approve / reject / refine)"
 
-### Step 4 — Detect design sub-phase (design phase only)
-
-If the current phase is `design`, read the initiative file and check `phases.design.sub_phase`. The design phase has two sub-phases that require separate human gate decisions:
-
-- **`component_map`**: the loop agent has produced or refined the Solution Component Map (SAD §4 only). The architect is approving HG-RD-001. The phase remains `in_progress` after approval — SAD writing happens next.
-- **`sad`**: the loop agent has produced the full SAD plus ADRs. The architect is approving HG-RD-002 (SAD), HG-RD-003 (ADRs ratified), and HG-RD-004 (stakeholder review). The phase becomes `complete` after approval.
-
-For all other phases, this step is a no-op.
-
-When prompting the architect in Step 5, surface which sub-phase is being reviewed:
-> "Reviewing the Solution Component Map (Phase 1 of design)." — when `sub_phase: component_map`
-> "Reviewing the full SAD and ADRs (Phase 2 of design)." — when `sub_phase: sad`
-
-### Step 5 — Architect decision
+### Step 4 — Architect decision
 
 If `--decision` was provided as an argument, use that value.
 Otherwise, prompt:
@@ -116,43 +103,31 @@ If decision is `reject` or `refine` and no `--feedback` was provided, prompt:
 
 Append to `workspace/log.jsonl`:
 ```json
-{"event": "phase_reviewed", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}", "sub_phase": "{component_map|sad|null}", "decision": "{decision}", "feedback": "{feedback or null}", "panel_used": true|false, "spec_check_used": true|false}
+{"event": "phase_reviewed", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}", "decision": "{decision}", "feedback": "{feedback or null}", "panel_used": true|false, "spec_check_used": true|false}
 ```
 
 **On `approve`** — apply phase-specific logic:
 
-For `intent`, `requirements`, or `assessment` phases (single-step approval):
+For `intent`, `requirements`, or `assessment` phases:
 - Update initiative file: `phases.{phase}.status = complete`
 - Append `phase_complete` event:
 ```json
 {"event": "phase_complete", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}"}
 ```
 
-For the `design` phase, behaviour depends on `sub_phase`:
-
-- If `sub_phase == component_map`:
-  - Update initiative file: `phases.design.human_gate_status.HG-RD-001 = approved`
-  - Update initiative file: `phases.design.sub_phase = sad`
-  - **Do not** mark the phase complete. Status stays `in_progress`.
-  - **Do not** emit `phase_complete` — SAD writing has not happened yet.
-  - The `phase_reviewed` event is the only event emitted.
-
-- If `sub_phase == sad`:
-  - Confirm HG-RD-001 is already `approved` (otherwise warn the architect — the component map should have been approved first).
-  - Update initiative file: `phases.design.human_gate_status.HG-RD-002 = approved`, `HG-RD-003 = approved`, `HG-RD-004 = approved`.
-  - Update initiative file: `phases.design.status = complete`
-  - Append `phase_complete` event for the design phase.
+For the `design` phase:
+- Update initiative file: `phases.design.human_gate_status.HG-RD-002 = approved`, `HG-RD-003 = approved`, `HG-RD-004 = approved`.
+- Update initiative file: `phases.design.status = complete`
+- Append `phase_complete` event for the design phase.
 
 **On `reject` or `refine`**:
 - Update initiative file: `phases.{phase}.status = in_progress`
 - Record feedback: `phases.{phase}.last_feedback = "{feedback}"`
-- For design `sub_phase == component_map` rejection: stay in component_map sub-phase; the next iterate will refine the component map.
-- For design `sub_phase == sad` rejection: stay in sad sub-phase; the next iterate will refine the SAD. Component map approval (HG-RD-001) is preserved unless the architect explicitly resets it.
 - No `phase_complete` event is emitted.
 
-### Step 7 — Print result
+### Step 5 — Print result
 
-For `approve` on intent/requirements/assessment, or on design `sub_phase == sad`:
+For `approve`:
 ```
 Phase approved: {phase}
 Initiative: {id}
@@ -160,17 +135,6 @@ Initiative: {id}
 {phase} is complete.
 
 Next: Run /jupiter:iterate to begin the {next-phase} phase.
-```
-
-For `approve` on design `sub_phase == component_map`:
-```
-Component Map approved: HG-RD-001 ✓
-Initiative: {id}
-
-Phase 1 of design complete. The Solution Component Map is ratified.
-Phase 2 (SAD + ADRs) begins on the next iterate.
-
-Next: Run /jupiter:iterate to begin SAD writing.
 ```
 
 For `reject`:

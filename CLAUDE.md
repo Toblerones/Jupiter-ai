@@ -28,13 +28,9 @@ The intent phase is not a manual authoring step. `/jupiter:start` captures a one
 
 This means the architect describes the problem; the loop agent draws out the business context, desired outcomes, and known constraints from what is already known. No blank-template authoring.
 
-### Design runs in two sub-phases
+### Design phase
 
-**Phase 1 — Solution Component Map**: map every REQ key to an architecture building block (COMP-NNN). Identify Architecturally Significant Requirements (ASRs) at the component level. Raise design questions. The architect approves the component map (HG-RD-001) via `/jupiter:review` before SAD writing begins.
-
-**Phase 2 — SAD + ADRs**: write the full SAD using the approved component map as §4. Generate ADRs for every significant decision. The architect approves the SAD, ratifies all ADRs, and confirms stakeholder review (HG-RD-002, HG-RD-003, HG-RD-004) via `/jupiter:review --panel`. The design phase is complete only when all four design human gates are approved.
-
-The `phases.design.sub_phase` field in the initiative file (`component_map` or `sad`) tracks which sub-phase the loop agent is producing. The first `/jupiter:review` approval flips `sub_phase` from `component_map` to `sad` and sets HG-RD-001 to `approved`. The second `/jupiter:review` approval marks the design phase `complete`.
+The design phase produces the full SAD and ADRs in one flow. The loop agent loads the SAD template from `templates/SAD_template.md` as context and writes every section with substantive content. The architect approves the SAD, ratifies all ADRs, and confirms stakeholder review (HG-RD-002, HG-RD-003, HG-RD-004) via `/jupiter:review --panel`. The design phase is complete only when all three design human gates are approved.
 
 ### Gate checks
 
@@ -193,15 +189,13 @@ ADR status values: `Proposed` → `Accepted` or `Superseded`. No ADR may be `Pro
 
 **1. Requirements are tech-agnostic.** Requirements describe WHAT the system must do for users and the business — not HOW the architecture responds. A requirement expressed as an architecture decision is a requirements-phase defect.
 
-**2. The component map precedes the SAD.** Before writing the SAD, the architect maps every REQ key to an architecture building block (COMP-NNN). The component map is §4 of the SAD and must be architect-approved before SAD writing begins.
+**2. Human gate is non-negotiable.** The loop agent never auto-approves the human gate. The loop agent reports READY FOR REVIEW; the architect runs `/jupiter:review`.
 
-**3. Human gate is non-negotiable.** The loop agent never auto-approves the human gate. The loop agent reports READY FOR REVIEW; the architect runs `/jupiter:review`.
+**3. Log is append-only.** State is derived from `workspace/log.jsonl`. Never modify existing lines — only append.
 
-**4. Log is append-only.** State is derived from `workspace/log.jsonl`. Never modify existing lines — only append.
+**4. Commands are thin dispatchers.** Each command: validate → load config → invoke agent → write event → report. No business logic in commands.
 
-**5. Commands are thin dispatchers.** Each command: validate → load config → invoke agent → write event → report. No business logic in commands.
-
-**6. Reviewer agents are pure evaluation agents.** Reviewers produce a structured text report and stop. They do not emit events, maintain state, or make decisions.
+**5. Reviewer agents are pure evaluation agents.** Reviewers produce a structured text report and stop. They do not emit events, maintain state, or make decisions.
 
 ---
 

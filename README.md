@@ -43,8 +43,6 @@ The architect drives every phase transition. Jupiter does the structured work.
 /jupiter:review
 
 # 6. Continue through design
-/jupiter:iterate   # produces Solution Component Map
-/jupiter:review    # architect approves the component map
 /jupiter:iterate   # produces SAD + ADRs
 /jupiter:review --panel  # reviewer panel + architect approval
 
