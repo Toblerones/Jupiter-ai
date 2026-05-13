@@ -30,6 +30,67 @@ constraint_dimension_resolution_template: |
   |-----------|-------|-----------|----------------------------|
   | {dimension_name} | Decided \| Inherited \| Untouched | {ADR-NNN or context binding} | {one-line rationale if Untouched} |
 
+# ─── Source Analysis ──────────────────────────────────────────────────────────
+# Backward checks: the loop agent analyses the requirements artifact before
+# generating the SAD. Each finding must be disposed before the design proceeds.
+# Classified as SOURCE_AMBIGUITY (could mean multiple architectures),
+# SOURCE_GAP (information needed but absent), or SOURCE_CONFLICT (contradiction).
+
+source_analysis:
+
+  - id: SA-RD-001
+    name: requirements_ambiguities_identified
+    description: >
+      Before generating the SAD, read the requirements artifact and identify every
+      requirement that is ambiguous from a design perspective — requirements that
+      could be satisfied by multiple incompatible architectures, unclear acceptance
+      criteria, underspecified performance targets, or undefined error semantics.
+      Each ambiguity must be recorded as SOURCE_AMBIGUITY and either resolved via
+      a stated design assumption or raised as an open issue in the SAD.
+    required: true
+    failure_message: >
+      Source analysis for requirements ambiguities has not been completed.
+      Before generating any SAD content, read every requirement and record each
+      design-perspective ambiguity as SOURCE_AMBIGUITY. Each must be disposed:
+      either resolved with a stated assumption (recorded in the SAD) or raised
+      as an open issue with a named owner.
+
+  - id: SA-RD-002
+    name: requirements_gaps_for_design
+    description: >
+      Identify information the requirements should contain for design decisions but
+      do not — missing data schemas, unspecified concurrency models, implied but
+      unstated integration points, missing error handling requirements, or
+      performance targets that cannot be designed against.
+      Each gap must be recorded as SOURCE_GAP and either filled from project
+      context (citing the source) or raised as an open issue in the SAD.
+      Do not silently absorb gaps into design assumptions.
+    required: true
+    failure_message: >
+      Source analysis for requirements gaps has not been completed.
+      Before generating any SAD content, read the requirements and record each
+      piece of information needed for design that is absent as SOURCE_GAP.
+      Each gap must be disposed: filled from context (cite the source) or
+      raised as an open issue in the SAD with a named owner.
+
+  - id: SA-RD-003
+    name: requirements_conflicts_identified
+    description: >
+      Identify requirements that conflict with each other or contradict the
+      project constraints in workspace/context/project.yml — for example, a
+      performance requirement incompatible with a declared technology constraint,
+      or two functional requirements with mutually exclusive behaviours.
+      Each conflict must be recorded as SOURCE_CONFLICT and resolved before
+      the SAD proceeds. Unresolved conflicts may not be silently incorporated.
+    required: true
+    failure_message: >
+      Source analysis for requirements conflicts has not been completed.
+      Read the requirements alongside project.yml and record each contradiction
+      between requirements, or between requirements and declared constraints,
+      as SOURCE_CONFLICT. Each conflict must be resolved — by clarifying intent,
+      recording a constraint exception in the SAD, or raising an open issue —
+      before SAD generation continues.
+
 # ─── Auto Checks ──────────────────────────────────────────────────────────────
 
 auto_checks:
@@ -161,6 +222,110 @@ ai_checks:
       must have a named owner or an explicit resolved-by statement. Resolve or
       assign all open issues before requesting human gate approval.
 
+  - id: AI-RD-009
+    name: architecture_diagrams_present
+    description: >
+      The SAD contains at least two Mermaid diagrams:
+        1. A component/system diagram in the Architecture Overview or Target State
+           section — showing all named components and their relationships.
+        2. A data model diagram in the Data Model or equivalent section — showing
+           key entities and their relationships.
+      Both diagrams must use valid Mermaid syntax and be consistent with the
+      surrounding prose. A diagram that omits components described in the prose,
+      or contradicts the component descriptions, is a defect — not a diagram.
+    required: true
+    failure_message: >
+      The SAD is missing required architecture diagrams. In the next iteration,
+      produce both of the following using valid Mermaid syntax:
+        1. A component diagram (in the Architecture Overview section) showing
+           every named component and the relationships between them.
+        2. A data model diagram (in the Data Model section) showing key entities
+           and their relationships.
+      Both diagrams must be consistent with the surrounding prose. Do not
+      reference or describe diagrams — write the Mermaid code blocks directly
+      in the SAD sections.
+
+  - id: AI-RD-010
+    name: adr_depth_adequate
+    description: >
+      Each ADR in this initiative is substantive — not just a record of what was
+      chosen. Every ADR must contain:
+        - At least two alternatives evaluated (each with trade-offs stated, not
+          just listed by name)
+        - Concrete consequences of the decision (what it enables, prevents, or costs)
+        - A connection to the specific REQ key(s) or constraint that drove the
+          decision
+      Minimum density: one ADR for every five SAD components, or three ADRs total —
+      whichever is larger. An ADR that records a choice without showing the reasoning
+      behind it cannot be ratified at the human gate.
+    required: true
+    failure_message: >
+      One or more ADRs are too shallow to be ratifiable. For each ADR, verify it
+      contains: (1) at least two evaluated alternatives with trade-offs, (2) concrete
+      consequences of the decision, and (3) the REQ key(s) or constraint that drove
+      it. Also check minimum density: one ADR per five components, or three total
+      (whichever is larger). Expand any thin ADRs in the next iteration — a decision
+      recorded without its reasoning cannot be approved.
+
+  - id: AI-RD-011
+    name: security_dimension_quality
+    description: >
+      The SAD explicitly addresses the security constraint dimension with enough
+      specificity for implementation. Required content:
+        - Authentication mechanism chosen and justified (e.g. OAuth2, JWT, mTLS —
+          not just "authentication will be implemented")
+        - Authorisation model defined (e.g. RBAC, ABAC, policy-based) with scope
+          and enforcement point stated
+        - Data protection approach documented for data at rest and in transit
+        - Connection to any compliance requirements from project.yml
+      A vague statement of security intent does not pass this check.
+    required: true
+    failure_message: >
+      The security constraint dimension is inadequately addressed. The SAD must
+      name the specific authentication mechanism, define the authorisation model
+      and enforcement point, and document the data protection approach for data
+      at rest and in transit. Check project.yml for compliance obligations that
+      must be reflected. If security decisions are genuinely deferred, they must
+      appear as open issues with a named owner — not be silently omitted.
+
+  - id: AI-RD-012
+    name: deployment_dimension_quality
+    description: >
+      The SAD explicitly addresses the deployment constraint dimension with enough
+      specificity for implementation. Required content:
+        - Where the system runs (cloud provider, region, on-premise, hybrid — be
+          specific; "cloud" alone is not acceptable)
+        - Infrastructure assumptions documented (compute sizing, storage, networking)
+        - Deployment mechanism chosen (containers, serverless, VMs, PaaS — named)
+        - Consistency with platform constraints declared in project.yml
+    required: true
+    failure_message: >
+      The deployment constraint dimension is inadequately addressed. The SAD must
+      state specifically where the system runs (named cloud provider/region or
+      on-premise environment), document infrastructure assumptions, and name the
+      deployment mechanism. If deployment is constrained by project.yml, verify
+      the SAD is consistent with those constraints. Vague references to "cloud
+      infrastructure" without specifics do not pass this check.
+
+  - id: AI-RD-013
+    name: ecosystem_dimension_quality
+    description: >
+      The SAD explicitly addresses the ecosystem and technology stack constraint
+      dimension with enough specificity for implementation. Required content:
+        - Target language(s) and runtime version(s) stated
+        - Framework choices documented with version constraints
+        - Any version incompatibilities identified and resolved via ADR
+        - Consistency with ecosystem constraints declared in project.yml
+      Implicit technology assumptions — choices that are "obvious" from context
+      but not stated in the SAD — fail this check. They must be made explicit.
+    required: true
+    failure_message: >
+      The ecosystem constraint dimension is inadequately addressed. The SAD must
+      state target languages and runtime versions, document framework choices with
+      version constraints, and flag any incompatibilities via ADR. Check project.yml
+      for declared ecosystem bindings — if the SAD is consistent with them, confirm
+      the binding explicitly rather than leaving it implicit.
+
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
 human_gate:
@@ -242,6 +407,30 @@ agent_guidance: |
     - Any prior architecture documents listed in the project configuration
   Do not begin SAD writing until you have read all requirements in full.
 
+  STEP 1b — ANALYSE SOURCE (backward — before generating)
+  Before producing any SAD content, read the requirements artifact and classify
+  every finding that affects design. Record each finding with its classification:
+
+    SOURCE_AMBIGUITY — a requirement that could be satisfied by multiple
+      incompatible architectures, has unclear acceptance criteria, or leaves
+      error semantics undefined. For each: state the design assumption you will
+      apply, or raise it as an open issue. Do not silently adopt one reading.
+
+    SOURCE_GAP — information needed for a design decision that is absent from
+      the requirements: missing data schemas, unspecified concurrency models,
+      implied integration points not stated, performance targets you cannot
+      design to. For each: fill from project context (cite the source) or raise
+      as an open issue. Do not guess.
+
+    SOURCE_CONFLICT — a requirement that contradicts another requirement, or
+      contradicts a constraint in project.yml. For each: resolve the conflict
+      with a stated rationale, record a constraint exception, or raise as an
+      open issue. Do not absorb the conflict silently.
+
+  If you find no issues in a category, state that explicitly (e.g. "No
+  SOURCE_AMBIGUITY findings"). An empty analysis without a statement is not
+  acceptable — it looks the same as a skipped step.
+
   STEP 2 — PRODUCE THE SAD
   Follow templates/SAD_template.md. Write every section with substantive content.
   No section may be empty or contain placeholder text ([REPLACE WITH...], [TODO], TBD).
@@ -250,6 +439,15 @@ agent_guidance: |
   key from the requirements artifact. For each key record:
     req_key | description | type | addressed_in (SAD section or ADR ID)
   Every REQ-* key must appear. Count both totals and verify they match.
+
+  For architecture diagrams: write two Mermaid code blocks directly in the SAD —
+  do not reference or describe them without producing the code. Required:
+    1. Component diagram in Architecture Overview: all components and relationships.
+       Use `graph TD` or `C4Component` syntax. Every named component in the prose
+       must appear in the diagram. The diagram and prose must be consistent.
+    2. Data model diagram in the Data Model section: key entities and relationships.
+       Use `erDiagram` syntax. Entities must match the data model prose.
+  A missing diagram or an inconsistent diagram fails AI-RD-009.
 
   STEP 3 — GENERATE ADRs FOR SIGNIFICANT DECISIONS
   Generate ADRs for every significant architectural decision in the SAD.
@@ -261,6 +459,19 @@ agent_guidance: |
   Follow the ADR template loaded from templates/ADR_template.md.
   Set Status to "Proposed" initially. Do not leave significant decisions as
   implicit prose in the SAD.
+
+  ADR depth requirements (AI-RD-010 gates on these — shallow ADRs cannot be
+  ratified at the human gate):
+    - At least two alternatives evaluated per ADR, each with trade-offs stated.
+      "We considered X and Y; chose X because Z" is shallow. Show the trade-off
+      for each alternative — what it gains, what it costs.
+    - Concrete consequences: what the chosen option enables, what it prevents or
+      makes harder, and what it costs (operationally, in complexity, or in future
+      flexibility).
+    - REQ connection: name the specific REQ key(s) or constraint that drove the
+      decision. An ADR with no REQ reference is unjustified.
+  Minimum density: one ADR per five SAD components, or three total — whichever
+  is larger. Count your components and verify coverage before the self-review.
 
   STEP 3b — RESOLVE CONSTRAINT DIMENSIONS
   Read workspace/context/constraint-dimensions.yml. For every dimension marked
@@ -308,6 +519,19 @@ agent_guidance: |
     - Open issues: have owners or resolved-by statements
     - No contradictions between SAD sections
     - No violations of project constraints
+    - Source analysis complete: SA-RD-001/002/003 findings recorded and disposed
+    - Architecture diagrams: two Mermaid code blocks present in the SAD —
+      component diagram in Architecture Overview, data model diagram in Data Model.
+      Both consistent with prose (AI-RD-009)
+    - ADR depth: each ADR has ≥2 evaluated alternatives with trade-offs, concrete
+      consequences, and a REQ key connection. Density ≥1 per 5 components or ≥3
+      total (AI-RD-010)
+    - Security dimension: auth mechanism named, authorisation model defined,
+      data protection documented (AI-RD-011)
+    - Deployment dimension: platform/provider named, infrastructure assumptions
+      stated, deployment mechanism chosen (AI-RD-012)
+    - Ecosystem dimension: languages/runtimes versioned, framework choices
+      explicit, no implicit technology assumptions (AI-RD-013)
 
   STEP 6 — PRESENT FOR HUMAN GATE REVIEW
   After auto checks and AI checks pass, present the complete SAD and ADR set
