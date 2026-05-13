@@ -81,9 +81,47 @@ Then run `/jupiter:assess --artifact {path}`. If no workspace exists yet, ask Q1
 ### Step 2b — Requirements-first flow (Option 5)
 
 Ask:
-> "Path to the business requirements document: (absolute or relative path to your BRD, user story set, or equivalent)"
+```
+How would you like to provide the requirements document?
+
+  A. File path  — local file (BRD, user story set, or equivalent)
+  B. Confluence — paste a Confluence page URL and Jupiter will fetch it
+
+Enter A or B (or press Enter for A):
+```
+
+**Option A — File path:**
+
+Ask:
+> "Path to the business requirements document: (absolute or relative path)"
 
 Validate the path. If the file does not exist or cannot be read, error and let the architect try again.
+
+Set `source_document` to the absolute path of that file. Leave `source_url` unset.
+
+**Option B — Confluence URL:**
+
+Ask:
+> "Confluence page URL: (paste the full URL, e.g. https://your-org.atlassian.net/wiki/spaces/PROJ/pages/123456)"
+
+Use the Atlassian MCP to fetch the page content from the URL provided. If the MCP call fails (page not found, permission denied, unreachable), show the error and let the architect try again — do not proceed with empty content.
+
+Once content is fetched:
+- Create directory `workspace/context/source/` if it does not exist.
+- Derive a safe filename from the Confluence page title (lowercase, spaces → hyphens, strip special characters). Example: `invoice-processing-requirements.md`.
+- Write the fetched page content to `workspace/context/source/{filename}`.
+- Set `source_document` to the absolute path of the written file.
+- Set `source_url` to the original Confluence URL (for traceability).
+
+Print:
+```
+Fetched from Confluence: {page title}
+Saved to:               workspace/context/source/{filename}
+```
+
+---
+
+**Continuing (both options):**
 
 Then ask Q1–Q5 from Step 3 (project identity questions). Skip Q6 — the source document replaces it. After Q5, print:
 ```
@@ -96,6 +134,7 @@ Run the context scan (Step 4) as normal.
 Then scaffold the workspace with the `requirements-first` profile:
 - Run `/jupiter:init --profile requirements-first` passing Q1–Q5 answers
 - After init completes, write `source_document: {absolute path}` to the initiative YAML under `initiative:`
+- If the source came from Confluence, also write `source_url: {confluence url}` to the initiative YAML under `initiative:`
 - Do NOT write a Q6 seed to INTENT.md — the loop agent will produce INTENT.md from the source document during iteration. Leave the placeholder content that init wrote as-is.
 
 Print:
@@ -105,6 +144,7 @@ Project:    {project name}
 Profile:    requirements-first
 Initiative: {initiative-id}
 Source doc: {path}
+{Source URL: {url}   ← only shown if sourced from Confluence}
 
 Running first requirements iteration...
 ```
