@@ -70,9 +70,42 @@ Write the answer to `workspace/INTENT.md` Problem Statement. Create a child init
 > "Project name (or press Enter to use the directory name):"
 
 **Option 4 — Assess existing artifact**: Ask:
+```
+How would you like to provide the artifact?
+
+  A. File path  — local file (SAD, requirements doc, ADR, or equivalent)
+  B. Confluence — paste a Confluence page URL and Jupiter will fetch it
+
+Enter A or B (or press Enter for A):
+```
+
+**Option 4A — File path:** Ask:
 > "Path to the artifact to assess: (absolute or relative path)"
 
-Then run `/jupiter:assess --artifact {path}`. If no workspace exists yet, ask Q1 (project name) only to initialise the workspace first. Do not run the full identity flow — assessment is a focused engagement.
+Validate the path. If the file does not exist or cannot be read, error and let the architect try again. Set `artifact_path` to the absolute path.
+
+**Option 4B — Confluence URL:** Ask:
+> "Confluence page URL: (paste the full URL, e.g. https://your-org.atlassian.net/wiki/spaces/PROJ/pages/123456)"
+
+Use the Atlassian MCP to fetch the page content from the URL provided. If the MCP call fails (page not found, permission denied, unreachable), show the error and let the architect try again — do not proceed with empty content.
+
+Once content is fetched:
+- Create directory `workspace/artifacts/assessment/inbox/` if it does not exist.
+- Derive a safe filename from the Confluence page title (lowercase, spaces → hyphens, strip special characters). Example: `solution-architecture-document.md`.
+- Write the fetched page content to `workspace/artifacts/assessment/inbox/{filename}`.
+- Set `artifact_path` to the absolute path of the written file.
+
+Print:
+```
+Fetched from Confluence: {page title}
+Saved to:               workspace/artifacts/assessment/inbox/{filename}
+```
+
+**Continuing (both options):**
+
+If no workspace exists yet, ask Q1 (project name) only to initialise the workspace first. Do not run the full identity flow — assessment is a focused engagement.
+
+Then run `/jupiter:assess --artifact {artifact_path}`.
 
 **Option 5 — Import existing requirements**: Proceed to Step 2b (requirements-first flow).
 
