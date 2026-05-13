@@ -2,19 +2,19 @@
 # Defines the checks the loop agent runs when producing the Solution Architecture Document.
 #
 # The design phase produces:
-#   - A Solution Architecture Document (SAD) following templates/SAD_template.md
+#   - A Solution On A Page (SOAP) following templates/SOAP_template.md
 #   - Architecture Decision Records (ADRs) for every significant architectural decision
 
 version: "3.0"
 transition: "requirements → design"
 description: >
-  Produce a Solution Architecture Document (SAD) and Architecture Decision Records
-  (ADRs) from the ratified requirements artifact. The SAD structure is defined by
-  templates/SAD_template.md, loaded as context.
+  Produce a Solution On A Page (SOAP) and Architecture Decision Records
+  (ADRs) from the ratified requirements artifact. The SOAP structure is defined by
+  templates/SOAP_template.md, loaded as context.
 
 # ─── Constraint Dimension Resolution Template ─────────────────────────────────
 # Each mandatory dimension declared in workspace/context/constraint-dimensions.yml
-# must appear as a row in the Constraint Dimension Resolution section of the SAD,
+# must appear as a row in the Constraint Dimension Resolution section of the SOAP,
 # with a resolution state and a reference. Three valid states:
 #
 #   Decided   — a new ADR in this initiative resolves it
@@ -32,7 +32,7 @@ constraint_dimension_resolution_template: |
 
 # ─── Source Analysis ──────────────────────────────────────────────────────────
 # Backward checks: the loop agent analyses the requirements artifact before
-# generating the SAD. Each finding must be disposed before the design proceeds.
+# generating the SOAP. Each finding must be disposed before the design proceeds.
 # Classified as SOURCE_AMBIGUITY (could mean multiple architectures),
 # SOURCE_GAP (information needed but absent), or SOURCE_CONFLICT (contradiction).
 
@@ -41,18 +41,18 @@ source_analysis:
   - id: SA-RD-001
     name: requirements_ambiguities_identified
     description: >
-      Before generating the SAD, read the requirements artifact and identify every
+      Before generating the SOAP, read the requirements artifact and identify every
       requirement that is ambiguous from a design perspective — requirements that
       could be satisfied by multiple incompatible architectures, unclear acceptance
       criteria, underspecified performance targets, or undefined error semantics.
       Each ambiguity must be recorded as SOURCE_AMBIGUITY and either resolved via
-      a stated design assumption or raised as an open issue in the SAD.
+      a stated design assumption or raised as an open issue in the SOAP.
     required: true
     failure_message: >
       Source analysis for requirements ambiguities has not been completed.
-      Before generating any SAD content, read every requirement and record each
+      Before generating any SOAP content, read every requirement and record each
       design-perspective ambiguity as SOURCE_AMBIGUITY. Each must be disposed:
-      either resolved with a stated assumption (recorded in the SAD) or raised
+      either resolved with a stated assumption (recorded in the SOAP) or raised
       as an open issue with a named owner.
 
   - id: SA-RD-002
@@ -63,15 +63,15 @@ source_analysis:
       unstated integration points, missing error handling requirements, or
       performance targets that cannot be designed against.
       Each gap must be recorded as SOURCE_GAP and either filled from project
-      context (citing the source) or raised as an open issue in the SAD.
+      context (citing the source) or raised as an open issue in the SOAP.
       Do not silently absorb gaps into design assumptions.
     required: true
     failure_message: >
       Source analysis for requirements gaps has not been completed.
-      Before generating any SAD content, read the requirements and record each
+      Before generating any SOAP content, read the requirements and record each
       piece of information needed for design that is absent as SOURCE_GAP.
       Each gap must be disposed: filled from context (cite the source) or
-      raised as an open issue in the SAD with a named owner.
+      raised as an open issue in the SOAP with a named owner.
 
   - id: SA-RD-003
     name: requirements_conflicts_identified
@@ -81,52 +81,52 @@ source_analysis:
       performance requirement incompatible with a declared technology constraint,
       or two functional requirements with mutually exclusive behaviours.
       Each conflict must be recorded as SOURCE_CONFLICT and resolved before
-      the SAD proceeds. Unresolved conflicts may not be silently incorporated.
+      the SOAP proceeds. Unresolved conflicts may not be silently incorporated.
     required: true
     failure_message: >
       Source analysis for requirements conflicts has not been completed.
       Read the requirements alongside project.yml and record each contradiction
       between requirements, or between requirements and declared constraints,
       as SOURCE_CONFLICT. Each conflict must be resolved — by clarifying intent,
-      recording a constraint exception in the SAD, or raising an open issue —
-      before SAD generation continues.
+      recording a constraint exception in the SOAP, or raising an open issue —
+      before SOAP generation continues.
 
 # ─── Auto Checks ──────────────────────────────────────────────────────────────
 
 auto_checks:
 
   - id: AC-RD-002
-    name: sad_sections_complete
+    name: soap_sections_complete
     description: >
-      The SAD has substantive content in every section — no section is blank,
+      The SOAP has substantive content in every section — no section is blank,
       missing, or still contains placeholder text (e.g. [REPLACE WITH ...], [TODO], TBD).
     required: true
     failure_message: >
-      One or more SAD sections still contain placeholder text or lack substantive
+      One or more SOAP sections still contain placeholder text or lack substantive
       content. Replace all [REPLACE WITH ...] placeholders and fill every section
       before requesting human gate approval.
 
   - id: AC-RD-003
-    name: req_coverage_in_sad
+    name: req_coverage_in_soap
     description: >
       Every REQ-* key from the ratified requirements artifact appears in the
-      Requirements Traceability section of the SAD. The traceability table must
-      include: req_key, description, type, addressed_in (SAD section or ADR ID).
+      Requirements Traceability section of the SOAP. The traceability table must
+      include: req_key, description, type, addressed_in (SOAP section or ADR ID).
       No requirement is unaddressed.
     required: true
     failure_message: >
       One or more REQ-* keys from the requirements artifact are absent from the
-      SAD Requirements Traceability table. Every requirement must be traced to a
-      SAD section or ADR. Identify and cover all missing keys.
+      SOAP Requirements Traceability table. Every requirement must be traced to a
+      SOAP section or ADR. Identify and cover all missing keys.
 
   - id: AC-RD-004
     name: adrs_have_status
     description: >
-      Every ADR referenced in the SAD has a status field set to one of the three
+      Every ADR referenced in the SOAP has a status field set to one of the three
       valid values: proposed, accepted, or superseded. No ADR is missing a status.
     required: true
     failure_message: >
-      One or more ADRs referenced in the SAD are missing a status value, or have
+      One or more ADRs referenced in the SOAP are missing a status value, or have
       an invalid status. Valid values: proposed, accepted, superseded.
       Set the correct status on every ADR.
 
@@ -135,30 +135,30 @@ auto_checks:
 ai_checks:
 
   - id: AI-RD-002
-    name: sad_internally_coherent
+    name: soap_internally_coherent
     description: >
-      Design decisions across all SAD sections are internally consistent.
+      Design decisions across all SOAP sections are internally consistent.
       The Target State does not contradict the Architecture Principles. The Risk
       Register does not describe risks that are ignored in the Target State. ADRs
       do not contradict each other or the overall design.
     required: true
     failure_message: >
-      The SAD contains internal contradictions between sections. Identify and
-      resolve all inconsistencies before human gate review. A SAD with
+      The SOAP contains internal contradictions between sections. Identify and
+      resolve all inconsistencies before human gate review. A SOAP with
       contradictory sections cannot be ratified.
 
   - id: AI-RD-003
-    name: sad_does_not_contradict_constraints
+    name: soap_does_not_contradict_constraints
     description: >
-      The SAD design does not contradict any constraint loaded from the project
+      The SOAP design does not contradict any constraint loaded from the project
       configuration (workspace/context/project.yml). This includes compliance
       obligations, integration landscape constraints, stakeholder constraints,
       architecture principles, and performance targets.
     required: true
     failure_message: >
-      The SAD contradicts one or more project constraints. Identify the specific
+      The SOAP contradicts one or more project constraints. Identify the specific
       conflict and either revise the design or raise a formal constraint exception
-      documented in the SAD. A SAD that violates declared constraints cannot
+      documented in the SOAP. A SOAP that violates declared constraints cannot
       be approved.
 
   - id: AI-RD-005
@@ -168,10 +168,10 @@ ai_checks:
       trade-offs have corresponding ADRs. A decision is significant if it has
       long-term consequences, affects multiple parts of the architecture, or
       constrains future options. Significant decisions must not remain as implicit
-      prose in the SAD.
+      prose in the SOAP.
     required: true
     failure_message: >
-      One or more significant architectural decisions are made in the SAD without
+      One or more significant architectural decisions are made in the SOAP without
       a corresponding ADR. Identify every significant decision and generate the
       missing ADRs.
 
@@ -180,7 +180,7 @@ ai_checks:
     description: >
       Every mandatory constraint dimension declared in
       workspace/context/constraint-dimensions.yml is explicitly resolved in the
-      Constraint Dimension Resolution section of the SAD. Each mandatory dimension
+      Constraint Dimension Resolution section of the SOAP. Each mandatory dimension
       has a state of Decided, Inherited, or Untouched, with a valid reference:
         - Decided   — a new ADR in this initiative (must exist in the ADR Index)
         - Inherited — a prior ADR loaded from workspace/context/adrs/, or the
@@ -192,7 +192,7 @@ ai_checks:
     failure_message: >
       One or more mandatory constraint dimensions are not explicitly resolved in
       the Constraint Dimension Resolution section. For each mandatory dimension
-      in workspace/context/constraint-dimensions.yml, the SAD must record a
+      in workspace/context/constraint-dimensions.yml, the SOAP must record a
       state of Decided, Inherited, or Untouched with a valid reference. A
       missing or unreferenced row fails this gate.
 
@@ -214,7 +214,7 @@ ai_checks:
     description: >
       All open issues in the Open Issues and Assumptions section have either a
       named owner or an explicit "resolved by [milestone or date]" target. Issues
-      without owners and issues with no resolution path are not acceptable in a SAD
+      without owners and issues with no resolution path are not acceptable in a SOAP
       proceeding to human gate.
     required: true
     failure_message: >
@@ -225,7 +225,7 @@ ai_checks:
   - id: AI-RD-009
     name: architecture_diagrams_present
     description: >
-      The SAD contains at least two Mermaid diagrams:
+      The SOAP contains at least two Mermaid diagrams:
         1. A component/system diagram in the Architecture Overview or Target State
            section — showing all named components and their relationships.
         2. A data model diagram in the Data Model or equivalent section — showing
@@ -235,7 +235,7 @@ ai_checks:
       or contradicts the component descriptions, is a defect — not a diagram.
     required: true
     failure_message: >
-      The SAD is missing required architecture diagrams. In the next iteration,
+      The SOAP is missing required architecture diagrams. In the next iteration,
       produce both of the following using valid Mermaid syntax:
         1. A component diagram (in the Architecture Overview section) showing
            every named component and the relationships between them.
@@ -243,7 +243,7 @@ ai_checks:
            and their relationships.
       Both diagrams must be consistent with the surrounding prose. Do not
       reference or describe diagrams — write the Mermaid code blocks directly
-      in the SAD sections.
+      in the SOAP sections.
 
   - id: AI-RD-010
     name: adr_depth_adequate
@@ -255,7 +255,7 @@ ai_checks:
         - Concrete consequences of the decision (what it enables, prevents, or costs)
         - A connection to the specific REQ key(s) or constraint that drove the
           decision
-      Minimum density: one ADR for every five SAD components, or three ADRs total —
+      Minimum density: one ADR for every five SOAP components, or three ADRs total —
       whichever is larger. An ADR that records a choice without showing the reasoning
       behind it cannot be ratified at the human gate.
     required: true
@@ -270,7 +270,7 @@ ai_checks:
   - id: AI-RD-011
     name: security_dimension_quality
     description: >
-      The SAD explicitly addresses the security constraint dimension with enough
+      The SOAP explicitly addresses the security constraint dimension with enough
       specificity for implementation. Required content:
         - Authentication mechanism chosen and justified (e.g. OAuth2, JWT, mTLS —
           not just "authentication will be implemented")
@@ -281,7 +281,7 @@ ai_checks:
       A vague statement of security intent does not pass this check.
     required: true
     failure_message: >
-      The security constraint dimension is inadequately addressed. The SAD must
+      The security constraint dimension is inadequately addressed. The SOAP must
       name the specific authentication mechanism, define the authorisation model
       and enforcement point, and document the data protection approach for data
       at rest and in transit. Check project.yml for compliance obligations that
@@ -291,7 +291,7 @@ ai_checks:
   - id: AI-RD-012
     name: deployment_dimension_quality
     description: >
-      The SAD explicitly addresses the deployment constraint dimension with enough
+      The SOAP explicitly addresses the deployment constraint dimension with enough
       specificity for implementation. Required content:
         - Where the system runs (cloud provider, region, on-premise, hybrid — be
           specific; "cloud" alone is not acceptable)
@@ -300,30 +300,30 @@ ai_checks:
         - Consistency with platform constraints declared in project.yml
     required: true
     failure_message: >
-      The deployment constraint dimension is inadequately addressed. The SAD must
+      The deployment constraint dimension is inadequately addressed. The SOAP must
       state specifically where the system runs (named cloud provider/region or
       on-premise environment), document infrastructure assumptions, and name the
       deployment mechanism. If deployment is constrained by project.yml, verify
-      the SAD is consistent with those constraints. Vague references to "cloud
+      the SOAP is consistent with those constraints. Vague references to "cloud
       infrastructure" without specifics do not pass this check.
 
   - id: AI-RD-013
     name: ecosystem_dimension_quality
     description: >
-      The SAD explicitly addresses the ecosystem and technology stack constraint
+      The SOAP explicitly addresses the ecosystem and technology stack constraint
       dimension with enough specificity for implementation. Required content:
         - Target language(s) and runtime version(s) stated
         - Framework choices documented with version constraints
         - Any version incompatibilities identified and resolved via ADR
         - Consistency with ecosystem constraints declared in project.yml
       Implicit technology assumptions — choices that are "obvious" from context
-      but not stated in the SAD — fail this check. They must be made explicit.
+      but not stated in the SOAP — fail this check. They must be made explicit.
     required: true
     failure_message: >
-      The ecosystem constraint dimension is inadequately addressed. The SAD must
+      The ecosystem constraint dimension is inadequately addressed. The SOAP must
       state target languages and runtime versions, document framework choices with
       version constraints, and flag any incompatibilities via ADR. Check project.yml
-      for declared ecosystem bindings — if the SAD is consistent with them, confirm
+      for declared ecosystem bindings — if the SOAP is consistent with them, confirm
       the binding explicitly rather than leaving it implicit.
 
 # ─── Human Gate ───────────────────────────────────────────────────────────────
@@ -333,15 +333,15 @@ human_gate:
   checks:
 
     - id: HG-RD-002
-      name: architect_approves_sad
+      name: architect_approves_soap
       description: >
-        The lead architect has reviewed the complete SAD and explicitly approves
+        The lead architect has reviewed the complete SOAP and explicitly approves
         it as an accurate and sound architectural design. This is a substantive
         review, not a formality. The lead architect is accountable for what is
-        in the SAD.
+        in the SOAP.
       required: true
       failure_message: >
-        Lead architect SAD approval is pending. Present the complete SAD via
+        Lead architect SOAP approval is pending. Present the complete SOAP via
         /jupiter:review and record explicit approval before this gate can pass.
 
     - id: HG-RD-003
@@ -380,9 +380,9 @@ completion:
 # ─── Agent Guidance ───────────────────────────────────────────────────────────
 
 agent_guidance: |
-  You are producing a Solution Architecture Document (SAD) and Architecture
+  You are producing a Solution On A Page (SOAP) and Architecture
   Decision Records (ADRs) from the ratified requirements. Load and follow the
-  SAD template from templates/SAD_template.md — it defines the required sections.
+  SOAP template from templates/SOAP_template.md — it defines the required sections.
   Write every section with substantive content and replace all [REPLACE WITH ...]
   placeholders.
 
@@ -401,14 +401,14 @@ agent_guidance: |
     - The ratified requirements artifact (all REQ-* requirements)
     - workspace/context/project.yml (constraints, compliance context)
     - workspace/context/constraint-dimensions.yml (architecture constraint
-      dimensions — mandatory dimensions must be resolved by the SAD)
+      dimensions — mandatory dimensions must be resolved by the SOAP)
     - workspace/context/adrs/ (prior ADRs that may already resolve dimensions)
-    - templates/SAD_template.md (the authoritative SAD structure)
+    - templates/SOAP_template.md (the authoritative SOAP structure)
     - Any prior architecture documents listed in the project configuration
-  Do not begin SAD writing until you have read all requirements in full.
+  Do not begin SOAP writing until you have read all requirements in full.
 
   STEP 1b — ANALYSE SOURCE (backward — before generating)
-  Before producing any SAD content, read the requirements artifact and classify
+  Before producing any SOAP content, read the requirements artifact and classify
   every finding that affects design. Record each finding with its classification:
 
     SOURCE_AMBIGUITY — a requirement that could be satisfied by multiple
@@ -431,16 +431,16 @@ agent_guidance: |
   SOURCE_AMBIGUITY findings"). An empty analysis without a statement is not
   acceptable — it looks the same as a skipped step.
 
-  STEP 2 — PRODUCE THE SAD
-  Follow templates/SAD_template.md. Write every section with substantive content.
+  STEP 2 — PRODUCE THE SOAP
+  Follow templates/SOAP_template.md. Write every section with substantive content.
   No section may be empty or contain placeholder text ([REPLACE WITH...], [TODO], TBD).
 
   For the requirements traceability section: produce a table covering every REQ-*
   key from the requirements artifact. For each key record:
-    req_key | description | type | addressed_in (SAD section or ADR ID)
+    req_key | description | type | addressed_in (SOAP section or ADR ID)
   Every REQ-* key must appear. Count both totals and verify they match.
 
-  For architecture diagrams: write two Mermaid code blocks directly in the SAD —
+  For architecture diagrams: write two Mermaid code blocks directly in the SOAP —
   do not reference or describe them without producing the code. Required:
     1. Component diagram in Architecture Overview: all components and relationships.
        Use `graph TD` or `C4Component` syntax. Every named component in the prose
@@ -450,7 +450,7 @@ agent_guidance: |
   A missing diagram or an inconsistent diagram fails AI-RD-009.
 
   STEP 3 — GENERATE ADRs FOR SIGNIFICANT DECISIONS
-  Generate ADRs for every significant architectural decision in the SAD.
+  Generate ADRs for every significant architectural decision in the SOAP.
   A decision is significant if it:
     - Selects a technology, platform, or framework
     - Chooses an architectural pattern
@@ -458,7 +458,7 @@ agent_guidance: |
     - Constrains future options
   Follow the ADR template loaded from templates/ADR_template.md.
   Set Status to "Proposed" initially. Do not leave significant decisions as
-  implicit prose in the SAD.
+  implicit prose in the SOAP.
 
   ADR depth requirements (AI-RD-010 gates on these — shallow ADRs cannot be
   ratified at the human gate):
@@ -470,23 +470,23 @@ agent_guidance: |
       flexibility).
     - REQ connection: name the specific REQ key(s) or constraint that drove the
       decision. An ADR with no REQ reference is unjustified.
-  Minimum density: one ADR per five SAD components, or three total — whichever
+  Minimum density: one ADR per five SOAP components, or three total — whichever
   is larger. Count your components and verify coverage before the self-review.
 
   STEP 3b — RESOLVE CONSTRAINT DIMENSIONS
   Read workspace/context/constraint-dimensions.yml. For every dimension marked
-  mandatory, the SAD's Constraint Dimension Resolution section must record one
+  mandatory, the SOAP's Constraint Dimension Resolution section must record one
   resolution row per dimension with:
     - State: Decided | Inherited | Untouched
     - Reference: ADR-NNN (Decided/Inherited), context binding (Inherited),
                  or "—" (Untouched, with one-line rationale)
   Resolution states:
     - Decided   — this initiative produces a new ADR that resolves the dimension.
-                  The ADR must appear in the ADR Index and be addressed in the SAD.
+                  The ADR must appear in the ADR Index and be addressed in the SOAP.
     - Inherited — the dimension is already resolved by a prior ADR (loaded from
                   workspace/context/adrs/) or by current_binding declared in
                   constraint-dimensions.yml. Reference the inherited decision; no
-                  new ADR is required. The SAD must briefly state why the
+                  new ADR is required. The SOAP must briefly state why the
                   inherited decision still applies.
     - Untouched — this initiative does not affect the dimension. State this
                   explicitly with a one-line rationale (e.g. "New reporting
@@ -497,7 +497,7 @@ agent_guidance: |
   missing row before requesting human gate approval.
 
   STEP 4 — CHECK AGAINST PROJECT CONSTRAINTS
-  Re-read workspace/context/project.yml. Verify the SAD does not contradict:
+  Re-read workspace/context/project.yml. Verify the SOAP does not contradict:
     - compliance obligations (must be addressed in the design)
     - integration landscape (integration constraints must be respected)
     - stakeholder constraints (budget, timeline, organisational constraints)
@@ -511,16 +511,16 @@ agent_guidance: |
       with a valid state and reference (AI-RD-008)
   Then verify the standard items:
   Verify:
-    - All SAD sections: populated with substantive content, no placeholders
+    - All SOAP sections: populated with substantive content, no placeholders
     - Requirements Traceability: covers every REQ-* key
     - Every significant decision: has a corresponding ADR
     - All ADRs: have a valid status field
     - Risk Register: entries complete and credible
     - Open issues: have owners or resolved-by statements
-    - No contradictions between SAD sections
+    - No contradictions between SOAP sections
     - No violations of project constraints
     - Source analysis complete: SA-RD-001/002/003 findings recorded and disposed
-    - Architecture diagrams: two Mermaid code blocks present in the SAD —
+    - Architecture diagrams: two Mermaid code blocks present in the SOAP —
       component diagram in Architecture Overview, data model diagram in Data Model.
       Both consistent with prose (AI-RD-009)
     - ADR depth: each ADR has ≥2 evaluated alternatives with trade-offs, concrete
@@ -534,9 +534,9 @@ agent_guidance: |
       explicit, no implicit technology assumptions (AI-RD-013)
 
   STEP 6 — PRESENT FOR HUMAN GATE REVIEW
-  After auto checks and AI checks pass, present the complete SAD and ADR set
+  After auto checks and AI checks pass, present the complete SOAP and ADR set
   via /jupiter:review. Explicitly request:
-    - Lead architect approval of the SAD (HG-RD-002)
+    - Lead architect approval of the SOAP (HG-RD-002)
     - Lead architect ratification of all ADRs: proposed → accepted or superseded (HG-RD-003)
     - Confirmation that stakeholder review has been completed (HG-RD-004)
   Do not mark the phase complete without all human gate checks confirmed.

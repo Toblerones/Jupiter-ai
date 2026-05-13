@@ -45,7 +45,7 @@ Welcome to Jupiter. What would you like to do?
      — explore a question or unknown without committing to a full initiative
 
   4. Assess an existing artifact
-     — evaluate a SAD, requirements doc, or ADR against project constraints
+     — evaluate a SOAP, requirements doc, or ADR against project constraints
 
   5. Import existing requirements
      — normalise a business requirements document; intent derived automatically
@@ -73,7 +73,7 @@ Write the answer to `workspace/INTENT.md` Problem Statement. Create a child init
 ```
 How would you like to provide the artifact?
 
-  A. File path  — local file (SAD, requirements doc, ADR, or equivalent)
+  A. File path  — local file (SOAP, requirements doc, ADR, or equivalent)
   B. Confluence — paste a Confluence page URL and Jupiter will fetch it
 
 Enter A or B (or press Enter for A):
@@ -213,7 +213,7 @@ Ask these questions **one at a time**. Accept each answer before asking the next
 (Name and role. This person confirms requirements are correct.)
 
 **Q3: Who is the lead architect?**
-(Name. This person approves the SAD and ratifies ADRs.)
+(Name. This person approves the SOAP and ratifies ADRs.)
 
 **Q4: Are there any compliance or regulatory obligations for this project?**
 (Examples: GDPR, PCI-DSS, SOX, ISO 27001. If none, say "None".)
@@ -323,7 +323,7 @@ Walk phase states in order. The first matching condition determines the action.
 | `REQUIREMENTS_LOOPING` | `phases.requirements.status == in_progress` | Run `/jupiter:iterate --phase requirements` |
 | `REQUIREMENTS_READY` | `phases.requirements.status == ready_for_review` | Prompt: "Requirements are ready for review." → Run `/jupiter:review` |
 | `DESIGN_IN_PROGRESS` | `phases.requirements.status == complete` AND `phases.design.status == in_progress` OR `phases.design.status == not_started` | Run `/jupiter:iterate --phase design` |
-| `DESIGN_READY` | `phases.design.status == ready_for_review` | Prompt: "SAD is ready for panel review." → Run `/jupiter:review --panel` |
+| `DESIGN_READY` | `phases.design.status == ready_for_review` | Prompt: "SOAP is ready for panel review." → Run `/jupiter:review --panel` |
 | `DESIGN_COMPLETE` | `phases.design.status == complete` | Show completion → suggest `/jupiter:gaps` then `/jupiter:handoff` |
 | `BLOCKED` | Any phase `status == blocked` | Surface the blocker from the last gate report. Do not auto-iterate. |
 | `BUDGET_EXPIRED` | Any phase `status == budget_expired` | Prompt: "Time-box reached." → Run `/jupiter:review` to record findings |

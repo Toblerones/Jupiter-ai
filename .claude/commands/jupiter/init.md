@@ -67,7 +67,7 @@ Ask these questions one at a time. Accept answers before asking the next.
 (Name and role. This person confirms requirements are correct.)
 
 **Q3: Who is the lead architect?**
-(Name. This person approves the SAD and ratifies ADRs.)
+(Name. This person approves the SOAP and ratifies ADRs.)
 
 **Q4: Are there any compliance or regulatory obligations for this project?**
 (Examples: GDPR, PCI-DSS, SOX, ISO 27001. If none, say "None".)
@@ -159,11 +159,11 @@ phases:
 
   design:
     status: not_started
-    artifact: "workspace/artifacts/design/{initiative-id}-SAD.md"
+    artifact: "workspace/artifacts/design/{initiative-id}-SOAP.md"
     iteration_count: 0
     gate_result: null
     human_gate_status:           # tracks each design human gate independently
-      HG-RD-002: pending         # SAD approved
+      HG-RD-002: pending         # SOAP approved
       HG-RD-003: pending         # ADRs ratified
       HG-RD-004: pending         # stakeholder review complete
 
@@ -196,7 +196,7 @@ phases:
 
   design:
     status: not_started
-    artifact: "workspace/artifacts/design/{initiative-id}-SAD.md"
+    artifact: "workspace/artifacts/design/{initiative-id}-SOAP.md"
     iteration_count: 0
     gate_result: null
     human_gate_status:

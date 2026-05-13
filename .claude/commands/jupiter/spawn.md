@@ -183,5 +183,5 @@ Next steps:
 To fold back findings:
   - For a spike: create an ADR in workspace/artifacts/design/adrs/ citing the spike report.
   - For a discovery: update workspace/INTENT.md or the requirements artifact with new understanding.
-  - For a poc: update the relevant design decision or open issue in the parent SAD.
+  - For a poc: update the relevant design decision or open issue in the parent SOAP.
 ```

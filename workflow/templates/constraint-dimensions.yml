@@ -3,7 +3,7 @@
 # This file defines the architecture constraint dimensions every Jupiter design
 # must explicitly resolve. It is loaded as context at every design iteration.
 #
-# Mandatory dimensions MUST be resolved in the SAD as one of:
+# Mandatory dimensions MUST be resolved in the SOAP as one of:
 #   1. Decided   — a new ADR in this initiative resolves it
 #   2. Inherited — already resolved by a prior ADR or by the current_binding below
 #   3. Untouched — this initiative does not affect this dimension (state explicitly)

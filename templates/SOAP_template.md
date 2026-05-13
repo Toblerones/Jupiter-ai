@@ -1,11 +1,11 @@
-# Solution Architecture Document (SAD)
+# Solution On A Page (SOAP)
 
 <!-- Metadata — update all fields before human gate review -->
 
 | Field          | Value                                                          |
 |----------------|----------------------------------------------------------------|
 | Initiative     | [REPLACE WITH initiative-id]                                   |
-| SAD Version    | [REPLACE WITH version, e.g. 0.1.0-draft]                      |
+| SOAP Version   | [REPLACE WITH version, e.g. 0.1.0-draft]                      |
 | Date           | [REPLACE WITH date of this version, ISO 8601]                  |
 | Lead Architect | [REPLACE WITH full name]                                       |
 | Status         | draft \| in_review \| approved \| superseded                   |
@@ -89,7 +89,7 @@
 
 ## 5. Requirements Traceability
 
-*Coverage table mapping every REQ-* key to its component and where it is addressed in this SAD.*
+*Coverage table mapping every REQ-* key to its component and where it is addressed in this SOAP.*
 
 | REQ Key            | Description                              | Type | Component  | Addressed In                |
 |--------------------|------------------------------------------|------|------------|-----------------------------|

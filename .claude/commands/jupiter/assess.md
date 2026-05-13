@@ -19,7 +19,7 @@ Evaluate an externally-produced artifact from the perspective of a Domain Soluti
 ### Step 1 — Capture engagement brief
 
 Ask:
-> "In one or two sentences, what is this assessment engagement? (e.g. 'Review a SAD submitted by the payments lead against GDPR and internal policy requirements.')"
+> "In one or two sentences, what is this assessment engagement? (e.g. 'Review a SOAP submitted by the payments lead against GDPR and internal policy requirements.')"
 
 Write the response to `workspace/INTENT.md` as the Problem Statement (create the file if it does not exist, using the standard INTENT.md format with other sections left as `[To be elaborated.]`). This gives the loop agent framing for the assessment.
 
@@ -36,13 +36,13 @@ Copy the artifact to `workspace/artifacts/assessment/inbox/{filename}` so the or
 
 Read the artifact. Based on its content, structure, and purpose, infer which of the three assessment types applies:
 
-- **(A) Architecture/Design** — solution architecture document (SAD), architecture decision record (ADR), component map, technical design, or similar design artifact
+- **(A) Architecture/Design** — solution on a page (SOAP), architecture decision record (ADR), component map, technical design, or similar design artifact
 - **(B) Engineering Process** — process definition, procedure, runbook, operating model component, deployment process, or similar procedural document
 - **(C) Requirements/Analysis** — business requirements document (BRD), functional requirements, user stories, analysis document, or similar artifact that specifies what a system must do
 
 Present your inference to the architect:
 
-> "I've read the artifact. Based on [brief evidence — e.g. 'its component diagrams, SAD structure, and architecture decision sections'], this appears to be an **Architecture/Design** document.
+> "I've read the artifact. Based on [brief evidence — e.g. 'its component diagrams, SOAP structure, and architecture decision sections'], this appears to be an **Architecture/Design** document.
 >
 > Please confirm the assessment type:
 > **(A) Architecture/Design** — evaluate design against requirements baseline and constraints

@@ -1,6 +1,6 @@
 # Jupiter
 
-An AI-assisted architecture governance engine. Jupiter helps architects deliver structured, traceable architecture work — from problem statement through requirements to a ratified Solution Architecture Document (SAD).
+An AI-assisted architecture governance engine. Jupiter helps architects deliver structured, traceable architecture work — from problem statement through requirements to a ratified Solution On A Page (SOAP).
 
 Jupiter runs on Claude Code. Every phase of the architecture workflow is governed by gate checks. Human approval is required at every phase transition. The architect stays in control.
 
@@ -11,7 +11,7 @@ Jupiter runs on Claude Code. Every phase of the architecture workflow is governe
 Jupiter manages one architecture initiative at a time through three phases:
 
 ```
-Intent  →  Requirements  →  Design (SAD + ADRs)
+Intent  →  Requirements  →  Design (SOAP + ADRs)
 ```
 
 At each phase, the loop agent:
@@ -43,7 +43,7 @@ The architect drives every phase transition. Jupiter does the structured work.
 /jupiter:review
 
 # 6. Continue through design
-/jupiter:iterate   # produces SAD + ADRs
+/jupiter:iterate   # produces SOAP + ADRs
 /jupiter:review --panel  # reviewer panel + architect approval
 
 # 7. Check traceability
@@ -131,7 +131,7 @@ workspace/
   initiatives/{id}.yml             ← machine-readable initiative state
   artifacts/
     requirements/{id}-requirements.md
-    design/{id}-SAD.md
+    design/{id}-SOAP.md
     design/adrs/ADR-{NNN}-{slug}.md
     gate-reports/{id}-{phase}-latest.json  ← latest gate report (overwritten each iteration)
   assessment/inbox/                ← drop externally-produced artifacts here

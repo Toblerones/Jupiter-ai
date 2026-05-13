@@ -1,7 +1,7 @@
 # Jupiter Profile — Architecture
 # Standard profile for architecture governance work.
 # All three phases active. Human gate required on every phase.
-# Use this for any initiative that produces a ratified SAD.
+# Use this for any initiative that produces a ratified SOAP.
 
 version: "3.0"
 id: architecture
@@ -9,7 +9,7 @@ label: "Architecture Governance"
 description: >
   Full architecture governance workflow: Intent → Requirements → Design.
   Human gate required at every phase transition. Reviewer panel available
-  on all phases. Produces a ratified SAD and a set of accepted ADRs.
+  on all phases. Produces a ratified SOAP and a set of accepted ADRs.
 
 phases:
   include: [intent, requirements, design]
@@ -52,7 +52,7 @@ output:
     artifact: "workspace/artifacts/requirements/{initiative_id}-requirements.md"
     template: templates/requirements_template.md
   design:
-    artifact: "workspace/artifacts/design/{initiative_id}-SAD.md"
+    artifact: "workspace/artifacts/design/{initiative_id}-SOAP.md"
     adrs: "workspace/artifacts/design/adrs/"
-    template_sad: templates/SAD_template.md
+    template_soap: templates/SOAP_template.md
     template_adr: templates/ADR_template.md

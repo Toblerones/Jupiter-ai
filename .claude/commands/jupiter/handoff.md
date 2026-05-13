@@ -25,14 +25,14 @@ Load `workspace/initiatives/{id}.yml`. All phases in the active profile's `phase
 
 **Check 2: Full requirements coverage**
 Run the same coverage check as `/jupiter:gaps`:
-- Every REQ-* key must appear in the SAD Requirements Traceability table (§5).
+- Every REQ-* key must appear in the SOAP Requirements Traceability table (§5).
 - Coverage must be 100%. Any uncovered requirement blocks the handoff.
 
 **Check 3: All ADRs ratified**
 Every ADR in `workspace/artifacts/design/adrs/` must have `Status: Accepted` or `Status: Superseded`. No ADR may have `Status: Proposed` at handoff time.
 
 **Check 4: Stakeholder Approval Record populated**
-The SAD §12 (Stakeholder Approval Record) must have at least one row with a decision of "Approved". An empty or unsigned approval record blocks the handoff.
+The SOAP §12 (Stakeholder Approval Record) must have at least one row with a decision of "Approved". An empty or unsigned approval record blocks the handoff.
 
 ### Step 2 — Print readiness check results
 
@@ -67,7 +67,7 @@ handoff:
   artifacts:
     intent: workspace/INTENT.md
     requirements: "workspace/artifacts/requirements/{id}-requirements.md"
-    sad: "workspace/artifacts/design/{id}-SAD.md"
+    soap: "workspace/artifacts/design/{id}-SOAP.md"
     adrs:
       - "workspace/artifacts/design/adrs/ADR-001-{slug}.md"
       - "workspace/artifacts/design/adrs/ADR-002-{slug}.md"
@@ -81,7 +81,7 @@ handoff:
     adrs_ratified: {n}
 
   stakeholder_approvals:
-    - name: "{from SAD §12}"
+    - name: "{from SOAP §12}"
       role: "{role}"
       decision: Approved
       date: "{date}"
@@ -112,7 +112,7 @@ Date:       {ISO-8601}
 Artifacts:
   Intent:        workspace/INTENT.md
   Requirements:  workspace/artifacts/requirements/{id}-requirements.md
-  SAD:           workspace/artifacts/design/{id}-SAD.md
+  SOAP:           workspace/artifacts/design/{id}-SOAP.md
   ADRs ({n}):    workspace/artifacts/design/adrs/
 
 Coverage:   100% ({n}/{n} requirements)

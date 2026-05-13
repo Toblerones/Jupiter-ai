@@ -20,7 +20,7 @@ Jupiter is accessed through Claude Code slash commands in `.claude/commands/jupi
 |-------|---------|---------------------|
 | Intent | `workspace/INTENT.md` — problem statement and desired outcomes | Yes |
 | Requirements | `workspace/artifacts/requirements/{id}-requirements.md` — structured, tech-agnostic requirements | Yes |
-| Design | `workspace/artifacts/design/{id}-SAD.md` + ADRs | Yes |
+| Design | `workspace/artifacts/design/{id}-SOAP.md` + ADRs | Yes |
 
 ### Intent is loop-produced
 
@@ -30,7 +30,7 @@ This means the architect describes the problem; the loop agent draws out the bus
 
 ### Design phase
 
-The design phase produces the full SAD and ADRs in one flow. The loop agent loads the SAD template from `templates/SAD_template.md` as context and writes every section with substantive content. The architect approves the SAD, ratifies all ADRs, and confirms stakeholder review (HG-RD-002, HG-RD-003, HG-RD-004) via `/jupiter:review --panel`. The design phase is complete only when all three design human gates are approved.
+The design phase produces the full SOAP and ADRs in one flow. The loop agent loads the SOAP template from `templates/SOAP_template.md` as context and writes every section with substantive content. The architect approves the SOAP, ratifies all ADRs, and confirms stakeholder review (HG-RD-002, HG-RD-003, HG-RD-004) via `/jupiter:review --panel`. The design phase is complete only when all three design human gates are approved.
 
 ### Gate checks
 
@@ -100,7 +100,7 @@ workspace/
     requirements/
       {id}-requirements.md         ← requirements artifact
     design/
-      {id}-SAD.md                  ← Solution Architecture Document
+      {id}-SOAP.md                  ← Solution On A Page (SOAP)
       adrs/
         ADR-{NNN}-{slug}.md        ← Architecture Decision Records
     spawn/

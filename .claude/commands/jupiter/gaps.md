@@ -1,6 +1,6 @@
 # /jupiter:gaps — REQ key traceability check across requirements and design
 
-Traceability gap analysis. Checks REQ key coverage across the requirements artifact, SAD, and ADRs. Identifies requirements with no corresponding design coverage.
+Traceability gap analysis. Checks REQ key coverage across the requirements artifact, SOAP, and ADRs. Identifies requirements with no corresponding design coverage.
 
 ## Usage
 
@@ -32,7 +32,7 @@ Total count: {n} requirements.
 ### Step 2 — Load design artifacts
 
 Load:
-- `workspace/artifacts/design/{id}-SAD.md` (if exists)
+- `workspace/artifacts/design/{id}-SOAP.md` (if exists)
 - All `workspace/artifacts/design/adrs/ADR-*.md` files (if exist)
 
 If no design artifacts exist yet, report that and skip to the summary.
@@ -40,9 +40,9 @@ If no design artifacts exist yet, report that and skip to the summary.
 ### Step 3 — Check coverage
 
 For each REQ-* key from the requirements inventory:
-1. Search for the key in the Requirements Traceability table (§5) of the SAD.
+1. Search for the key in the Requirements Traceability table (§5) of the SOAP.
 2. Search for the key in all ADR files (in "Requirements addressed" or inline references).
-3. Record: covered (found in SAD traceability table) | partial (found in ADRs but not SAD traceability table) | uncovered (not found anywhere in design artifacts)
+3. Record: covered (found in SOAP traceability table) | partial (found in ADRs but not SOAP traceability table) | uncovered (not found anywhere in design artifacts)
 
 ### Step 4 — Check ADR status
 
@@ -67,7 +67,7 @@ Initiative: {id}
 Requirements Inventory: {n} total
 
 Coverage:
-  Covered (in SAD traceability table):  {n}  ({pct}%)
+  Covered (in SOAP traceability table):  {n}  ({pct}%)
   Partial (in ADRs only):               {n}  ({pct}%)
   Uncovered (not in design artifacts):  {n}  ({pct}%)
 
@@ -76,13 +76,13 @@ Uncovered Requirements:
   REQ-F-{DOM}-001   {description}
   REQ-NFR-{DOM}-001 {description}
   ...
-  Action: Run /jupiter:iterate to ensure these requirements are addressed in the SAD.
+  Action: Run /jupiter:iterate to ensure these requirements are addressed in the SOAP.
 
 {if partial > 0:}
-Partially Covered (in ADRs but missing from SAD traceability table):
+Partially Covered (in ADRs but missing from SOAP traceability table):
   REQ-F-{DOM}-002   {description} — found in ADR-003 but not in §5 traceability table
   ...
-  Action: Add these to the Requirements Traceability table in the SAD.
+  Action: Add these to the Requirements Traceability table in the SOAP.
 
 ADR Status:
   {n} ADRs total
@@ -91,7 +91,7 @@ ADR Status:
   {n} Superseded
 
 {if all covered and no proposed ADRs:}
-Coverage: complete. All {n} requirements are covered in the SAD traceability table.
+Coverage: complete. All {n} requirements are covered in the SOAP traceability table.
 ADRs: all ratified.
 Ready for /jupiter:handoff.
 ```

@@ -42,12 +42,12 @@ phases:
     sequence: 3
     label: Design
     description: >
-      Produce the Solution Architecture Document (SAD) and Architecture Decision Records (ADRs).
-      The SAD structure is defined by templates/SAD_template.md, loaded as context.
+      Produce the Solution On A Page (SOAP) and Architecture Decision Records (ADRs).
+      The SOAP structure is defined by templates/SOAP_template.md, loaded as context.
       The loop agent writes every section with substantive content in one flow.
     artifact:
-      path: "workspace/artifacts/design/{initiative_id}-SAD.md"
-      type: solution_architecture_document
+      path: "workspace/artifacts/design/{initiative_id}-SOAP.md"
+      type: solution_on_a_page
     sub_artifacts:
       adrs:
         path: "workspace/artifacts/design/adrs/"

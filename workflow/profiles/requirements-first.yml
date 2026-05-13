@@ -11,7 +11,7 @@ description: >
   requirements document (BRD, user story set, or equivalent). The loop agent reads the
   raw document, derives the intent statement, normalises requirements to Jupiter format,
   and runs gate checks to surface gaps. Human gate required at every phase transition.
-  Produces a ratified SAD and a set of accepted ADRs.
+  Produces a ratified SOAP and a set of accepted ADRs.
 
 phases:
   include: [requirements, design]
@@ -66,7 +66,7 @@ output:
     artifact: "workspace/artifacts/requirements/{initiative_id}-requirements.md"
     template: templates/requirements_template.md
   design:
-    artifact: "workspace/artifacts/design/{initiative_id}-SAD.md"
+    artifact: "workspace/artifacts/design/{initiative_id}-SOAP.md"
     adrs: "workspace/artifacts/design/adrs/"
-    template_sad: templates/SAD_template.md
+    template_soap: templates/SOAP_template.md
     template_adr: templates/ADR_template.md

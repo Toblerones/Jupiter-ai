@@ -1,7 +1,7 @@
 # Jupiter Profile — Discovery
 # Time-boxed exploration profile. Use when the problem space is not yet
 # understood well enough to write intent. Produces an exploration report,
-# not a SAD. Findings are folded back to a parent initiative manually.
+# not a SOAP. Findings are folded back to a parent initiative manually.
 # Typically spawned via /jupiter:spawn --type discovery
 
 version: "3.0"

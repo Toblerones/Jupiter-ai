@@ -36,9 +36,9 @@ All three profiles have loop-produced intent. The seed (one or two sentences wri
 
 Load project context from `workspace/context/project.yml`. Per the active profile's context density setting, also load:
 - Required: `workspace/context/policy/` (always load all files)
-- Required for design phase: `workspace/context/constraint-dimensions.yml` (read by AI-RD-008; mandatory dimensions must be resolved in the SAD)
+- Required for design phase: `workspace/context/constraint-dimensions.yml` (read by AI-RD-008; mandatory dimensions must be resolved in the SOAP)
 - Optional (load if present): `workspace/context/standards/`, `workspace/context/landscape/`, `workspace/context/adrs/`, `workspace/context/glossary/`
-- Optional (load if present): `templates/` (artifact templates — ADR_template.md, SAD_template.md, requirements_template.md)
+- Optional (load if present): `templates/` (artifact templates — ADR_template.md, SOAP_template.md, requirements_template.md)
 
 Record which context files were loaded (paths and presence). Run `engine/context.py scan` if you need an aggregate hash for the iteration record.
 
