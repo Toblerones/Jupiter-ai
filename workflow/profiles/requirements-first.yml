@@ -46,6 +46,9 @@ intent:
   confidence_field: phases.requirements.intent_confidence_note
 
 context:
+  # density: currently a label only — describes profile intent (standard | light | minimal | full)
+  # but does not drive loop behavior. The required/optional lists below are what the loop honors.
+  # Future: may become functional as a token-budget knob or per-folder file cap.
   density: standard
   required:
     - workspace/context/project.yml
@@ -55,6 +58,7 @@ context:
     - workspace/context/landscape/
     - workspace/context/adrs/
     - workspace/context/glossary/
+    - workspace/context/data-products/
 
 output:
   intent:

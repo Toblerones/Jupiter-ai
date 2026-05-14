@@ -48,12 +48,16 @@ iteration:
     Surface current findings and stop. Discovery has a fixed time box.
 
 context:
+  # density: currently a label only — describes profile intent (standard | light | minimal | full)
+  # but does not drive loop behavior. The required/optional lists below are what the loop honors.
+  # Future: may become functional as a token-budget knob or per-folder file cap.
   density: minimal
   required:
     - workspace/context/project.yml
   optional:
     - workspace/context/landscape/
     - workspace/context/glossary/
+    - workspace/context/data-products/
 
 parent_linkage:
   enabled: true

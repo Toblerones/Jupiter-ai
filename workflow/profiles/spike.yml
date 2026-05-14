@@ -49,12 +49,16 @@ iteration:
     learned. Note confidence level explicitly. Do not continue beyond the time box.
 
 context:
+  # density: currently a label only — describes profile intent (standard | light | minimal | full)
+  # but does not drive loop behavior. The required/optional lists below are what the loop honors.
+  # Future: may become functional as a token-budget knob or per-folder file cap.
   density: minimal
   required:
     - workspace/context/project.yml
   optional:
     - workspace/context/standards/
     - workspace/context/adrs/
+    - workspace/context/data-products/
 
 parent_linkage:
   enabled: true

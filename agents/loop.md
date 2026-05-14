@@ -34,11 +34,15 @@ All three profiles have loop-produced intent. The seed (one or two sentences wri
 
 **Requirements-first profile:** When the active profile is `requirements-first` and the current phase is `requirements`, use `workflow/gates/ingest-requirements.yml`. The source artifact is the raw business requirements document at `initiative.source_document` — not a Jupiter INTENT.md. The loop agent derives INTENT.md as a by-product of the first iteration (see Step 3 below).
 
-Load project context from `workspace/context/project.yml`. Per the active profile's context density setting, also load:
-- Required: `workspace/context/policy/` (always load all files)
-- Required for design phase: `workspace/context/constraint-dimensions.yml` (read by AI-RD-008; mandatory dimensions must be resolved in the SOAP)
-- Optional (load if present): `workspace/context/standards/`, `workspace/context/landscape/`, `workspace/context/adrs/`, `workspace/context/glossary/`
-- Optional (load if present): `templates/` (artifact templates — ADR_template.md, SOAP_template.md, requirements_template.md)
+Load context per the active profile's `context` block in `workflow/profiles/{profile}.yml`:
+
+- **`context.required`** — every path listed here must be loaded. For a directory, load all files inside it (skip `.gitkeep` and empty files). If a required path is missing or unreadable, surface a Block and stop — the profile declares this context is necessary.
+- **`context.optional`** — every path listed here is loaded if present. If a directory does not exist or is empty, skip it silently. Do not warn about missing optional context.
+- **Paths not listed in either block are not loaded for this profile**, even if files exist in those directories. The profile decides the context surface — adding a folder to the workspace does not make it visible to the loop unless the profile lists it.
+
+Design phase special case: when the current phase is `design`, always also load `workspace/context/constraint-dimensions.yml` regardless of whether the profile lists it. AI-RD-008 in `workflow/gates/requirements-design.yml` reads this file directly to enforce mandatory-dimension resolution in the SOAP; the loop cannot evaluate that check without it.
+
+Templates: load the artifact templates referenced in the profile's `output.{phase}` block (e.g. `template_soap`, `template_adr`, `template`). These ship with the engine under `templates/` and are not part of the profile's context block.
 
 Record which context files were loaded (paths and presence). Run `engine/context.py scan` if you need an aggregate hash for the iteration record.
 

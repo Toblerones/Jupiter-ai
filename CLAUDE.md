@@ -86,11 +86,13 @@ workspace/
   log.jsonl                        ← append-only activity log (source of truth for state)
   context/
     project.yml                    ← project identity and constraints
+    constraint-dimensions.yml      ← mandatory architecture dimensions (loaded in design phase)
     policy/                        ← regulatory and policy documents
     standards/                     ← architecture standards
     landscape/                     ← integration landscape constraints
     adrs/                          ← prior ADRs loaded as guardrails
     glossary/                      ← domain vocabulary
+    data-products/                 ← data product specs (schema + governance: owner, SLA, classification, lineage)
   initiatives/
     {id}.yml                       ← one file per initiative (machine-readable state)
   state/
