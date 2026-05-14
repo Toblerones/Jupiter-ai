@@ -28,28 +28,43 @@ The architect drives every phase transition. Jupiter does the structured work.
 ## Quick start
 
 ```bash
-# 1. Initialise a workspace
-/jupiter:init --project my-initiative
+# 1. Launch the primary entry point — Jupiter detects state and routes automatically
+/jupiter:start
+```
 
-# 2. Edit workspace/INTENT.md with the problem statement
+On first run, `/jupiter:start` presents a menu:
 
-# 3. Iterate — Jupiter produces requirements from the intent
+```
+Welcome to Jupiter. What would you like to do?
+
+  1. Start a new architecture initiative
+  2. Continue existing work
+  3. Quick spike or discovery
+  4. Assess an existing artifact
+  5. Import existing requirements
+
+Enter 1, 2, 3, 4, or 5 (or press Enter for 1):
+```
+
+Option 1 walks through project identity questions, captures a one- or two-sentence intent seed, and runs the first intent iteration. No manual file editing required.
+
+On subsequent runs, `/jupiter:start` detects the current phase and routes to the right next action automatically.
+
+```bash
+# Iterate until gap = 0
 /jupiter:iterate
 
-# 4. Run again if gate checks are still failing
-/jupiter:iterate
-
-# 5. Review — approve, reject, or request refinement
+# Approve, reject, or request refinement
 /jupiter:review
 
-# 6. Continue through design
+# Continue through design
 /jupiter:iterate   # produces SOAP + ADRs
 /jupiter:review --panel  # reviewer panel + architect approval
 
-# 7. Check traceability
+# Check traceability
 /jupiter:gaps
 
-# 8. Generate handoff package
+# Generate handoff package
 /jupiter:handoff --version 1.0.0
 ```
 
@@ -59,7 +74,8 @@ The architect drives every phase transition. Jupiter does the structured work.
 
 | Command | What it does |
 |---------|-------------|
-| `/jupiter:init` | Scaffold workspace, guided project setup, create first initiative |
+| `/jupiter:start` | **Primary entry point** — first run bootstraps workspace + captures intent seed + runs first iteration; subsequent runs detect state and route automatically |
+| `/jupiter:init` | Scaffold workspace only (called by `/jupiter:start` on first run; direct use is for programmatic setup) |
 | `/jupiter:iterate` | Run one loop iteration — produce or refine the current phase artifact + gate report |
 | `/jupiter:status` | Show phase progress, current gate check status, pending escalations, next action |
 | `/jupiter:review` | Record human gate decision (approve / reject / refine) |
@@ -103,6 +119,7 @@ After reading all five reports, the architect makes the approval decision. The p
 | Profile | Phases | Use when |
 |---------|--------|---------|
 | `architecture` | Intent → Requirements → Design | Standard architecture governance work |
+| `requirements-first` | Requirements → Design (intent derived automatically) | Business has provided an existing BRD, user story set, or requirements doc |
 | `assessment` | Assessment only | Evaluating an externally-produced artifact |
 | `discovery` | Intent (exploration variant, 3-iteration budget) | Problem space is not well understood yet |
 | `spike` | Intent (investigation variant, 2-iteration budget) | Answering a specific technical question |
@@ -113,13 +130,21 @@ Spawn child initiatives for discovery and spike work:
 /jupiter:spawn --type discovery --reason "Understand the integration landscape before writing intent"
 ```
 
+### Requirements-first import
+
+Select **Option 5** in the `/jupiter:start` menu when the business has already produced a requirements document. Jupiter reads the raw document, derives an intent statement, normalises requirements to Jupiter REQ format, and runs gate checks to surface gaps. The document can be a local file path or a Confluence page URL — Jupiter fetches Confluence pages automatically.
+
+### Assessing an existing artifact
+
+Select **Option 4** in the `/jupiter:start` menu (or run `/jupiter:assess --artifact <path>`) to evaluate a SOAP, requirements doc, or ADR against project constraints. As with requirements-first import, you can provide a local file path or a Confluence page URL.
+
 ---
 
 ## Workspace layout
 
 ```
 workspace/
-  INTENT.md                        ← edit before first /jupiter:iterate
+  INTENT.md                        ← intent statement (written by loop agent on first iteration)
   log.jsonl                        ← append-only activity log (source of truth)
   context/
     project.yml                    ← project identity and constraints
@@ -129,12 +154,15 @@ workspace/
     adrs/                          ← prior ADRs as guardrails
     glossary/                      ← domain vocabulary
   initiatives/{id}.yml             ← machine-readable initiative state
+  state/
+    gate-reports/{id}-{phase}-latest.json  ← latest gate report (overwritten each iteration)
   artifacts/
     requirements/{id}-requirements.md
     design/{id}-SOAP.md
     design/adrs/ADR-{NNN}-{slug}.md
-    gate-reports/{id}-{phase}-latest.json  ← latest gate report (overwritten each iteration)
-  assessment/inbox/                ← drop externally-produced artifacts here
+    assessment/
+      inbox/                       ← drop externally-produced artifacts here
+      {assessment-id}/findings.md  ← assessment findings report
 ```
 
 ---
@@ -153,14 +181,28 @@ workspace/
 
 ---
 
-## SDK and web frontend readiness
+## Web dashboard
 
-Jupiter's design supports future SDK integration and web frontend rendering without architectural changes:
+Jupiter includes a Next.js web dashboard (`web/`) for read-only visibility into initiative state. It renders:
 
-- `workflow/gates/*.yml` and `workflow/stages.yml` — machine-readable behavior config; an SDK agent reads the same YAML as Claude Code
-- `workspace/initiatives/{id}.yml` — machine-readable initiative state; maps directly to UI status components
+- Phase progress and current gate check status
+- Live activity log (`workspace/log.jsonl`)
+- Gate reports with auto-check and AI-check breakdowns
+- Artifact content (requirements, SOAP, ADRs) via react-markdown
+
+The dashboard is a read-only observer — all writes still go through Claude Code commands. To run it locally:
+
+```bash
+cd web && npm install && npm run dev
+```
+
+### SDK integration
+
+Jupiter's file formats are stable and machine-readable, making Claude API integration straightforward:
+
+- `workflow/gates/*.yml` and `workflow/stages.yml` — behavior config; an SDK agent reads the same YAML as Claude Code
+- `workspace/initiatives/{id}.yml` — machine-readable initiative state
 - `workspace/log.jsonl` — 7 stable event types; tail for real-time feeds
-- `workspace/artifacts/` — markdown content; renderable directly
-- `workspace/context/project.yml` — project identity and constraints
+- `workspace/state/gate-reports/` — persisted gate report JSON per iteration
 
-A web backend trigger calls the Claude API with `agents/loop.md` as the system prompt and loads context from `workflow/` and `workspace/` exactly as Claude Code does. No Jupiter-specific SDK code needed.
+A backend trigger calls the Claude API with `agents/loop.md` as the system prompt and loads context from `workflow/` and `workspace/` exactly as Claude Code does.
