@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jupiter — Assess Your SOAP</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="site-nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="index.html">
+            <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 2 L20 7 L20 17 L11 22 L2 17 L2 7 Z"
+                      fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+                <text x="11" y="15.5" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="800" fill="white">J</text>
+            </svg>
+            Jupiter
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Overview</a>
+            <a href="assess.html" class="active">Assess your SOAP</a>
+            <a href="import.html">Import requirements</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="page-hero amber">
+    <div class="hero-brand">
+        <svg class="hero-hex" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 3 L44 14 L44 34 L24 45 L4 34 L4 14 Z"
+                  fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+            <text x="24" y="30" text-anchor="middle" font-family="system-ui,sans-serif"
+                  font-size="15" font-weight="800" fill="white">J</text>
+        </svg>
+        <h1>Jupiter</h1>
+    </div>
+    <p class="page-title">Get your SOAP reviewed</p>
+    <p class="hero-subtitle">Option 4 — Assess an existing architecture artifact</p>
+    <div class="phase-track" style="margin-top: 20px;">
+        <span class="phase-pill active">Assessment</span>
+        <span class="phase-sep" style="color:rgba(255,255,255,0.3)">→</span>
+        <span class="phase-pill">Findings report</span>
+        <span class="phase-sep" style="color:rgba(255,255,255,0.3)">→</span>
+        <span class="phase-pill">Human gate review</span>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main class="container">
+
+    <!-- Prerequisites -->
+    <div class="prereqs">
+        <div class="prereqs-label">Before you begin</div>
+        <div class="prereqs-grid">
+            <div class="prereq-item"><span class="prereq-check">✓</span> Claude Code CLI installed on your machine</div>
+            <div class="prereq-item"><span class="prereq-check">✓</span> Anthropic API key configured (<code>ANTHROPIC_API_KEY</code>)</div>
+            <div class="prereq-item"><span class="prereq-check">✓</span> Jupiter repository cloned locally</div>
+            <div class="prereq-item"><span class="prereq-check">✓</span> Your SOAP or architecture document ready (file or Confluence URL)</div>
+        </div>
+    </div>
+
+    <!-- What Jupiter does here -->
+    <div class="card">
+        <div class="card-head amber">
+            <span class="card-badge amber">Option 4</span>
+            <h2>Assess an existing artifact</h2>
+            <p>You have already written a SOAP or architecture document. Jupiter reads it, applies structured gate checks across multiple architecture dimensions, and produces a findings report — specific gaps and recommendations, not generic feedback.</p>
+        </div>
+        <div class="card-body">
+
+            <!-- Flow diagram -->
+            <div class="diagram-wrap">
+                <div class="diagram-lbl">End-to-end flow</div>
+                <!--
+                    5 boxes (w=116, h=52), gaps=16, total=5×116+4×16=644, viewBox=660
+                    y=10, center=36. Arrows y=36.
+                -->
+                <svg width="100%" viewBox="0 0 660 72" xmlns="http://www.w3.org/2000/svg"
+                     aria-label="Assessment flow: Your SOAP → /jupiter:start option 4 → File or Confluence URL → Jupiter evaluates → Findings Report">
+                    <defs>
+                        <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5"
+                                orient="auto" markerUnits="userSpaceOnUse">
+                            <polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/>
+                        </marker>
+                    </defs>
+
+                    <!-- 1 – Your SOAP (amber input) -->
+                    <rect x="1"   y="10" width="116" height="52" rx="7" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+                    <text x="59"  y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#92400e">Your SOAP</text>
+                    <text x="59"  y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#a16207">or arch doc</text>
+                    <line x1="119" y1="36" x2="130" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                    <!-- 2 – /jupiter:start -->
+                    <rect x="132" y="10" width="116" height="52" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+                    <text x="190" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1e293b">/jupiter:start</text>
+                    <text x="190" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#64748b">select option 4</text>
+                    <line x1="250" y1="36" x2="261" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                    <!-- 3 – File or URL -->
+                    <rect x="263" y="10" width="116" height="52" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+                    <text x="321" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1e293b">File path or</text>
+                    <text x="321" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#64748b">Confluence URL</text>
+                    <line x1="381" y1="36" x2="392" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                    <!-- 4 – Jupiter evaluates (violet = engine) -->
+                    <rect x="394" y="10" width="116" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+                    <text x="452" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#4c1d95">Jupiter</text>
+                    <text x="452" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#6d28d9">evaluates</text>
+                    <line x1="512" y1="36" x2="523" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                    <!-- 5 – Findings Report (green = output) -->
+                    <rect x="525" y="10" width="134" height="52" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                    <text x="592" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#14532d">Findings Report</text>
+                    <text x="592" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#15803d">findings.md</text>
+                </svg>
+            </div>
+
+            <!-- Steps -->
+            <ol class="steps">
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Open a terminal in the Jupiter repository and launch Claude Code</strong>
+                        <p>Navigate to where you cloned Jupiter, then run: <code>claude</code></p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Run <code>/jupiter:start</code> — type <code>4</code> to assess an existing artifact</strong>
+                        <p>Jupiter presents a welcome menu on first run. Select option 4: <em>"Assess an existing artifact"</em>.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Choose how to provide your document</strong>
+                        <p>Type <code>A</code> for a local file path, or <code>B</code> to paste a Confluence page URL. Jupiter fetches Confluence content automatically — no manual export needed.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Provide the file path or Confluence URL</strong>
+                        <p>Enter the full path to your SOAP or architecture document. Jupiter copies it into the assessment workspace so your original is untouched.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Describe the engagement in 1–2 sentences</strong>
+                        <p>Example: <em>"Review the payments SOAP against GDPR requirements and our internal API gateway standards."</em> This scopes the evaluation for Jupiter — include the audience and known constraints.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Confirm the artifact type when Jupiter asks</strong>
+                        <p>Jupiter reads the document and infers whether it is an <strong>Architecture/Design</strong> doc, <strong>Engineering Process</strong> doc, or <strong>Requirements/Analysis</strong> doc. Confirm or correct its inference — this determines which gate checks apply.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Wait — Jupiter runs gate checks and writes the findings report</strong>
+                        <p>The loop agent evaluates the artifact across all gate check dimensions and writes the report to <code>workspace/artifacts/assessment/.../findings.md</code>.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum amber"></span>
+                    <div class="sbody">
+                        <strong>Review the findings, then close with <code>/jupiter:review</code></strong>
+                        <p>Read the findings report. When satisfied, run <code>/jupiter:review</code> to formally record the assessment outcome and close the initiative.</p>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="output-box">
+                <div class="output-lbl">What you get</div>
+                <ul class="output-list">
+                    <li><span class="odot"></span><span>Structured findings report with pass/fail across each gate check dimension</span></li>
+                    <li><span class="odot"></span><span>Specific gaps by category — design quality, NFR coverage, standards compliance, requirement traceability</span></li>
+                    <li><span class="odot"></span><span>Actionable recommendations for each finding, from a Domain Solution Architect perspective</span></li>
+                    <li><span class="odot"></span><span>Recorded assessment outcome in <code>workspace/log.jsonl</code> for traceability</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+        <div class="card-head">
+            <h2 style="font-size:1.125rem; color: var(--slate-800);">Tips for your assessment session</h2>
+        </div>
+        <div class="card-body">
+            <div class="card-grid">
+                <div class="tip-card">
+                    <strong>Load guardrails for sharper findings</strong>
+                    <p>If you have architecture standards, a landscape map, or prior ADRs, load them into <code>workspace/context/</code> before running. Jupiter uses these to evaluate the artifact against your organisation's actual constraints, not generic ones.</p>
+                </div>
+                <div class="tip-card">
+                    <strong>Assessments are isolated</strong>
+                    <p>Each assessment creates its own initiative (<code>{parent}-assessment-001</code>) inside the workspace. Your main initiative is unaffected. You can assess multiple SOAPs in sequence without interference.</p>
+                </div>
+                <div class="tip-card">
+                    <strong>Iterate to deepen the findings</strong>
+                    <p>After reading the first findings report, run <code>/jupiter:iterate</code> again to dig deeper into specific gaps. Jupiter re-reads the artifact with the previous findings in context and can surface additional detail.</p>
+                </div>
+                <div class="tip-card">
+                    <strong>No requirements baseline needed</strong>
+                    <p>Assessment does not require a prior requirements artifact. If you have one, add it to <code>workspace/artifacts/requirements/</code> — Jupiter will cross-reference it. If not, Jupiter evaluates the design on its own merits.</p>
+                </div>
+                <div class="tip-card wide">
+                    <strong>Optional: watch progress in the web dashboard</strong>
+                    <p>Jupiter's companion dashboard shows gate check progress, the live activity log, and the findings report as it is written. Run: <code>cd web &amp;&amp; npm install &amp;&amp; npm run dev</code>, then open <code>http://localhost:3000</code>. Read-only — all actions still go through Claude Code commands.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation to other option -->
+    <div style="text-align: center; margin-top: 8px;">
+        <p style="color: var(--slate-500); font-size: 0.9375rem; margin-bottom: 12px;">Ready to let Jupiter write a SOAP from scratch?</p>
+        <a href="import.html" style="display:inline-flex; align-items:center; gap:8px; background: var(--blue-600); color:#fff; text-decoration:none; padding: 10px 20px; border-radius: 8px; font-size:0.9375rem; font-weight:600;">
+            Go to: Import requirements → Jupiter writes your SOAP →
+        </a>
+    </div>
+
+</main>
+
+<footer class="site-footer">
+    Jupiter &mdash; AI-assisted architecture governance &nbsp;&middot;&nbsp; Questions? Contact the team lead.
+</footer>
+
+</body>
+</html>

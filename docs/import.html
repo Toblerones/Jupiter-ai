@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jupiter — Import Requirements</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="site-nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="index.html">
+            <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 2 L20 7 L20 17 L11 22 L2 17 L2 7 Z"
+                      fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+                <text x="11" y="15.5" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="800" fill="white">J</text>
+            </svg>
+            Jupiter
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Overview</a>
+            <a href="assess.html">Assess your SOAP</a>
+            <a href="import.html" class="active">Import requirements</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="page-hero blue">
+    <div class="hero-brand">
+        <svg class="hero-hex" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 3 L44 14 L44 34 L24 45 L4 34 L4 14 Z"
+                  fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+            <text x="24" y="30" text-anchor="middle" font-family="system-ui,sans-serif"
+                  font-size="15" font-weight="800" fill="white">J</text>
+        </svg>
+        <h1>Jupiter</h1>
+    </div>
+    <p class="page-title">Let Jupiter write your SOAP</p>
+    <p class="hero-subtitle">Option 5 — Import a BRD and Jupiter produces requirements + SOAP + ADRs</p>
+    <div class="phase-track" style="margin-top: 20px;">
+        <span class="phase-pill active">Requirements</span>
+        <span class="phase-sep" style="color:rgba(255,255,255,0.3)">→</span>
+        <span class="phase-pill active">Design</span>
+        <span class="phase-sep" style="color:rgba(255,255,255,0.3)">→</span>
+        <span class="phase-pill">SOAP + ADRs</span>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main class="container">
+
+    <!-- Prerequisites -->
+    <div class="prereqs">
+        <div class="prereqs-label">Before you begin</div>
+        <div class="prereqs-grid">
+            <div class="prereq-item"><span class="prereq-check">✓</span> Claude Code CLI installed on your machine</div>
+            <div class="prereq-item"><span class="prereq-check">✓</span> Anthropic API key configured (<code>ANTHROPIC_API_KEY</code>)</div>
+            <div class="prereq-item"><span class="prereq-check">✓</span> Jupiter repository cloned locally</div>
+            <div class="prereq-item"><span class="prereq-check">✓</span> A BRD, user story set, or requirements doc ready (file or Confluence URL)</div>
+        </div>
+    </div>
+
+    <!-- What Jupiter does here -->
+    <div class="card">
+        <div class="card-head blue">
+            <span class="card-badge blue">Option 5</span>
+            <h2>Import existing requirements</h2>
+            <p>You have an existing Business Requirements Document. Jupiter normalises it into structured requirements, then writes the full SOAP and all Architecture Decision Records — with your review and approval at each phase gate.</p>
+        </div>
+        <div class="card-body">
+
+            <!-- ── PHASE 1 ── -->
+            <div class="phase-divider"><span>Phase 1 — Requirements</span></div>
+            <div class="diagram-wrap">
+                <div class="diagram-lbl">Requirements flow</div>
+                <!--
+                    5 boxes (w=116, h=52), gaps=16, total=644, viewBox=660
+                -->
+                <svg width="100%" viewBox="0 0 660 72" xmlns="http://www.w3.org/2000/svg"
+                     aria-label="Requirements flow: Your BRD → /jupiter:start option 5 → 5 project questions → Requirements normalised → Human gate">
+                    <defs>
+                        <marker id="arr1" markerWidth="10" markerHeight="7" refX="9" refY="3.5"
+                                orient="auto" markerUnits="userSpaceOnUse">
+                            <polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/>
+                        </marker>
+                    </defs>
+
+                    <!-- 1 – Your BRD (blue input) -->
+                    <rect x="1"   y="10" width="116" height="52" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+                    <text x="59"  y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1e40af">Your BRD</text>
+                    <text x="59"  y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#1d4ed8">or req's doc</text>
+                    <line x1="119" y1="36" x2="130" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+                    <!-- 2 – /jupiter:start -->
+                    <rect x="132" y="10" width="116" height="52" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+                    <text x="190" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1e293b">/jupiter:start</text>
+                    <text x="190" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#64748b">select option 5</text>
+                    <line x1="250" y1="36" x2="261" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+                    <!-- 3 – Project questions -->
+                    <rect x="263" y="10" width="116" height="52" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+                    <text x="321" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#1e293b">5 project</text>
+                    <text x="321" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#64748b">identity questions</text>
+                    <line x1="381" y1="36" x2="392" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+                    <!-- 4 – Requirements normalised (violet = engine) -->
+                    <rect x="394" y="10" width="116" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+                    <text x="452" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#4c1d95">Requirements</text>
+                    <text x="452" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#6d28d9">normalised</text>
+                    <line x1="512" y1="36" x2="523" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+                    <!-- 5 – Human gate (amber dashed) -->
+                    <rect x="525" y="10" width="134" height="52" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="592" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#854d0e">Human gate</text>
+                    <text x="592" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#92400e">/jupiter:review ✓</text>
+                </svg>
+            </div>
+
+            <ol class="steps">
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Open a terminal in the Jupiter repository and launch Claude Code</strong>
+                        <p>Navigate to where you cloned Jupiter, then run: <code>claude</code></p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Run <code>/jupiter:start</code> — type <code>5</code> to import existing requirements</strong>
+                        <p>Select option 5: <em>"Import existing requirements"</em>.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Provide your BRD as a file path or Confluence URL</strong>
+                        <p>Type <code>A</code> for a local file, or <code>B</code> to paste a Confluence URL. Jupiter fetches Confluence pages automatically and saves the content locally for traceability.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Answer 5 project identity questions</strong>
+                        <p>Jupiter asks one at a time: project name, business owner, lead architect, compliance obligations (e.g. GDPR, PCI-DSS), and any existing architecture constraints. Takes about 3 minutes.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Jupiter normalises your requirements — read the gate report</strong>
+                        <p>The loop agent reads your BRD and produces a structured requirements artifact at <code>workspace/artifacts/requirements/</code> with formal REQ keys (F, NFR, BR, C, S). A gate report shows which checks pass and which gaps remain.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Run <code>/jupiter:iterate</code> if there are gaps — or approve via <code>/jupiter:review</code></strong>
+                        <p>If the gate report shows open gaps, run <code>/jupiter:iterate</code> to address them. When gap = 0 and you are satisfied with the requirements, run <code>/jupiter:review</code> and approve. Jupiter waits for your explicit sign-off before proceeding to the design phase.</p>
+                    </div>
+                </li>
+            </ol>
+
+            <!-- ── PHASE 2 ── -->
+            <div class="phase-divider"><span>Phase 2 — Design</span></div>
+            <div class="diagram-wrap">
+                <div class="diagram-lbl">Design flow</div>
+                <!--
+                    4 boxes: Design begins (w=148), SOAP written (w=162), Panel review (w=162), Complete (w=148)
+                    gaps=16. total=148+16+162+16+162+16+148=668. viewBox=680
+                -->
+                <svg width="100%" viewBox="0 0 680 72" xmlns="http://www.w3.org/2000/svg"
+                     aria-label="Design flow: Design phase begins → Jupiter writes SOAP and ADRs → Panel review 5 domains → SOAP and ADRs complete">
+                    <defs>
+                        <marker id="arr2" markerWidth="10" markerHeight="7" refX="9" refY="3.5"
+                                orient="auto" markerUnits="userSpaceOnUse">
+                            <polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/>
+                        </marker>
+                    </defs>
+
+                    <!-- 1 – Design phase begins (violet) -->
+                    <rect x="1"   y="10" width="148" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+                    <text x="75"  y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#4c1d95">Design phase</text>
+                    <text x="75"  y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#6d28d9">begins automatically</text>
+                    <line x1="151" y1="36" x2="162" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+                    <!-- 2 – SOAP + ADRs written (violet) -->
+                    <rect x="164" y="10" width="162" height="52" rx="7" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+                    <text x="245" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#4c1d95">Jupiter writes</text>
+                    <text x="245" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#6d28d9">SOAP + ADRs</text>
+                    <line x1="328" y1="36" x2="339" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+                    <!-- 3 – Panel review (amber dashed = human gate) -->
+                    <rect x="341" y="10" width="162" height="52" rx="7" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="5,3"/>
+                    <text x="422" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#854d0e">Panel review</text>
+                    <text x="422" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#92400e">5 domains + your approval</text>
+                    <line x1="505" y1="36" x2="516" y2="36" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+                    <!-- 4 – Complete (green = output) -->
+                    <rect x="518" y="10" width="160" height="52" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                    <text x="598" y="33" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600" fill="#14532d">SOAP + ADRs</text>
+                    <text x="598" y="50" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#15803d">complete ✓</text>
+                </svg>
+            </div>
+
+            <ol class="steps steps-from-7">
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Jupiter writes the SOAP and all ADRs</strong>
+                        <p>The loop agent loads your approved requirements and produces the full Solution On A Page — every section with substantive content, not placeholders — plus all Architecture Decision Records with rationale and options considered. This begins automatically after requirements approval.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Run the panel review — <code>/jupiter:review --panel</code></strong>
+                        <p>Five reviewer agents each assess the SOAP from their domain: Enterprise Architect, Business Architect, Data Architect, Solution Architect, and Engineering Lead. Their consolidated findings appear as a structured review report for you to consider before approving.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="snum blue"></span>
+                    <div class="sbody">
+                        <strong>Approve the design — <code>/jupiter:review</code></strong>
+                        <p>Read the panel report and make the call. Run <code>/jupiter:review</code> to record your approval and close the design phase. Your completed SOAP is at <code>workspace/artifacts/design/</code> and ADRs at <code>workspace/artifacts/design/adrs/</code>.</p>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="output-box">
+                <div class="output-lbl">What you get</div>
+                <ul class="output-list">
+                    <li><span class="odot"></span><span>Structured requirements artifact with formal REQ keys (Functional, NFR, Business Rule, Compliance, Security) and full traceability</span></li>
+                    <li><span class="odot"></span><span>Full Solution On A Page (SOAP) — every section written by Jupiter from your approved requirements</span></li>
+                    <li><span class="odot"></span><span>All Architecture Decision Records with rationale, options considered, and ratified status</span></li>
+                    <li><span class="odot"></span><span>Multi-domain reviewer report covering enterprise, business, data, solution, and engineering perspectives</span></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+        <div class="card-head">
+            <h2 style="font-size:1.125rem; color: var(--slate-800);">Tips for your import session</h2>
+        </div>
+        <div class="card-body">
+            <div class="card-grid">
+                <div class="tip-card">
+                    <strong>Load architecture context as guardrails</strong>
+                    <p>When Jupiter asks during setup, load existing standards docs, landscape maps, and prior ADRs. Jupiter uses these when writing the SOAP — the more context loaded, the more organisation-specific the output.</p>
+                </div>
+                <div class="tip-card">
+                    <strong>Human gates are yours to own</strong>
+                    <p>Jupiter never auto-approves. When it says "ready for review", read the artifact. Run <code>/jupiter:iterate</code> to address gaps before approving. Run <code>/jupiter:review</code> when satisfied. This is true for both the requirements gate and the design gate.</p>
+                </div>
+                <div class="tip-card">
+                    <strong>The panel is advisory — you decide</strong>
+                    <p>The five reviewer agents (EA, BA, DA, SA, Engineering Lead) each produce a structured report. Read all five, weigh the findings, and then decide. Run <code>/jupiter:review</code> to record your decision. Approving with open reviewer concerns is allowed — just be deliberate.</p>
+                </div>
+                <div class="tip-card">
+                    <strong>Check traceability before handoff</strong>
+                    <p>After the design is approved, run <code>/jupiter:gaps</code> to verify every REQ key in requirements is addressed in the SOAP. Then run <code>/jupiter:handoff</code> to generate the architecture handoff package.</p>
+                </div>
+                <div class="tip-card wide">
+                    <strong>Optional: watch progress in the web dashboard</strong>
+                    <p>Jupiter's companion dashboard shows phase progress, gate check breakdown, live activity log, and rendered artifact content as Jupiter works. Run: <code>cd web &amp;&amp; npm install &amp;&amp; npm run dev</code>, then open <code>http://localhost:3000</code>. Read-only — all actions still go through Claude Code commands.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation to other option -->
+    <div style="text-align: center; margin-top: 8px;">
+        <p style="color: var(--slate-500); font-size: 0.9375rem; margin-bottom: 12px;">Already have a SOAP written and want Jupiter to review it?</p>
+        <a href="assess.html" style="display:inline-flex; align-items:center; gap:8px; background: var(--amber-600); color:#fff; text-decoration:none; padding: 10px 20px; border-radius: 8px; font-size:0.9375rem; font-weight:600;">
+            Go to: Assess your existing SOAP →
+        </a>
+    </div>
+
+</main>
+
+<footer class="site-footer">
+    Jupiter &mdash; AI-assisted architecture governance &nbsp;&middot;&nbsp; Questions? Contact the team lead.
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jupiter — Architecture Governance Engine</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── INDEX-SPECIFIC STYLES ─────────────────────── */
+
+        /* Concept diagram (HTML/CSS layout) */
+        .concept {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            align-items: stretch;
+            gap: 0;
+            margin-bottom: 0;
+        }
+
+        .concept-col {
+            border-radius: 12px;
+            padding: 20px 18px;
+        }
+
+        .concept-col.inputs {
+            background: var(--blue-50);
+            border: 1.5px solid var(--blue-200);
+        }
+
+        .concept-col.engine {
+            background: var(--violet-100);
+            border: 2px solid var(--violet-600);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .concept-col.outputs {
+            background: var(--green-50);
+            border: 1.5px solid var(--green-200);
+        }
+
+        .concept-col-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid;
+        }
+
+        .inputs .concept-col-title  { color: var(--blue-600);  border-color: var(--blue-200); }
+        .outputs .concept-col-title { color: var(--green-600); border-color: var(--green-200); }
+
+        .concept-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .concept-items li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--slate-700);
+            margin-bottom: 9px;
+            line-height: 1.4;
+        }
+
+        .concept-items li:last-child { margin-bottom: 0; }
+
+        .concept-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        .inputs  .concept-dot { background: var(--blue-400); }
+        .outputs .concept-dot { background: var(--green-500); }
+        .concept-dot.highlight { background: var(--amber-500); }
+        .concept-dot.gate      { background: var(--yellow-600); }
+
+        .concept-item-note {
+            font-size: 0.8125rem;
+            color: var(--slate-400);
+            font-style: italic;
+        }
+
+        /* Concept arrow between columns */
+        .concept-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+        }
+
+        .concept-arrow svg { width: 40px; height: 20px; }
+
+        /* Jupiter engine column */
+        .engine-hex {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 14px;
+        }
+
+        .engine-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            color: var(--violet-900);
+            margin-bottom: 4px;
+        }
+
+        .engine-sub {
+            font-size: 0.8125rem;
+            color: var(--violet-600);
+            margin-bottom: 12px;
+        }
+
+        .engine-checks {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .check-pill {
+            background: rgba(124,58,237,0.1);
+            border: 1px solid var(--violet-300);
+            border-radius: 99px;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--violet-600);
+            text-align: center;
+        }
+
+        /* Gate row in outputs */
+        .concept-items .gate-row {
+            flex-direction: column;
+            gap: 3px;
+            padding-top: 10px;
+            margin-top: 8px;
+            border-top: 1px dashed var(--green-200);
+        }
+
+        .gate-row-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--yellow-800);
+            font-weight: 600;
+        }
+
+        .gate-row-note {
+            font-size: 0.8rem;
+            color: var(--slate-400);
+            padding-left: 14px;
+        }
+
+        /* ── LOOP PATTERN ──────────────────────────────── */
+        .loop-pattern {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .loop-pattern-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--slate-400);
+            margin-bottom: 18px;
+        }
+
+        .loop-steps {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .loop-step {
+            flex: 1;
+            min-width: 140px;
+            background: var(--violet-100);
+            border: 1.5px solid var(--violet-300);
+            border-radius: 9px;
+            padding: 14px 14px 12px;
+            text-align: center;
+        }
+
+        .loop-step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--violet-600);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+        }
+
+        .loop-step-label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--violet-900);
+            line-height: 1.35;
+        }
+
+        .loop-step-sub {
+            font-size: 0.75rem;
+            color: var(--violet-600);
+            margin-top: 3px;
+        }
+
+        .loop-arrow {
+            padding: 0 10px;
+            color: var(--slate-400);
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .loop-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--slate-200);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .loop-back {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+        }
+
+        .loop-back strong { color: var(--violet-600); }
+
+        .gate-trigger {
+            font-size: 0.875rem;
+            background: var(--yellow-100);
+            border: 1px solid var(--amber-200);
+            border-radius: 99px;
+            padding: 4px 14px;
+            color: var(--yellow-800);
+            font-weight: 600;
+        }
+
+        /* ── PHASE JOURNEY ─────────────────────────────── */
+        .phase-journey {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .phase-card {
+            background: #fff;
+            border: 1px solid var(--slate-200);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .phase-card-num {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--slate-400);
+            margin-bottom: 6px;
+        }
+
+        .phase-card-name {
+            font-size: 1.0625rem;
+            font-weight: 700;
+            color: var(--slate-800);
+            margin-bottom: 6px;
+        }
+
+        .phase-card-artifact {
+            display: inline-block;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            background: var(--slate-100);
+            border: 1px solid var(--slate-200);
+            border-radius: 4px;
+            padding: 2px 7px;
+            color: var(--slate-600);
+            margin-bottom: 10px;
+        }
+
+        .phase-card-gate {
+            font-size: 0.8125rem;
+            color: var(--yellow-800);
+            background: var(--yellow-50);
+            border: 1px solid var(--amber-200);
+            border-radius: 99px;
+            padding: 2px 10px;
+            display: inline-block;
+        }
+
+        /* ── PATH CARDS (CTAs) ─────────────────────────── */
+        .path-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .path-card {
+            border-radius: 14px;
+            overflow: hidden;
+            text-decoration: none;
+            display: block;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .path-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 8px 28px rgba(0,0,0,0.07);
+        }
+
+        .path-card-head {
+            padding: 22px 24px 18px;
+        }
+
+        .path-card-head.amber { background: #78350f; }
+        .path-card-head.blue  { background: #1e3a8a; }
+
+        .path-option-num {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 6px;
+        }
+
+        .path-card-head h3 {
+            margin: 0 0 4px;
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .path-card-head p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.65);
+        }
+
+        .path-card-body {
+            background: #fff;
+            padding: 16px 24px 20px;
+            border: 1px solid var(--slate-200);
+            border-top: none;
+        }
+
+        .path-card-body ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 14px;
+        }
+
+        .path-card-body li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--slate-600);
+            margin-bottom: 6px;
+        }
+
+        .path-card-body li::before {
+            content: '→';
+            color: var(--slate-400);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .path-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #fff;
+        }
+
+        .path-cta.amber { background: var(--amber-600); }
+        .path-cta.blue  { background: var(--blue-600); }
+
+        /* Section title */
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin: 0 0 16px;
+        }
+
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: var(--slate-500);
+            margin: -10px 0 20px;
+        }
+
+        @media (max-width: 768px) {
+            .concept { grid-template-columns: 1fr; }
+            .concept-arrow { transform: rotate(90deg); padding: 8px 0; }
+            .phase-journey { grid-template-columns: 1fr; }
+            .path-cards { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 560px) {
+            .loop-steps { flex-direction: column; align-items: stretch; }
+            .loop-arrow { transform: rotate(90deg); text-align: center; }
+            .loop-footer { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="site-nav">
+    <div class="nav-inner">
+        <a class="nav-brand" href="index.html">
+            <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 2 L20 7 L20 17 L11 22 L2 17 L2 7 Z"
+                      fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+                <text x="11" y="15.5" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="800" fill="white">J</text>
+            </svg>
+            Jupiter
+        </a>
+        <div class="nav-links">
+            <a href="index.html" class="active">Overview</a>
+            <a href="assess.html">Assess your SOAP</a>
+            <a href="import.html">Import requirements</a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="page-hero">
+    <div class="hero-brand">
+        <svg class="hero-hex" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 3 L44 14 L44 34 L24 45 L4 34 L4 14 Z"
+                  fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+            <path d="M24 11 L39 20 L39 36 L24 45 L9 36 L9 20 Z"
+                  fill="rgba(255,255,255,0.06)"/>
+            <text x="24" y="30" text-anchor="middle" font-family="system-ui,sans-serif"
+                  font-size="15" font-weight="800" fill="white">J</text>
+        </svg>
+        <h1>Jupiter</h1>
+    </div>
+    <p class="hero-tagline">AI-assisted architecture governance engine</p>
+    <div class="phase-track">
+        <span class="phase-pill">Intent</span>
+        <span class="phase-sep">→</span>
+        <span class="phase-pill">Requirements</span>
+        <span class="phase-sep">→</span>
+        <span class="phase-pill">Design (SOAP + ADRs)</span>
+    </div>
+</header>
+
+<!-- MAIN -->
+<main class="container">
+
+    <!-- ═══ HOW JUPITER WORKS ═══════════════════════════════ -->
+    <p class="section-title">How Jupiter works</p>
+    <p class="section-subtitle">The same engine, the same pattern — across all phases and use cases.</p>
+
+    <div class="card" style="margin-bottom: 16px;">
+        <div class="card-body" style="padding-top: 24px;">
+
+            <!-- Concept diagram: Inputs → Engine → Outputs -->
+            <div class="concept">
+
+                <!-- LEFT: Inputs -->
+                <div class="concept-col inputs">
+                    <div class="concept-col-title">Context &amp; Guardrails</div>
+                    <ul class="concept-items">
+                        <li><span class="concept-dot"></span> Context files <span class="concept-item-note">(project.yml)</span></li>
+                        <li><span class="concept-dot"></span> Standards &amp; policy</li>
+                        <li><span class="concept-dot"></span> Landscape &amp; ADRs</li>
+                        <li><span class="concept-dot"></span> Data products</li>
+                        <li><span class="concept-dot"></span> Domain glossary</li>
+                        <li><span class="concept-dot highlight"></span> <strong>Your document</strong> <span class="concept-item-note">seed / BRD / SOAP</span></li>
+                    </ul>
+                </div>
+
+                <!-- Arrow → -->
+                <div class="concept-arrow">
+                    <svg viewBox="0 0 40 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="2" y1="10" x2="30" y2="10" stroke="#94a3b8" stroke-width="2"/>
+                        <polygon points="28,6 38,10 28,14" fill="#94a3b8"/>
+                    </svg>
+                </div>
+
+                <!-- CENTER: Jupiter engine -->
+                <div class="concept-col engine">
+                    <svg class="engine-hex" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M30 4 L54 18 L54 46 L30 60 L6 46 L6 18 Z"
+                              fill="rgba(124,58,237,0.12)" stroke="#7c3aed" stroke-width="1.5"/>
+                        <path d="M30 12 L48 22 L48 42 L30 52 L12 42 L12 22 Z"
+                              fill="rgba(124,58,237,0.08)"/>
+                        <text x="30" y="36" text-anchor="middle" font-family="system-ui,sans-serif"
+                              font-size="18" font-weight="800" fill="#6d28d9">J</text>
+                    </svg>
+                    <div class="engine-name">JUPITER</div>
+                    <div class="engine-sub">Loop Agent</div>
+                    <div class="engine-checks">
+                        <span class="check-pill">Auto checks</span>
+                        <span class="check-pill">AI checks</span>
+                    </div>
+                </div>
+
+                <!-- Arrow → -->
+                <div class="concept-arrow">
+                    <svg viewBox="0 0 40 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="2" y1="10" x2="30" y2="10" stroke="#94a3b8" stroke-width="2"/>
+                        <polygon points="28,6 38,10 28,14" fill="#94a3b8"/>
+                    </svg>
+                </div>
+
+                <!-- RIGHT: Outputs -->
+                <div class="concept-col outputs">
+                    <div class="concept-col-title">Every iteration produces</div>
+                    <ul class="concept-items">
+                        <li><span class="concept-dot"></span> Artifact written or updated</li>
+                        <li><span class="concept-dot"></span> Gate report <span class="concept-item-note">(gap count)</span></li>
+                        <li><span class="concept-dot"></span> Delta summary</li>
+                        <li><span class="concept-dot"></span> Activity log event</li>
+                        <li class="gate-row">
+                            <div class="gate-row-label">
+                                <span class="concept-dot gate"></span>
+                                Human gate required
+                            </div>
+                            <div class="gate-row-note">when gap = 0 on all checks</div>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Loop pattern -->
+    <div class="loop-pattern" style="margin-bottom: 40px;">
+        <div class="loop-pattern-title">The loop — same pattern every iteration, every phase</div>
+        <div class="loop-steps">
+            <div class="loop-step">
+                <div class="loop-step-num">1</div>
+                <div class="loop-step-label">Load context<br>&amp; prior artifact</div>
+                <div class="loop-step-sub">all guardrails in scope</div>
+            </div>
+            <div class="loop-arrow">→</div>
+            <div class="loop-step">
+                <div class="loop-step-num">2</div>
+                <div class="loop-step-label">Produce or refine<br>artifact</div>
+                <div class="loop-step-sub">reqs / SOAP / findings</div>
+            </div>
+            <div class="loop-arrow">→</div>
+            <div class="loop-step">
+                <div class="loop-step-num">3</div>
+                <div class="loop-step-label">Run gate checks</div>
+                <div class="loop-step-sub">auto + AI checks</div>
+            </div>
+            <div class="loop-arrow">→</div>
+            <div class="loop-step">
+                <div class="loop-step-num">4</div>
+                <div class="loop-step-label">Report delta<br>&amp; gap count</div>
+                <div class="loop-step-sub">log event appended</div>
+            </div>
+        </div>
+        <div class="loop-footer">
+            <span class="loop-back">↺ <strong>/jupiter:iterate</strong> again if gap &gt; 0</span>
+            <span class="gate-trigger">gap = 0 → run /jupiter:review</span>
+        </div>
+    </div>
+
+    <!-- ═══ THREE-PHASE JOURNEY ══════════════════════════════ -->
+    <p class="section-title">Three-phase delivery</p>
+    <div class="phase-journey" style="margin-bottom: 40px;">
+        <div class="phase-card">
+            <div class="phase-card-num">Phase 1</div>
+            <div class="phase-card-name">Intent</div>
+            <div class="phase-card-artifact">INTENT.md</div><br>
+            <span class="phase-card-gate">Human gate</span>
+        </div>
+        <div class="phase-card">
+            <div class="phase-card-num">Phase 2</div>
+            <div class="phase-card-name">Requirements</div>
+            <div class="phase-card-artifact">{id}-requirements.md</div><br>
+            <span class="phase-card-gate">Human gate</span>
+        </div>
+        <div class="phase-card">
+            <div class="phase-card-num">Phase 3</div>
+            <div class="phase-card-name">Design</div>
+            <div class="phase-card-artifact">{id}-SOAP.md + ADRs</div><br>
+            <span class="phase-card-gate">Panel review + Human gate</span>
+        </div>
+    </div>
+
+    <!-- ═══ WHERE TO START ═══════════════════════════════════ -->
+    <p class="section-title">Where would you like to start?</p>
+    <div class="path-cards">
+
+        <a class="path-card" href="assess.html">
+            <div class="path-card-head amber">
+                <div class="path-option-num">Option 4</div>
+                <h3>Get your SOAP reviewed</h3>
+                <p>Submit an existing architecture doc for structured assessment</p>
+            </div>
+            <div class="path-card-body">
+                <ul>
+                    <li>Works on any existing SOAP, architecture doc, or ADR</li>
+                    <li>Accepts file path or Confluence URL</li>
+                    <li>Gate checks for design quality, NFR coverage, standards compliance</li>
+                    <li>Findings report with specific gaps and recommendations</li>
+                </ul>
+                <span class="path-cta amber">Start assessment guide →</span>
+            </div>
+        </a>
+
+        <a class="path-card" href="import.html">
+            <div class="path-card-head blue">
+                <div class="path-option-num">Option 5</div>
+                <h3>Let Jupiter write your SOAP</h3>
+                <p>Import a BRD and Jupiter produces the full requirements + SOAP</p>
+            </div>
+            <div class="path-card-body">
+                <ul>
+                    <li>Accepts a BRD, user story set, or any requirements doc</li>
+                    <li>Jupiter normalises requirements with formal REQ keys</li>
+                    <li>Full SOAP + ADRs written from approved requirements</li>
+                    <li>Five-domain panel review before final approval</li>
+                </ul>
+                <span class="path-cta blue">Start import guide →</span>
+            </div>
+        </a>
+
+    </div>
+
+</main>
+
+<footer class="site-footer">
+    Jupiter &mdash; AI-assisted architecture governance &nbsp;&middot;&nbsp; Questions? Contact the team lead.
+</footer>
+
+</body>
+</html>
