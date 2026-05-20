@@ -46,6 +46,8 @@ Templates: load the artifact templates referenced in the profile's `output.{phas
 
 Record which context files were loaded (paths and presence). Run `engine/context.py scan` if you need an aggregate hash for the iteration record.
 
+**Peer reviews (load if present):** After loading profile context, check `workspace/state/peer-reviews/{id}-{phase}-peer-*.md`. Load every file found — sorted by peer number ascending. These are independent evaluations produced by separate sessions. Read them as challenger context: they may confirm gate check conclusions, disagree with them, or surface gaps no existing check covers. Peer reviews do not override gate check results — you re-evaluate each check yourself and factor in the challenger findings when applying judgment. If no peer review files exist, skip silently.
+
 ### Step 2 — Check the source artifact (backward check)
 
 Before producing or refining the current artifact, check the source artifact (the previous phase's output) for issues that would undermine the current phase:
@@ -134,6 +136,13 @@ AI Checks:     {pass}/{total} required passing
 
 Human Gate:    PENDING — run /jupiter:review when auto and AI checks pass
 
+Peer Reviews:  {n} loaded | {concur: x} {partial: x} {dissent: x}
+  (omit this line entirely if no peer review files were loaded)
+  peer-1  [{model}] [{session_note or model only if no note}]  CONCUR | PARTIAL | DISSENT
+    Challenger: {summary of disagreements, one line}
+    Additional: {summary of extra gaps found, one line, or "none"}
+  peer-2  ...
+
 Gap:    {n} required checks failing
 Status: LOOPING | READY FOR REVIEW | BLOCKED
 
@@ -205,6 +214,9 @@ Call the Write tool now to write `workspace/state/gate-reports/{initiative-id}-{
     ]
   },
   "human_gate": "pending|approved|rejected",
+  "peer_reviews": [
+    { "peer_review_id": "peer-{n}", "model": "{model-id}", "session_note": "{text or null}", "verdict": "concur|partial|dissent", "challenger_count": {n} }
+  ],
   "narrative": "{plain-text content of the Next: line — one to three sentences, no markdown, no command references}",
   "source_findings": [
     { "finding": "{text}", "disposition": "resolve_with_assumption|flag|spawn|block", "rationale": "{one-line reason}" }
@@ -269,5 +281,7 @@ Field notes:
 4. **Context hash every iteration.** Record the aggregate context hash in the iteration event so context drift is detectable across iterations.
 
 6. **Log is append-only.** Never modify existing lines in `workspace/log.jsonl`. Always append.
+
+7. **Peer reviews are context, not authority.** If a peer review DISAGREEs with a check result, re-evaluate that check independently. You may confirm the gate report or agree with the challenger — but make your own determination. Record which peer reviews were loaded in the gate report JSON `peer_reviews` array so the architect can see what informed the iteration.
 
 7. **Stuck threshold.** If the active profile defines a `stuck_threshold` and you have run that many iterations with no gap reduction, follow the profile's `stuck_action` — surface a status report and stop looping automatically.

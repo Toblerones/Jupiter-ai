@@ -2,10 +2,13 @@
 
 Human gate decision point. Records the architect's approval, rejection, or refinement request for the current phase. Optionally invokes the reviewer panel and/or runs a spec boundary check before the decision.
 
+Run with `--peer` in a **separate session** to act as an independent challenger — loads the same context as the loop agent, evaluates the artifact against the gate report, and writes peer findings. No architect decision is made in peer mode.
+
 ## Usage
 
 ```
 /jupiter:review [--initiative <id>] [--panel] [--spec] [--decision <approve|reject|refine>] [--feedback "<text>"]
+/jupiter:review --peer [--initiative <id>] [--session-note "<text>"]
 ```
 
 **Arguments:**
@@ -14,6 +17,84 @@ Human gate decision point. Records the architect's approval, rejection, or refin
 - `--spec` — run a spec boundary check (verifies requirements are tech-agnostic and complete) before the decision
 - `--decision <approve|reject|refine>` — record the architect's decision directly (skip interactive prompt)
 - `--feedback "<text>"` — attach feedback to a reject or refine decision
+- `--peer` — peer review mode: evaluate artifact and gate report independently, write findings, no decision prompt
+- `--session-note "<text>"` — label this peer session (e.g. "opus session", "fast mode") — recorded in the peer findings file
+
+---
+
+## Peer Mode Execution (--peer)
+
+Run this in a **separate terminal session** from the one running `/jupiter:iterate`. The goal is an independent evaluation with no session bleed from the first session's reasoning.
+
+### Peer Step 1 — Load initiative and gate report
+
+Load `workspace/initiatives/{id}.yml`. Determine current phase and artifact path.
+
+Verify that `workspace/state/gate-reports/{id}-{phase}-latest.json` exists. If missing, stop:
+> "No gate report found for {id} / {phase}. Run /jupiter:iterate in session 1 first."
+
+Read the gate report in full — this is what you are challenging.
+
+### Peer Step 2 — Load context independently
+
+Load the same context the loop agent would load for this phase and profile. Follow the loop agent's Step 1 context rules exactly:
+- Profile's `context.required` paths (all must be present)
+- Profile's `context.optional` paths (load if present, skip silently if not)
+- Design phase: always load `workspace/context/constraint-dimensions.yml`
+- Load the artifact template for reference (do not treat it as the artifact)
+
+Also load the artifact itself (path from the initiative file).
+
+Load any prior peer review files at `workspace/state/peer-reviews/{id}-{phase}-peer-*.md` as additional context — read what prior peer sessions found before forming your own assessment.
+
+Record every file loaded (paths). This becomes the "Context Loaded" section of your findings.
+
+### Peer Step 3 — Independent evaluation
+
+Evaluate the artifact against the gate criteria (`workflow/gates/{phase-transition}.yml`) independently. Run every auto check and AI check yourself — do not rely on the gate report's conclusions.
+
+Then compare your conclusions against the gate report:
+
+- **Agreement**: checks where you reached the same conclusion (pass or fail)
+- **Challenger**: checks where you reached a different conclusion — be specific about why
+- **Additional gaps**: quality issues you found that no existing check covers
+
+Be honest. If the gate report says READY FOR REVIEW but you find a material gap, say so. If it says LOOPING but you think the flagged check actually passes, say that too.
+
+### Peer Step 4 — Auto-increment and write findings
+
+Count existing files at `workspace/state/peer-reviews/{id}-{phase}-peer-*.md` to determine `n` (next peer number, 1-based).
+
+Fill in `templates/peer-review-template.md` with your findings. Set:
+- `peer_review_id`: `peer-{n}`
+- `model`: self-report your model ID (e.g. `claude-sonnet-4-6`, `claude-opus-4-7`)
+- `session_note`: value of `--session-note` if provided, else empty string
+- `timestamp`: current ISO-8601
+
+Write the completed template to:
+`workspace/state/peer-reviews/{id}-{phase}-peer-{n}.md`
+
+Append to `workspace/log.jsonl`:
+```json
+{"event": "peer_review_completed", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}", "peer_review_id": "peer-{n}", "model": "{model-id}", "session_note": "{text or null}", "verdict": "concur|partial|dissent", "challenger_count": {n gaps disagreed or added}}
+```
+
+### Peer Step 5 — Report and hand back
+
+```
+Peer review written: workspace/state/peer-reviews/{id}-{phase}-peer-{n}.md
+  Initiative:   {id}
+  Phase:        {phase}
+  Model:        {model-id}
+  Session note: {text or "(none)"}
+  Verdict:      CONCUR | PARTIAL | DISSENT
+  Challenger:   {n} disagreements
+  Additional:   {n} gaps not in gate report
+
+Return to session 1 and run /jupiter:iterate to load this finding.
+```
+
+This session's work is complete. Do not run `/jupiter:review` (without `--peer`) in this session — the architect decision belongs to session 1.
 
 ---
 
@@ -166,3 +247,15 @@ The human gate is the architect's decision. This command records it — it does 
 The `--panel` flag replaces the v2 consensus-open + consensus-run flow. All five reviewers run sequentially in one command. The architect sees all five reports, then makes the decision. There is no voting threshold — the architect is the decision-maker.
 
 The `--spec` flag replaces the v2 jup-spec-review command. It runs as a pre-check inside this command rather than as a separate flow.
+
+## Notes on peer review
+
+Peer reviews are independent evaluations produced by separate Claude Code sessions. They are not votes — they do not auto-approve or auto-block the gate. They are challenger inputs that session 1's loop agent loads as context on the next `/jupiter:iterate` run.
+
+The flow for N peer opinions:
+1. Session 1 runs `/jupiter:iterate` → gate report written
+2. Sessions 2, 3, 4... each run `/jupiter:review --peer` → peer-1.md, peer-2.md, peer-3.md written
+3. Session 1 runs `/jupiter:iterate` → loads all peer files as context, re-evaluates artifact
+4. Session 1 runs `/jupiter:review` → architect sees consolidated result, decides
+
+There is no required number of peer sessions. Zero peer reviews is valid. The architect decides when enough opinions have been collected before running `/jupiter:review`.
