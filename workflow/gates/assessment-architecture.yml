@@ -1,361 +1,618 @@
-# Jupiter Gate Config — Assessment
-# Defines the checks the loop agent runs when evaluating an externally-produced artifact.
+# Jupiter Gate Config — Architecture Assessment (Peer Review)
+# Evaluates an externally-produced architecture/design artifact — typically a
+# Solution On A Page (SOAP) — from the perspective of a senior architect
+# conducting a peer review prior to an architecture review board (e.g. ARB, TAB, Design Authority) submission.
 #
-# Assessment is an evaluate-only mode: the loop agent does not produce a new artifact.
-# It assesses an existing one (loaded via /jupiter:assess --artifact <path>) against
-# the requirements baseline and project constraints.
-# Output: a structured findings report in workspace/assessment/{initiative_id}/findings.md
+# Outputs (both written to workspace/artifacts/assessment/{assessment-id}/):
+#   findings.md   — canonical peer review report (markdown, gate-checked)
+#   findings.html — styled companion view for review board chairs and stakeholders
+#                   (color-coded severities, verdict badge, confidence
+#                    highlighting; rendered by engine/render_assessment.py)
 #
 # Entry point: /jupiter:assess --artifact <path>
-# This sets the assessment profile and delegates to /jupiter:iterate.
+# /jupiter:assess sets the assessment profile and delegates to /jupiter:iterate.
 
 version: "3.0"
 transition: "assessment"
-pattern: alignment_evaluation
+pattern: peer_review
 description: >
-  Evaluate an externally-produced artifact against the requirements baseline and
-  project constraints. Produces a structured findings report classifying each
-  requirement as aligned, gap, violation, or risk. The loop agent does not produce
-  a new artifact — it assesses the provided one.
+  Conduct an architectural peer review of an externally-produced solution
+  design (typically a SOAP) to determine its readiness for review board
+  endorsement (ARB, TAB, Design Authority, or equivalent). The reviewer answers two questions a senior
+  architect would ask — "are we doing the right thing?" and "are we doing
+  things right?" — and systematically checks coverage against standards,
+  regulatory obligations, and ADR documentation. Produces a peer review report
+  with a verdict, inline severity-tagged findings, coverage tables, and a
+  pre-review readiness checklist.
 
-# ─── Findings Schema ──────────────────────────────────────────────────────────
-# Required sections in the findings report. Referenced by auto check AC-RA-001.
+# ─── Report Structure ────────────────────────────────────────────────────────
+# The peer review report must contain these sections, in order. Referenced by
+# AC-RA-001.
 
-findings_report_sections:
-  - "Assessment Summary"
-  - "Architecture Perspective"
-  - "Artifact Under Assessment"
-  - "Requirements Baseline"
-  - "Per-Requirement Alignment"
-  - "Guardrail Conformance"
-  - "Classified Findings"
-  - "Escalations"
-  - "Recommendations"
-  - "Architect Review Record"
+report_sections:
+  - "Header & Verdict"
+  - "Are we doing the right thing?"
+  - "Are we doing things right?"
+  - "Standards Conformance"
+  - "Regulatory & Policy Compliance"
+  - "ADR Coverage"
+  - "Open Questions"
+  - "Pre-Review Readiness Checklist"
+  - "Sign-off"
 
-# Finding classification values
-finding_classifications:
-  aligned: "Requirement fully addressed by the artifact; no gap detected"
-  gap: "Requirement partially addressed or missing from the artifact"
-  violation: "Artifact explicitly contradicts the requirement or a constraint"
-  risk: "Requirement addressed but in a way that introduces identifiable risk"
-  not_assessed: "Evaluation impossible due to artifact ambiguity or missing context"
+# ─── Verdict Values ──────────────────────────────────────────────────────────
+# The reviewer's bottom-line judgment, shown in the Header & Verdict section.
 
-# ─── Auto Checks ──────────────────────────────────────────────────────────────
+verdict_values:
+  REVIEW-READY:     "No blockers or majors remain; the SOAP can be tabled for review"
+  CONDITIONAL:   "Material findings exist but are bounded — addressable before the review"
+  NOT-REVIEW-READY: "Significant issues prevent productive review"
+  NEEDS-REWORK:  "Fundamental rework required before peer review can be concluded"
+
+# ─── Severity Levels ─────────────────────────────────────────────────────────
+# Applied as inline [SEVERITY] tags on findings within the prose sections.
+
+severity_levels:
+  BLOCKER:     "the review board will reject. Examples: compliance violation, fundamental architectural unsoundness, missing critical capability"
+  MAJOR:       "the review board will require resolution or formal exception. Examples: undocumented standards deviation, significant decision without ADR, material risk without mitigation"
+  MINOR:       "the review board will note. Examples: clarification needed, low-impact deviation with rationale, documentation gap"
+  OBSERVATION: "Reviewer commentary; no action required. Examples: design strength to highlight, forward-looking consideration"
+
+# ─── Confidence Levels (Regulatory) ──────────────────────────────────────────
+# Applied to every row in the Regulatory & Policy Compliance table to honestly
+# calibrate the reviewer's certainty on legal/regulatory interpretation calls.
+
+confidence_levels:
+  High:   "Clear from design and regulation text; reviewer is confident"
+  Medium: "Design intent present, implementation-dependent"
+  Low:    "Specialist review recommended (legal, compliance, security, privacy)"
+
+# ─── Standards Conformance Status Values ─────────────────────────────────────
+
+standards_conformance_status:
+  Conformant:             "Decision/component matches the standard"
+  "Deviation (with ADR)": "Decision deviates from the standard; an ADR documents the rationale"
+  "Deviation (no ADR)":   "Decision deviates from the standard; no ADR exists — must be drafted"
+  Gap:                    "Standard relevant but not addressed by the SOAP"
+  "Not applicable":       "Standard does not apply in this design context"
+
+# ─── Auto Checks ─────────────────────────────────────────────────────────────
 
 auto_checks:
 
   - id: AC-RA-001
-    name: findings_report_complete
+    name: report_structure_complete
     description: >
-      The findings report contains all required sections listed in
-      findings_report_sections. Each section has substantive content — no section
-      is blank, missing, or contains placeholder text.
+      The peer review report contains every section listed in report_sections,
+      in order. Each section has substantive content — no section is blank,
+      missing, or contains placeholder text.
     required: true
     failure_message: >
-      Findings report is missing one or more required sections, or one or more
-      sections contain placeholder text. All sections must be populated with
-      substantive content before gate review.
+      Peer review report is missing one or more required sections, or one or
+      more sections contain placeholder text. All sections must be populated
+      with substantive content before gate review.
 
   - id: AC-RA-002
-    name: all_requirements_evaluated
+    name: verdict_valid
     description: >
-      Every REQ-* key from the requirements baseline appears in the
-      Per-Requirement Alignment section with a valid finding_classification.
-      No requirement may have classification "not_assessed" unless an explicit
-      rationale is recorded in the Escalations section.
+      The verdict in the Header & Verdict section is exactly one of the values
+      defined in verdict_values: REVIEW-READY, CONDITIONAL, NOT-REVIEW-READY, or
+      NEEDS-REWORK.
     required: true
     failure_message: >
-      One or more REQ-* keys are absent from the Per-Requirement Alignment table,
-      or have classification "not_assessed" without a recorded escalation.
-      Every requirement must be evaluated and classified.
+      The verdict is not one of the four defined values. Use exactly one of:
+      REVIEW-READY, CONDITIONAL, NOT-REVIEW-READY, NEEDS-REWORK.
 
   - id: AC-RA-003
-    name: guardrail_categories_evaluated
+    name: standards_coverage_complete
     description: >
-      The Guardrail Conformance section explicitly covers each constraint category
-      that was loaded for this assessment: policy (required), standards (if loaded),
-      landscape (if loaded), adrs (if loaded). Each category must have a conformance
-      status (conformant, non-conformant, partially-conformant, or not-applicable)
-      with a rationale.
+      Every standards document loaded from workspace/context/standards/ has at
+      least one corresponding row in the Standards Conformance table. Either
+      the standard is referenced against a SOAP decision or component and its
+      conformance recorded, or it is marked "Not applicable" with rationale.
     required: true
     failure_message: >
-      The Guardrail Conformance section does not cover all loaded constraint
-      categories. Each loaded category must have an explicit conformance status
-      and rationale. Check which categories were loaded and ensure all are covered.
+      One or more loaded standards do not appear in the Standards Conformance
+      table. Every loaded standard must be accounted for — either evaluated
+      against a SOAP decision or marked "Not applicable" with rationale.
 
-# ─── AI Checks ────────────────────────────────────────────────────────────────
+  - id: AC-RA-004
+    name: regulatory_coverage_complete
+    description: >
+      Every policy document loaded from workspace/context/policy/ has at least
+      one obligation row in the Regulatory & Policy Compliance table. Each row
+      has a confidence value (High, Medium, or Low).
+    required: true
+    failure_message: >
+      One or more loaded policy documents do not have a corresponding
+      obligation row in the Regulatory & Policy Compliance table, or one or
+      more rows lack a confidence value.
+
+  - id: AC-RA-005
+    name: low_confidence_has_specialist_note
+    description: >
+      Every row in the Regulatory & Policy Compliance table marked with Low
+      confidence has an associated specialist-needed note explaining what kind
+      of expert input would resolve the uncertainty (e.g. legal counsel,
+      compliance officer, privacy specialist, security architect).
+    required: true
+    failure_message: >
+      One or more Low-confidence regulatory rows lack a specialist-needed
+      note. Low confidence must trigger an explicit indication of what
+      specialist input would resolve the uncertainty.
+
+  - id: AC-RA-006
+    name: blockers_and_majors_in_checklist
+    description: >
+      Every BLOCKER and MAJOR finding raised inline in sections 2 ("Are we
+      doing the right thing?") and 3 ("Are we doing things right?") has a
+      corresponding tickable item in the Pre-Review Readiness Checklist.
+    required: true
+    failure_message: >
+      One or more BLOCKER or MAJOR findings are not represented in the Pre-Review
+      Readiness Checklist. Every blocker and major finding must be a tickable
+      action the architect can work through before the review.
+
+  - id: AC-RA-007
+    name: severity_counts_match
+    description: >
+      The severity counts in the Header & Verdict section
+      (e.g. "1 blocker • 3 major • 1 minor • 1 observation") match the count
+      of [SEVERITY] tags inline in sections 2 and 3.
+    required: true
+    failure_message: >
+      The severity counts in the header do not match the actual [SEVERITY]
+      tags inline in the report. Reconcile the header counts with the body.
+
+# ─── AI Checks ───────────────────────────────────────────────────────────────
 
 ai_checks:
 
   - id: AI-RA-001
-    name: findings_accurately_classified
+    name: right_thing_substantive
     description: >
-      Each finding is classified accurately using the defined classification values.
-      A gap is not a violation — the distinction matters for recommendations.
-      Aligned findings cite specific artifact evidence. Gap and violation findings
-      identify the specific requirement clause or constraint provision that is unmet.
+      The "Are we doing the right thing?" section is a substantive
+      architectural judgment that addresses all four dimensions: problem
+      framing, business value, scope appropriateness, and observations on
+      the requirements baseline. It is prose written by a senior reviewer —
+      not a checklist, not a list of facts.
     required: true
     failure_message: >
-      One or more findings are misclassified or lack supporting evidence.
-      Aligned findings need artifact evidence. Gap/violation findings need the
-      specific requirement clause or constraint provision that is unmet.
-      Review and correct all classification entries.
+      The "Are we doing the right thing?" section is incomplete or
+      superficial. Identify which of the four dimensions (problem framing,
+      business value, scope, requirements observations) is missing or
+      thinly addressed.
 
   - id: AI-RA-002
-    name: recommendations_actionable
+    name: things_right_substantive
     description: >
-      Every gap, violation, and risk finding has at least one specific, actionable
-      recommendation. "Revise the design" is not actionable — name the specific
-      section, decision, or component that needs revision and describe the change.
-      Aligned findings do not require recommendations.
+      The "Are we doing things right?" section is a substantive architectural
+      judgment that addresses all four dimensions: solution approach, pattern
+      selection, key design decisions, and proportionality of complexity to
+      the problem. Strengths in the design are explicitly acknowledged where
+      they exist. The section reads as a peer review, not a defect list.
     required: true
     failure_message: >
-      One or more gap, violation, or risk findings lack specific actionable
-      recommendations. Each non-aligned finding must have at least one
-      recommendation naming the specific artifact section or decision to revise.
+      The "Are we doing things right?" section is incomplete or one-sided.
+      Identify which of the four dimensions (solution approach, patterns,
+      key decisions, proportionality) is missing or thinly addressed, or
+      note where design strengths were not acknowledged.
 
   - id: AI-RA-003
-    name: policy_obligations_checked
+    name: all_requirements_considered
     description: >
-      All policy documents loaded from workspace/context/policy/ have been
-      examined. Each policy obligation relevant to the artifact's domain has been
-      checked against the artifact. Where the artifact does not address a policy
-      obligation, a gap or violation finding is raised. Absence of a finding implies
-      explicit confirmation of conformance, not a skip.
+      Every REQ-* key from the requirements baseline has been considered in
+      the review. Each requirement is either explicitly mentioned by key,
+      covered by a categorical statement (e.g. "all functional requirements
+      in §3.1–§3.5 are well-addressed"), or raised as an inline finding.
+      No requirement is silently skipped.
     required: true
     failure_message: >
-      The policy conformance check is incomplete. Not all policy obligations from
-      workspace/context/policy/ have been evaluated against the artifact. Policy
-      documents are the primary evaluation surface — every relevant obligation must
-      be checked. Review the policy documents and complete the evaluation.
+      One or more requirements from the baseline have not been considered.
+      List the REQ-* keys that are not addressed — explicitly, categorically,
+      or as findings — anywhere in sections 2, 3, or the supporting tables.
 
   - id: AI-RA-004
-    name: landscape_conflicts_checked
+    name: severity_calibrated
     description: >
-      If workspace/context/landscape/ documents were loaded, the artifact has been
-      checked for conflicts with the integration landscape: systems it must integrate
-      with, platforms it must run on, and constraints it must observe.
-      Integration landscape conflicts are classified as violations.
-    required: false
-    note: "Only evaluated when context/landscape/ files are present."
-    failure_message: >
-      Landscape conformance check is incomplete. The artifact has not been checked
-      against all integration landscape constraints in workspace/context/landscape/.
-      Review the landscape documents and complete the check for integration conflicts.
-
-  - id: AI-RA-005
-    name: assessment_internally_consistent
-    description: >
-      The findings report is internally consistent. A requirement cannot be
-      classified as "aligned" in Per-Requirement Alignment and "gap" in Classified
-      Findings. Recommendations do not contradict each other. The Assessment
-      Summary accurately summarises the Classified Findings counts.
+      Inline [SEVERITY] tags are calibrated appropriately to review board consequence.
+      Compliance violations and fundamental architectural unsoundness are
+      tagged BLOCKER. Undocumented standards deviations, significant
+      decisions missing ADRs, and control bypass risks are tagged at least
+      MAJOR. Documentation gaps and minor clarifications are tagged MINOR.
+      Strengths and forward-looking notes are tagged OBSERVATION.
     required: true
     failure_message: >
-      The findings report contains internal inconsistencies. Check for contradictions
-      between Per-Requirement Alignment and Classified Findings, and verify the
-      Assessment Summary counts match the actual finding totals.
+      One or more findings carry a severity tag that does not match its
+      review board impact. Identify each miscalibrated finding and note what severity it
+      should carry (compliance violation → BLOCKER, undocumented deviation
+      → ≥MAJOR, control bypass → ≥MAJOR, etc.).
 
-# ─── Human Gate ───────────────────────────────────────────────────────────────
+  - id: AI-RA-005
+    name: standards_deviations_flagged_for_adr
+    description: >
+      Every row in the Standards Conformance table marked "Deviation (no ADR)"
+      is also raised as a MAJOR (or higher) inline finding in section 3,
+      with a clear recommendation that an ADR be drafted. Deviations cannot
+      pass review board without ADRs and must surface as actionable items.
+    required: true
+    failure_message: >
+      One or more "Deviation (no ADR)" entries in the Standards Conformance
+      table do not have a corresponding inline finding flagging the missing
+      ADR. Every undocumented deviation must be raised as an actionable
+      MAJOR-or-higher finding.
+
+  - id: AI-RA-006
+    name: regulatory_confidence_calibrated
+    description: >
+      Confidence levels in the Regulatory & Policy Compliance table are
+      honestly assigned. Low confidence is used where legal or regulatory
+      interpretation is genuinely uncertain, not avoided to manufacture a
+      confident verdict. High confidence is reserved for cases where the
+      design and the regulation text are both clear. "Specialist needed"
+      notes accompany every Low row.
+    required: true
+    failure_message: >
+      One or more confidence assignments are not honestly calibrated.
+      Identify rows where Low confidence should have been used
+      (interpretation uncertainty) but was not, or where High confidence
+      has been claimed without sufficient evidence.
+
+  - id: AI-RA-007
+    name: adr_coverage_complete
+    description: >
+      The ADR Coverage section identifies every significant decision in the
+      SOAP and records whether each has an ADR (cite the ADR-NNN and status)
+      or requires one. Significant decisions include: technology selections
+      with alternatives, pattern deviations from standards, integration
+      approach choices, and decisions that constrain other teams. Every
+      decision flagged as requiring an ADR is also reflected as an inline
+      finding (MAJOR or higher).
+    required: true
+    failure_message: >
+      The ADR Coverage section is incomplete. One or more significant
+      decisions in the SOAP are not listed as either ADR'd or as requiring
+      an ADR, or a decision requiring an ADR is not reflected as an inline
+      finding. Identify the missing decisions.
+
+  - id: AI-RA-008
+    name: verdict_consistent_with_findings
+    description: >
+      The verdict is consistent with the findings raised. REVIEW-READY is used
+      only when no BLOCKER or MAJOR findings remain. CONDITIONAL is used
+      when MAJOR findings exist but are bounded and resolvable. NOT-REVIEW-READY
+      is used when BLOCKER findings exist. NEEDS-REWORK is used when the
+      SOAP requires fundamental change before peer review can productively
+      continue (e.g. entire sections missing, not just individual findings).
+    required: true
+    failure_message: >
+      The verdict is not consistent with the findings raised. If BLOCKERs
+      exist, the verdict cannot be REVIEW-READY or CONDITIONAL. If MAJORs
+      exist, the verdict cannot be REVIEW-READY. Reconcile the verdict with
+      the actual finding severities.
+
+  - id: AI-RA-009
+    name: open_questions_specific
+    description: >
+      Each entry in the Open Questions section is a specific, answerable
+      question that states why it matters (what assessment or decision it
+      gates) and who should answer it (architect, business owner, specialist).
+      "Clarify the architecture" is not a valid open question. "What is the
+      intended hosting region — required to complete the Privacy Act
+      residency assessment?" is.
+    required: true
+    failure_message: >
+      One or more open questions are vague or not answerable. Each open
+      question must be specific, state why it matters, and indicate who
+      should answer it.
+
+# ─── Human Gate ──────────────────────────────────────────────────────────────
 
 human_gate:
   required: true
   checks:
 
     - id: HG-RA-001
-      name: architect_approves_findings
+      name: architect_approves_peer_review
       description: >
-        The assessing architect has reviewed the complete findings report — all
-        sections — and explicitly approves it as an accurate and sound assessment.
-        The architect confirms that findings are correctly classified, recommendations
-        are appropriate, and no significant misalignment has been overlooked.
-        The architect is accountable for what is in the findings report.
+        The reviewing architect has read the complete peer review report and
+        explicitly approves it as a sound architectural opinion. The architect
+        confirms that the verdict is appropriate, findings are correctly
+        severity-classified, recommendations are appropriate, and no material
+        issue has been overlooked. The architect signs as the reviewer of
+        record — the report becomes a governance artifact that may be tabled
+        for review board endorsement.
       required: true
       failure_message: >
-        Architect approval is pending. Present the complete findings report via
-        /jupiter:review and record explicit approval before this gate can pass.
-        Do not mark the assessment complete without architect sign-off.
+        Architect approval is pending. Present the complete peer review
+        report via /jupiter:review and record explicit approval before this
+        gate can pass. Do not mark the peer review complete without architect
+        sign-off.
 
-# ─── Completion ───────────────────────────────────────────────────────────────
+# ─── Completion ──────────────────────────────────────────────────────────────
 
 completion:
   rule: all_required_checks_pass
   human_required: true
   description: >
-    Assessment complete when all required auto checks and AI checks pass,
-    and the architect approves the findings report via /jupiter:review.
+    Peer review complete when all required auto checks and AI checks pass,
+    and the architect approves the peer review report via /jupiter:review.
 
-# ─── Agent Guidance ───────────────────────────────────────────────────────────
+# ─── Agent Guidance ──────────────────────────────────────────────────────────
 
 agent_guidance: |
-  You are a Domain Solution Architect conducting an architectural assessment.
-  Read the assessor profile in the active workflow profile (assessment.yml,
-  'assessor' block). Apply its five lenses throughout this assessment:
-    - Business Value: do gaps undermine the business case?
-    - Strategic Alignment: does the design fit the target architecture direction?
-    - Target Architecture Fit: does it move toward the target state or accumulate debt?
-    - Architecture Quality: structure, resilience, scalability, maintainability
-    - Risk Posture: lock-in, scalability ceiling, integration complexity, tech debt
+  You are a senior architect conducting a peer review of a high-level solution
+  design — typically a Solution On A Page (SOAP) — that has been produced by
+  another team. The architect bringing this for review intends to table it at
+  a review board (e.g. ARB, TAB, Design Authority). Your job is to determine whether the
+  SOAP is review-ready, and if not, what must be resolved first.
 
-  Your findings report is a professional architectural opinion — not a
-  compliance checklist. Write it as something an architect can hand to a
-  steering committee.
+  This is not an audit. It is not a compliance checklist. It is a professional
+  peer review by another architect.
 
-  You are NOT producing a new design. You are assessing an existing one.
-  The provided artifact is the subject. The requirements and constraints are
-  the evaluation surface. The findings report is your output.
+  ─── The two questions ──────────────────────────────────────────────────────
+  Your reasoning is structured around the two questions a senior architect
+  asks when reviewing a peer's design:
 
-  STEP 1 — LOAD THE ARTIFACT UNDER ASSESSMENT
-  Load the artifact from the path provided via /jupiter:assess --artifact.
-  Read it completely before evaluating. Record: artifact type, author, version
-  (if present), and date. Do not make assumptions about its content — read it.
+    1. ARE WE DOING THE RIGHT THING?
+       Is the problem correctly framed? Does the business case hold? Is the
+       scope appropriate? Are the requirements that drive this design sound
+       enough to support it?
 
-  STEP 2 — LOAD THE REQUIREMENTS BASELINE
-  Load the requirements artifact for this initiative. Extract every REQ-* key,
-  its description, type, and acceptance criteria. List them before starting
-  the per-requirement evaluation — this is your evaluation checklist.
-  Count the total requirements. You must evaluate every one.
+    2. ARE WE DOING THINGS RIGHT?
+       Is the solution technically sound? Are the patterns appropriate for
+       the problem? Are key decisions adequately documented (ADRs)? Are
+       deviations from standards justified? Is complexity proportional?
 
-  STEP 3 — LOAD ALL CONSTRAINTS (PRIMARY EVALUATION SURFACE)
-  Load every constraint file available:
+  These are answered in prose — they carry the reviewer's judgment.
+
+  ─── Systematic coverage ────────────────────────────────────────────────────
+  Beyond the two questions, the review board always asks three things:
+    - Have we conformed to standards (or documented our deviations)?
+    - Have we addressed our regulatory and policy obligations?
+    - Have we documented significant decisions in ADRs?
+
+  These are coverage problems — prose can silently miss an obligation. They
+  are answered in tables: every loaded standard accounted for, every loaded
+  policy obligation evaluated, every significant decision either ADR'd or
+  flagged for ADR.
+
+  ─── Honest calibration ─────────────────────────────────────────────────────
+  On regulatory matters you are making interpretation calls that may be
+  better made by a legal or compliance specialist. Use the confidence column
+  honestly. Low confidence is not a failure — it is a signal to the architect
+  that a specialist should confirm. "I think this is OK but privacy counsel
+  should confirm" is more useful than a confident answer that may be wrong.
+
+  ─── Output ─────────────────────────────────────────────────────────────────
+  The peer review report should be readable in three ways:
+    - Top-down for the verdict and bottom line (architect in a hurry)
+    - As a checklist of items to resolve before the review (architect doing the work)
+    - As supporting evidence for the review board chair (governance record)
+
+  You are NOT producing a new design. You are NOT rewriting the SOAP.
+
+  ─── STEP 1 — READ THE ARTIFACT UNDER REVIEW ───────────────────────────────
+  Load the SOAP from the path provided via /jupiter:assess --artifact.
+  Read it completely. Record: artifact title, author/team, version, date,
+  and absolute path. Understand the architectural story it tells before
+  evaluating anything.
+
+  ─── STEP 2 — UNDERSTAND THE BRIEF ──────────────────────────────────────────
+  Load the requirements artifact for this initiative. Extract every REQ-*
+  key with its description, type, and acceptance criteria. Also load
+  workspace/INTENT.md if present — it captures the problem statement that
+  motivated the design.
+
+  Build a mental model: what is this design supposed to achieve?
+
+  ─── STEP 3 — LOAD THE RULES OF THE GAME ────────────────────────────────────
+  Load every context file available — these are the evaluation surface:
 
     REQUIRED:
     - workspace/context/project.yml — constraint dimensions, compliance context
-    - workspace/context/policy/     — regulatory documents, compliance mandates.
+    - workspace/context/policy/     — regulatory documents, policy mandates.
                                       Read every policy document completely.
-                                      These are the primary evaluation yardstick.
 
     LOAD IF PRESENT:
-    - workspace/context/standards/  — architecture standards
+    - workspace/context/standards/  — architecture standards (the patterns)
     - workspace/context/landscape/  — integration landscape, platform constraints
-    - workspace/context/adrs/       — prior architecture decisions (consistency check)
-    - workspace/context/glossary/   — domain vocabulary (terminology alignment)
+    - workspace/context/adrs/       — prior architecture decisions (history)
+    - workspace/context/glossary/   — domain vocabulary
 
-  Constraints are not supplementary references — they drive your findings.
-  A requirement the artifact does not address is a GAP.
-  A constraint the artifact contradicts is a VIOLATION.
-  Do not skip a policy document because it is long — read it fully.
+  Standards, policy, and ADRs are what the review board will reference. Read them fully.
 
-  STEP 4 — EVALUATE EACH REQUIREMENT
-  For each REQ-* key:
-    1. Locate where (if anywhere) the artifact addresses this requirement.
-    2. Assess whether the artifact's treatment satisfies the acceptance criteria.
-    3. Classify using exactly one value:
-         aligned      — requirement fully addressed; cite the artifact section
-         gap          — requirement not addressed or only partially addressed
-         violation    — artifact explicitly contradicts the requirement
-         risk         — requirement addressed but introduces identifiable risk
-         not_assessed — evaluation impossible (escalate immediately)
-    4. Record in Per-Requirement Alignment:
-         {req_key, description, classification, evidence_or_gap, notes}
-    5. For gap/violation/risk: note the specific clause unmet.
-       For aligned: cite the specific artifact section that addresses it.
-    6. For not_assessed: add an entry to the Escalations section immediately.
+  ─── STEP 4 — FORM THE "ARE WE DOING THE RIGHT THING?" VIEW ─────────────────
+  Write 2-4 paragraphs of prose covering all four dimensions:
 
-  STEP 5 — EVALUATE CONSTRAINT CONFORMANCE
-  For each loaded constraint category:
+    PROBLEM FRAMING: Is the right problem being solved? Is the framing
+      accurate, or does the design address symptoms rather than causes?
 
-    Policy (REQUIRED — examine every obligation):
-      For each policy document: identify every obligation relevant to the domain.
-      Check whether the artifact addresses the obligation.
-      Non-conformant obligations become violation findings.
-      Record overall policy conformance status in Guardrail Conformance section.
+    BUSINESS VALUE: Does the business case hold? Will this design deliver
+      the value the requirements imply? Are there gaps that materially
+      undermine the case?
 
-    Standards (if loaded):
-      Check artifact structure and decisions against loaded architecture standards.
-      Record conformance status in Guardrail Conformance section.
+    SCOPE: Is the scope appropriately bounded? Is there overreach into
+      adjacent problems that should be separate initiatives? Is anything
+      important missing from scope?
 
-    Landscape (if loaded):
-      Check for integration conflicts — systems, platforms, infrastructure constraints.
-      Integration landscape conflicts are violations.
-      Record conformance status in Guardrail Conformance section.
+    REQUIREMENTS OBSERVATIONS: Are the requirements that drive this design
+      well-formed enough to support it? Note ambiguities, missing rationale,
+      or quality issues that affect the design.
 
-    ADRs (if loaded):
-      Check whether the artifact's decisions are consistent with prior ADRs.
-      A decision contradicting an accepted ADR is a violation.
-      Record conformance status in Guardrail Conformance section.
+  Findings raised here are inline with [SEVERITY] tags. Example:
+    [MAJOR] No business basis recorded for the 30-second NFR target.
+    REQ-NFR-PROC-001 states 30 seconds as a hard SLA but no rationale is
+    documented. The design will lock around this number — confirm with the
+    Finance Owner and capture the rationale in the requirements artifact.
 
-  STEP 6 — BUILD THE CLASSIFIED FINDINGS LIST
-  Consolidate all non-aligned findings into the Classified Findings section.
-  For each finding:
-    - finding_id: FIND-{NNN}
-    - type: gap | violation | risk
-    - source: requirement ({REQ-*}) | policy ({doc_name}) | standard | landscape | adr
-    - description: what is unmet or contradicted
-    - evidence: specific artifact section or absence thereof
-    - recommendation: specific, actionable change the artifact author should make
+  ─── STEP 5 — FORM THE "ARE WE DOING THINGS RIGHT?" VIEW ────────────────────
+  Write 2-4 paragraphs of prose covering all four dimensions:
 
-  STEP 7 — WRITE RECOMMENDATIONS
-  For each gap, violation, and risk finding, write at least one actionable
-  recommendation naming:
-    - The specific artifact section, design decision, or component to revise
-    - The specific change needed (not just "address this requirement")
-    - Why the change matters in terms of the requirement or constraint
-  Do not write "the design should be improved." Write "Section X should add
-  [specific content] to address REQ-F-PROC-003 acceptance criterion 2."
+    SOLUTION APPROACH: Is the architecture approach sound at the level it
+      operates? Does it match the shape of the problem?
 
-  STEP 8 — WRITE THE ARCHITECTURE PERSPECTIVE
-  This is the Domain Solution Architect's holistic assessment — a professional
-  synthesis, not a data table. Write 3–5 paragraphs covering all five lens
-  dimensions from the assessor profile:
+    PATTERN SELECTION: Are the chosen patterns appropriate? Consistent with
+      how the organisation has used them before?
 
-    Business Value: Does the design deliver the expected outcomes? Do identified
-    gaps or violations materially undermine the business case for this initiative?
-    Be explicit about which findings, if unaddressed, put business value at risk.
+    KEY DECISIONS: Are the significant decisions sound? Adequately documented?
 
-    Strategic Alignment: Is the design consistent with the target architecture
-    direction, enterprise roadmap, and long-term strategy? Or does it introduce
-    divergence that creates future rework? Cite specific design decisions.
+    PROPORTIONALITY: Is complexity matched to the problem? Over- or under-
+      engineering?
 
-    Target Architecture Fit: Does the design move toward the target state or
-    accumulate technical debt against it? Reference the loaded standards and ADRs —
-    are decisions consistent with the architecture decisions already made?
+  Acknowledge strengths explicitly. This is a peer review, not a defect list.
 
-    Architecture Quality: Beyond requirement pass/fail — is the design internally
-    coherent? Is it well-structured, resilient, and maintainable? Name specific
-    structural strengths or weaknesses observed during evaluation.
+  Severity calibration for inline findings:
+    BLOCKER     — the review board will reject. Compliance violation, fundamental
+                  architectural unsoundness, missing critical capability.
+    MAJOR       — the review board will require resolution or formal exception.
+                  Undocumented standards deviation, significant decision
+                  without ADR, material risk without mitigation, control
+                  bypass.
+    MINOR       — the review board will note. Clarification needed, low-impact deviation
+                  with rationale, documentation gap.
+    OBSERVATION — Reviewer commentary, no action. Strength to highlight,
+                  forward-looking consideration.
 
-    Risk Posture: What are the architecture-level risks this design carries? Consider
-    vendor lock-in, scalability ceilings, integration complexity, compliance exposure,
-    and technical debt trajectory. Distinguish architecture risk from implementation risk.
+  ─── STEP 6 — TABULATE STANDARDS CONFORMANCE ────────────────────────────────
+  Build a table with one row for every standard loaded from
+  workspace/context/standards/. For each standard:
+    - Identify the decision or component in the SOAP that the standard governs
+    - Cite the SOAP section reference (e.g. "§3.4")
+    - Assign a status:
+        Conformant            — matches the standard
+        Deviation (with ADR)  — deviates, but an ADR documents the rationale
+                                (cite ADR-NNN)
+        Deviation (no ADR)    — deviates, no ADR — must be drafted
+        Gap                   — standard is relevant but not addressed
+        Not applicable        — standard does not apply (with rationale)
 
-  Write this as something an architect can hand to a steering committee — a clear
-  professional opinion with supporting evidence from your findings. Not a checklist.
+  Every "Deviation (no ADR)" must also appear as a MAJOR (or higher) inline
+  finding in section 3, recommending the ADR.
 
-  STEP 9 — POPULATE ALL REPORT SECTIONS
-    1. Assessment Summary        — total requirements, counts by classification,
-                                   critical findings count, overall conformance verdict
-    2. Architecture Perspective  — holistic SA assessment across five lens dimensions
-                                   (business value, strategic alignment, target arch fit,
-                                   architecture quality, risk posture)
-    3. Artifact Under Assessment — artifact name, author, version, date, path
-    4. Requirements Baseline     — total count, REQ key range, source artifact path
-    5. Per-Requirement Alignment — table of all REQ-* keys with classification
-    6. Guardrail Conformance     — per-category conformance status and rationale
-    7. Classified Findings       — consolidated FIND-* list (gaps, violations, risks)
-    8. Escalations               — not_assessed findings with rationale; items requiring
-                                   human resolution before assessment can be completed
-    9. Recommendations           — actionable recommendations for each non-aligned finding
-   10. Architect Review Record   — table ready for architect sign-off entry
+  Table format:
+    | Decision / Component (SOAP ref) | Standard | Status | Notes |
 
-  STEP 10 — SELF-REVIEW (before presenting for human gate)
-  Verify:
-    - Every REQ-* key appears in Per-Requirement Alignment
-    - Every loaded constraint category is covered in Guardrail Conformance
-    - Every not_assessed finding has an entry in Escalations
-    - Every gap/violation/risk finding has at least one recommendation
-    - Assessment Summary counts match the actual finding totals
-    - Architecture Perspective covers all five lens dimensions with specific evidence
-    - No contradictions within the report
-    - Aligned findings cite specific artifact evidence
-    - Gap/violation/risk findings name specific clauses
+  ─── STEP 7 — TABULATE REGULATORY & POLICY COMPLIANCE ───────────────────────
+  Build a table with rows for every obligation relevant to the design
+  domain, drawn from every policy document in workspace/context/policy/
+  (and any compliance context in project.yml). For each obligation:
+    - State the obligation (one sentence)
+    - Cite the source (policy document + clause or regulation if known)
+    - Assessment: Met | Not met | Partial | Not assessable
+    - Confidence: High | Medium | Low
 
-  STEP 11 — PRESENT FOR ARCHITECT REVIEW
-  After auto checks and AI checks pass, present the complete findings report
-  via /jupiter:review. Explicitly request:
-    - Architect approval of the findings report
-    - Confirmation that findings are correctly classified
+  Confidence calibration:
+    High   — Clear from design and regulation text; reviewer is confident
+    Medium — Design intent present, implementation-dependent
+    Low    — Specialist review recommended
+
+  Every Low-confidence row must include a "specialist needed" note naming
+  what kind of expert input would resolve the uncertainty (legal counsel,
+  privacy specialist, security architect, compliance officer, etc.).
+
+  Any non-conformance with policy obligations must also appear as an inline
+  finding in section 2 or 3 with appropriate severity (compliance violations
+  are BLOCKER).
+
+  Table format:
+    | Obligation | Source | Assessment | Confidence |
+    With specialist-needed notes listed below the table for Low rows.
+
+  ─── STEP 8 — CHECK ADR COVERAGE ────────────────────────────────────────────
+  For every significant decision in the SOAP — technology selections with
+  alternatives, pattern deviations from standards, integration approach
+  choices, decisions that constrain other teams — verify whether an ADR
+  exists:
+    - If an ADR exists in workspace/context/adrs/ or is cited in the SOAP,
+      record its ID and status (Proposed | Accepted | Superseded).
+    - If no ADR exists, mark the decision as requiring one. Every such
+      decision must also be reflected as an inline MAJOR (or higher)
+      finding flagging the missing ADR.
+
+  Table format:
+    | Decision | ADR Status |
+
+  ─── STEP 9 — LIST OPEN QUESTIONS ───────────────────────────────────────────
+  Identify questions the reviewer genuinely cannot resolve from the SOAP
+  and loaded context. Each question:
+    - Must be specific and answerable
+    - Must state why it matters (what assessment or decision it gates)
+    - Names who should answer it (architect, business owner, specialist)
+
+  Vague questions ("clarify the architecture") are not valid. Each open
+  question becomes a checklist item in the Pre-Review Readiness Checklist.
+
+  ─── STEP 10 — ASSEMBLE THE PRE-REVIEW READINESS CHECKLIST ─────────────────────
+  Translate every BLOCKER and MAJOR finding into a tickable action the SOAP
+  author can work through. Format each item:
+
+    - [ ] **[SEVERITY]** {Action — the specific change required, including
+          any ADR to draft}
+
+  Also include each Open Question as a tickable item. When all items can be
+  ticked, the SOAP should be review-ready.
+
+  ─── STEP 11 — REACH A VERDICT ──────────────────────────────────────────────
+  Apply verdict logic:
+    REVIEW-READY     — no BLOCKERs and no MAJORs after this iteration
+    CONDITIONAL   — MAJORs exist but are bounded; no BLOCKERs
+    NOT-REVIEW-READY — BLOCKERs exist
+    NEEDS-REWORK  — SOAP requires fundamental change before peer review can
+                    productively continue (entire sections missing, not just
+                    individual findings)
+
+  Write the Header & Verdict section:
+    - Reviewer name (architect conducting the review — to be filled at sign-off)
+    - Submitted by (the team or architect bringing the SOAP)
+    - Date
+    - Purpose (e.g. "Pre-Review peer review")
+    - Verdict (one of four values)
+    - One-paragraph executive summary
+    - Severity counts: "{n} blocker • {n} major • {n} minor • {n} observation"
+    - Open question count
+
+  ─── STEP 12 — SELF-REVIEW ──────────────────────────────────────────────────
+  Before presenting for architect approval, verify:
+    - All sections present and substantive
+    - Every loaded standard accounted for in Standards Conformance
+    - Every loaded policy has obligation rows in Regulatory & Policy Compliance
+    - Every Low-confidence regulatory row has a specialist-needed note
+    - Every "Deviation (no ADR)" has a matching inline MAJOR+ finding
+    - Every significant decision either has an ADR or is flagged
+    - Every BLOCKER and MAJOR finding has a Pre-Review checklist item
+    - Severity counts in header match inline tag totals
+    - Verdict is consistent with findings
+    - Open questions are specific and answerable
+
+  ─── STEP 13 — RENDER HTML COMPANION VIEW ──────────────────────────────────
+  After self-review passes, render a styled HTML companion to the markdown
+  report by calling the renderer script via Bash:
+
+      python engine/render_assessment.py --input workspace/artifacts/assessment/{assessment-id}/findings.md --output workspace/artifacts/assessment/{assessment-id}/findings.html
+
+  Substitute {assessment-id} with the assessment initiative ID (e.g.
+  "meridian-001-assessment-001"). The script is Python stdlib-only — no
+  dependencies to install.
+
+  The HTML companion is for review board chairs, business stakeholders, and the
+  reviewing architect to read in a browser. It color-codes severity tags,
+  the verdict badge, standards conformance status, and regulatory
+  confidence levels (Low confidence shows a ⚠ marker). The markdown
+  remains the canonical source — the HTML is a derived view.
+
+  If the script fails, surface the error and continue. The HTML is a
+  companion view, not a gate-blocking artifact; the markdown is what
+  gates on.
+
+  ─── STEP 14 — PRESENT FOR ARCHITECT REVIEW ─────────────────────────────────
+  After auto checks and AI checks pass, present the complete peer review
+  report via /jupiter:review. Explicitly request:
+    - Architect approval of the peer review report
+    - Confirmation that the verdict is appropriate
+    - Confirmation that severity classifications are sound
     - Confirmation that recommendations are appropriate
-  Do not mark the assessment complete without architect approval.
-  The human gate is non-negotiable — never auto-approve on behalf of the architect.
+
+  Do not mark the peer review complete without architect approval. The
+  human gate is non-negotiable — never auto-approve on behalf of the
+  architect.
