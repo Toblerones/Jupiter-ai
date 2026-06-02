@@ -53,6 +53,11 @@ Otherwise map the current phase and active profile to the gate config file:
   - If active profile is `architecture` → `workflow/gates/architecture-intent.yml` (loop agent elaborates full INTENT.md from seed + context)
   - If active profile is `discovery` → `workflow/gates/discovery-intent.yml` (loop agent produces a discovery report)
   - If active profile is `spike` → `workflow/gates/spike-intent.yml` (loop agent produces a spike report)
+- If active profile is `transformation` (additive — leaves the mappings above untouched):
+  - If current phase is `vision` → `workflow/gates/vision-probe.yml`
+  - If current phase is `probe` → `workflow/gates/probe-converge.yml`
+  - If current phase is `converge` → `workflow/gates/converge-design.yml`
+  - If current phase is `design_transformation` → `workflow/gates/design-handoff.yml`
 
 All profiles have loop-produced intent — the intent phase is never manually auto-completed. The seed written by `/jupiter:start` is the starting artifact; the loop agent elaborates it.
 
@@ -91,7 +96,13 @@ Invoke `agents/loop.md` with:
 - Current artifact path (from initiative file, may not exist yet on iteration 1)
 - Loaded context
 
-The loop agent runs Steps 1–7 as defined in `agents/loop.md` and produces the gate report.
+**Transformation profile additional inputs:** when the active profile is `transformation` and the current phase is `probe` or `converge` (phases with `work_units` declared in `workflow/stages.yml`), additionally pass:
+- The `work_units` block from `workflow/stages.yml` for the current phase (so the loop agent knows which instance types to iterate over and which templates to use)
+- The current list of PS files under `workspace/artifacts/transformation/problem-spaces/` and DPD files under `workspace/artifacts/transformation/data-products/`
+
+The loop agent's "Transformation Profile — Phase Extensions" section in `agents/loop.md` consumes these inputs and applies the per-instance iteration logic.
+
+The loop agent runs Steps 1–7 as defined in `agents/loop.md` and produces the gate report. For transformation phases with work_units, the gate report includes a `work_units` block with per-PS / per-DPD detail (per the loop agent's Step 7a extension).
 
 ### Step 5b — Verify gate report file
 

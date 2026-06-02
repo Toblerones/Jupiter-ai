@@ -1,0 +1,376 @@
+# Jupiter Gate Config — Probe → Converge (Transformation profile)
+# Defines the checks for completing Probe and transitioning into Converge.
+# Probe runs Problem Spaces concurrently. Each PS contains a structured layer
+# (strawman, OQs with resolutions) plus a separate notes file for raw evidence.
+# The loop agent processes notes against context to propose structured updates;
+# the architect approves before commit.
+#
+# Check ordering: auto checks first (deterministic), then AI checks (judgment),
+# then human gate. Gap = count of required checks failing.
+
+version: "3.0"
+transition: "probe → converge"
+description: >
+  Probe phase complete when all Problem Spaces have advanced beyond initial
+  open state, core PS artifacts are populated, structured updates trace to
+  authoritative context or activity_log evidence (no unauthoritative content),
+  cross-PS coherence holds, and architect approves transition into Converge.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-PROBE-001
+    name: every_PS_has_problem_statement
+    description: >
+      Every PS file under workspace/artifacts/transformation/problem-spaces/
+      has a non-empty Problem Statement section (no placeholder text).
+    required: true
+    failure_message: >
+      One or more PS lack a substantive Problem Statement.
+
+  - id: AC-PROBE-002
+    name: every_PS_has_scope_boundaries
+    description: >
+      Every PS has both Scope and Out of Scope sections populated.
+    required: true
+    failure_message: >
+      One or more PS lack explicit scope boundaries.
+
+  - id: AC-PROBE-003
+    name: every_PS_has_strawman
+    description: >
+      Every PS has a non-placeholder Strawman section.
+    required: true
+    failure_message: >
+      One or more PS lack an initial strawman.
+
+  - id: AC-PROBE-004
+    name: every_OQ_has_rationale
+    description: >
+      Every Open Question entry has a non-empty Why/rationale (italic line
+      below the question). The "Why this matters" line is required so
+      reviewers and stakeholders see the architectural intent.
+    required: true
+    failure_message: >
+      One or more OQs lack rationale. Add the architectural / process
+      implication for each question.
+
+  - id: AC-PROBE-005
+    name: every_resolved_OQ_has_resolution
+    description: >
+      Every OQ with status = resolved has a Resolution column populated
+      with one of: → REQ-{TYPE}-{DOMAIN}-{SEQ}, → ADR-{NNN}-{slug},
+      → context: {path}, or → knowledge.
+    required: true
+    failure_message: >
+      One or more resolved OQs lack a Resolution outcome. Resolution is
+      the bridge from inquiry to downstream artifacts.
+
+  - id: AC-PROBE-006
+    name: every_PS_has_derived_from
+    description: >
+      Every PS frontmatter has derived_from populated with artifact, source,
+      and gap fields. Provides traceability from PS back to the Vision
+      artifact gap that motivated it.
+    required: true
+    failure_message: >
+      One or more PS lack derived_from frontmatter. Traceability to Vision
+      is required — every PS should have a documented origin.
+
+  - id: AC-PROBE-007
+    name: every_PS_has_notes_file
+    description: >
+      Every PS-{SLUG}.md has a corresponding PS-{SLUG}-notes.md file at
+      workspace/artifacts/transformation/notes/.
+    required: true
+    failure_message: >
+      One or more PS lack a notes file. Raw inquiry evidence must live
+      under workspace/artifacts/transformation/notes/ — structured updates
+      in the PS file derive from this evidence via context cross-check.
+
+  - id: AC-PROBE-008
+    name: every_DPD_has_required_fields
+    description: >
+      Every DPD file under workspace/artifacts/transformation/data-products/
+      has id, name, status, sources, producer, and current draft spec
+      (Section 3) populated. A DPD without these fields cannot be
+      collaboratively progressed.
+    required: true
+    failure_message: >
+      One or more DPDs lack required frontmatter or Section 3 spec content.
+      Populate before continuing collaborative discovery.
+
+  - id: AC-PROBE-009
+    name: every_strawman_has_anchors
+    description: >
+      Every PS strawman (Section 4) has at least one entry in Section 4.2
+      (Components) OR Section 4.3 (Decisions). Without these structured
+      anchors the loop agent cannot perform gap analysis on the strawman
+      to surface candidate Open Questions.
+    required: true
+    failure_message: >
+      One or more strawmans lack structured anchors (Section 4.2 Components
+      and Section 4.3 Decisions both empty). Add at least one entry so the
+      gap-probe loop has something to analyse.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-PROBE-001
+    name: PS_scopes_distinct
+    description: >
+      PS scopes do not significantly overlap; each PS has a coherent area
+      of inquiry. Where two PS share a boundary, the boundary is explicit
+      in both PS's Out of Scope sections.
+    required: true
+    failure_message: >
+      Two or more PS appear to have overlapping scope. Reconcile boundaries
+      or merge the PS.
+
+  - id: AI-PROBE-002
+    name: cross_PS_refs_are_mutual
+    description: >
+      When an OQ in PS-A references PS-B in the Refs column, PS-B either
+      has a corresponding OQ that references PS-A or has scope that
+      explicitly absorbs the question. Dangling cross-PS references are
+      flagged.
+    required: true
+    failure_message: >
+      Cross-PS references are one-sided. Reconcile by adding the
+      corresponding OQ in the referenced PS, or reroute the question
+      to whichever PS owns it.
+
+  - id: AI-PROBE-003
+    name: strawmans_dont_contradict
+    description: >
+      PS strawmans are internally consistent at the architecture level.
+      No two PS strawmans propose contradictory designs for shared concerns
+      (e.g. two PS proposing different storage models for the same entity,
+      or different data ownership models for shared data).
+    required: true
+    failure_message: >
+      Two or more PS strawmans contradict each other on a shared concern.
+      Architect reconciliation needed before Converge.
+
+  - id: AI-PROBE-004
+    name: vision_capabilities_covered
+    description: >
+      Every capability in the Vision capability map with Clarity = `unclear`
+      or `unknown` has at least one PS with derived_from referencing that
+      capability, OR an explicit deferral note in the capability map's
+      Notes column. Silent dropping of capabilities is the failure mode
+      this prevents.
+    required: true
+    failure_message: >
+      One or more unclear/unknown capabilities from Vision have no covering
+      PS and no documented deferral. Either open a PS, document the
+      deferral, or reclassify the capability.
+
+  - id: AI-PROBE-005
+    name: candidate_PS_acknowledged
+    description: >
+      Candidate PS that the loop agent proposed but the architect did not
+      open are explicitly listed in a deferred state (e.g. in the capability
+      map's Notes column with "PS proposal deferred: {reason}"). Silent
+      dropping of proposed PS is the failure mode this prevents.
+    required: true
+    failure_message: >
+      One or more agent-proposed PS were neither opened nor explicitly
+      deferred. Acknowledge each proposal — open it, defer it with reason,
+      or reject it with reason.
+
+  - id: AI-PROBE-006
+    name: structured_updates_context_aligned
+    description: >
+      Every OQ resolution, every strawman update, and every REQ/ADR key
+      created during Probe traces to (a) an authoritative context item
+      (workspace/context/policy, prior ADR, glossary entry, landscape
+      entry, data product spec, capability map entry), OR (b) a documented
+      activity_log entry in the PS file backed by a session in the notes
+      file. Structured content without context or evidence traceability
+      risks introducing unauthoritative output — the very thing Jupiter's
+      context-driven principle prevents. This is the GUARDRAIL against
+      architect notes being typed directly into structured artifacts
+      without context cross-check.
+    required: true
+    failure_message: >
+      One or more structured updates (OQ resolution, strawman content, or
+      REQ/ADR key) lack traceability to authoritative context or
+      activity_log evidence. Untraceable structured content violates
+      Jupiter's context-driven output principle. Either trace it, or
+      remove it.
+
+  - id: AI-PROBE-007
+    name: DPD_spec_changes_context_aligned
+    description: >
+      Every change to a DPD Section 3 (Current Draft Specification) traces
+      to (a) an authoritative context item (workspace/context/...), (b) a
+      DPD notes file session entry, or (c) a PS notes entry from the
+      originating PS. Producer feedback captured in DPD notes counts as
+      evidence — but producer input that contradicts our authoritative
+      context must be flagged for reconciliation, not silently accepted.
+      This extends the AI-PROBE-006 guardrail to DPDs: "consume from
+      authoritative source only" applies to collaborative data product
+      definition as well.
+    required: true
+    failure_message: >
+      One or more DPD spec changes lack traceability to context or evidence,
+      or accept producer input that contradicts authoritative context.
+      Trace each spec change, or flag the conflict for reconciliation.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+    - id: HG-PROBE-001
+      name: architect_approves_probe_complete
+      description: >
+        Architect confirms all Problem Spaces are at status `converging`
+        or `closed`, the REQ/ADR catalogue accumulated during Probe
+        reflects the inquiry outcomes, cross-PS dependencies are reconciled,
+        and the initiative is ready to enter Converge for final closure
+        and stabilisation.
+      required: true
+      failure_message: >
+        Architect approval pending. Run /jupiter:review when ready.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Probe complete when all required auto and AI checks pass and the
+    architect approves via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  Probe phase. Architecture-led transformation. Multiple Problem Spaces run
+  concurrently as work units. Architect leads inquiry; loop agent supports by
+  reading raw notes, cross-checking against authoritative context, and proposing
+  structured updates for architect approval. Never auto-commit substantive
+  structured content without architect approval — the human gate principle
+  extends to all material PS updates, not just phase transitions.
+
+  STEP 1 — INITIAL PS PROPOSAL (run once at start of Probe)
+  After Vision is approved, run a PS proposal pass:
+  - Read workspace/artifacts/transformation/vision/capability-map.md and the
+    optional conceptual-sketch.md.
+  - For each CAP-{NNN} with Clarity = `unclear` or `unknown`:
+    Propose a candidate PS with:
+      - id (PS-{SLUG} where SLUG is derived from the capability name)
+      - draft problem_statement (drawn from the Notes column of the capability)
+      - draft derived_from: artifact: vision/capability-map.md, source:
+        CAP-{NNN}, gap: {Notes content}
+      - suggested stakeholders based on the Owner field
+  - Cluster candidate PS that share SMEs / data / process where appropriate.
+  - Present the candidate PS list to the architect for approval.
+  - Architect approves which PS to open; others must be noted in the capability
+    map Notes column as deferred — silent dropping violates AI-PROBE-005.
+
+  STEP 2 — PER-ITERATION SCAN OF ALL OPEN PS
+  Read every PS file under workspace/artifacts/transformation/problem-spaces/
+  AND its corresponding notes file under workspace/artifacts/transformation/
+  notes/. Per PS:
+    - Count OQs by status (open / in-discussion / resolved / deferred / rejected)
+    - Identify last activity_log entry date
+    - Identify last notes-file session date
+    - Note current PS status (open / in-progress / converging / closed)
+
+  STEP 3 — IDENTIFY CROSS-PS ISSUES
+    - Cross-PS OQ references: mutual / one-sided / dangling
+    - Scope overlaps between PS
+    - Strawman contradictions on shared concerns
+    - Stale PS (last activity older than threshold — flag for architect)
+
+  STEP 4 — PROCESS NEW NOTES (RAW → STRUCTURED, CONTEXT-ALIGNED)
+  For each PS, read notes-file session entries newer than the PS's last_updated:
+    - For each new session entry, cross-check content against authoritative
+      context (workspace/context/policy, prior ADRs, glossary, landscape,
+      data-products, capability-map).
+    - Propose structured updates with explicit traceability:
+        OQ resolution: → REQ / ADR / context-update / knowledge
+        Strawman updates (additions or refinements)
+        New OQs that surfaced in the session (with Why/rationale)
+    - For each proposal, include the trace — e.g. "OQ-X resolution proposal
+      based on notes 2026-06-04 + context check against policy/X.md".
+    - Flag CONTRADICTIONS: if notes say X but context says X', do not
+      proceed — surface the conflict for the architect to reconcile.
+    - This is the AI-PROBE-006 guardrail in action: structured outputs only
+      land when traceable to context or evidence.
+
+  STEP 5 — PROPOSE NEW PS (if needed)
+    - Capability-map check: any capabilities with no covering PS that should
+      have one (per AI-PROBE-004).
+    - Notes-driven: any session that surfaced "this is actually its own space"
+      → propose a new PS candidate with draft problem_statement and derived_from.
+
+  STEP 6 — REPORT CROSS-PS DASHBOARD
+  Output a per-PS status grid:
+    PS_ID | status | open OQ count | in-discussion OQ count | last activity
+  Plus:
+    - Cross-PS flags
+    - Suggested focus (stale PS, candidate PS not yet opened)
+    - Phase gap (sum of open + in-discussion OQs across all PS)
+
+  STEP 7 — ARCHITECT REVIEW
+  All substantive proposals (new OQs, new PS, strawman updates, OQ resolutions
+  with downstream REQ/ADR/context outputs) require architect approval before
+  commit. Bookkeeping (status updates on architect-closed OQs, activity_log
+  summary derived from notes-file sessions) can be auto-applied.
+
+  STRAWMAN-DRIVEN ELICITATION (cross-cutting mechanic):
+  The strawman in each PS Section 4 is the architect's working hypothesis.
+  The loop agent supports it across three nested loops tied to the steps above.
+
+  LOOP 1 — INITIAL STRAWMAN DRAFT (during STEP 1, at PS open)
+  When proposing a new PS, also draft the initial strawman from:
+    - The source capability in the capability map (derived_from)
+    - The HL conceptual sketch, if present
+    - Authoritative context (existing data products, prior ADRs, glossary, landscape)
+    - Any `initial-design` notes the architect captured in the PS notes file
+  Populate Section 4.1 (narrative), 4.2 (components anchored from context),
+  4.3 (decisions if any are implied by the source). Architect approves/refines.
+
+  LOOP 2 — GAP PROBE (during STEP 2 each iteration)
+  Scan the strawman for gaps that should become Open Questions:
+    - Components mentioned but unspecified (no responsibility / interface / NFR)
+    - Data referenced but unsourced (no producer / no DPD)
+    - Process steps mentioned but undetailed (who triggers? when?)
+    - Decisions implied but unstated (which approach? why?)
+    - Assumptions made but unvalidated
+    - Constraints applied but unjustified
+  Each gap becomes a candidate OQ with draft Question + draft Why/rationale.
+  Architect approves → OQs added to Section 5 register. The strawman is
+  the *probe* — the instrument used to find unknowns.
+
+  LOOP 3 — STRAWMAN UPDATE FROM OQ RESOLUTION (during STEP 4)
+  When OQs resolve (context-aligned per AI-PROBE-006), identify which
+  strawman sections are affected and propose specific edits in this format:
+
+    Existing (Section 4.X): "<current text>"
+    Proposed:               "<new text>"
+    Why:                    OQ-{SLUG}-{NNN} resolved {date};
+                            aligns with {context path or notes session}
+
+  Architect approves → strawman updates. Same context guardrail (AI-PROBE-006)
+  applies to strawman edits as to OQ resolutions and REQ/ADR creation.
+
+  CROSS-PS STRAWMAN RECONCILIATION (during STEP 3)
+  When PS-A and PS-B reference the same component or decision (visible in
+  Section 4.2 / 4.3 entries), check strawman consistency. Flag mismatches
+  with a proposed reconciliation: which PS owns the decision, what the
+  other should defer to. Cross-PS dependencies should be captured in
+  Section 4.4 (Open dependencies) of each PS that depends on the other.
+
+  THE GUARDRAIL (AI-PROBE-006):
+  Every structured update committed in Probe must trace to either an
+  authoritative context item OR a documented notes-file session. The architect
+  captures raw evidence in the notes file; the loop agent is the context-aware
+  interpreter; the structured layer in PS files is the audited output. Direct
+  architect edits to structured PS sections are discouraged — they bypass the
+  context check that gives Jupiter its rigor.

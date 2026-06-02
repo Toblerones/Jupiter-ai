@@ -1,0 +1,194 @@
+# Jupiter Gate Config — Vision → Probe (Transformation profile)
+# Defines the checks the loop agent runs to confirm Vision outputs are ready
+# to enter Probe. Vision must produce a populated capability map (mandatory)
+# and may produce an HL conceptual sketch (optional). Problem Space candidates
+# in Probe will be derived from gaps in these conceptual artifacts.
+#
+# Check ordering: auto checks first (deterministic), then AI checks (judgment),
+# then human gate. Gate run happens inside /jupiter:iterate.
+# Gap = count of required checks failing. Phase complete = gap 0 + human gate approved.
+
+version: "3.0"
+transition: "vision → probe"
+description: >
+  Vision phase complete when the conceptual artifacts (capability map mandatory,
+  HL conceptual sketch optional) are populated, capabilities have clarity flags
+  with justification for unclear/unknown entries, and the artifacts collectively
+  give the loop agent enough material to derive Problem Space candidates at the
+  Vision → Probe transition.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-VISION-001
+    name: intent_statement_complete
+    description: >
+      workspace/INTENT.md exists, is non-empty, and contains no placeholder
+      text ([REPLACE], [TODO], TBD).
+    required: true
+    failure_message: >
+      INTENT.md is missing, empty, or still contains placeholder text.
+      A populated vision statement is required before Probe can begin.
+
+  - id: AC-VISION-002
+    name: capability_map_exists
+    description: >
+      workspace/artifacts/transformation/vision/capability-map.md exists.
+    required: true
+    failure_message: >
+      Capability map file is missing. Capability map is MANDATORY in the
+      transformation profile — it is the primary source of Problem Space
+      candidates. Use templates/capability-map_template.md to create it.
+
+  - id: AC-VISION-003
+    name: capability_map_has_capabilities
+    description: >
+      The capability map contains at least one CAP-{NNN} entry in the
+      Capabilities table with required fields populated (Capability name,
+      Owner, Current State, Target State, Clarity).
+    required: true
+    failure_message: >
+      Capability map has no populated CAP-* entries. Populate the
+      Capabilities table before transitioning to Probe.
+
+  - id: AC-VISION-004
+    name: every_capability_has_clarity
+    description: >
+      Every CAP-{NNN} entry has a Clarity flag with one of the values:
+      `clear`, `unclear`, `unknown`. No placeholder text in the Clarity column.
+    required: true
+    failure_message: >
+      One or more capabilities lack a Clarity flag. Clarity drives PS
+      proposal — capabilities marked `unclear` or `unknown` are the
+      primary source of Problem Space candidates.
+
+  - id: AC-VISION-005
+    name: out_of_scope_section_present
+    description: >
+      The capability map's Out of Scope Capabilities section is populated
+      with either explicit out-of-scope entries or an explicit "None — all
+      related capabilities are in scope" statement.
+    required: true
+    failure_message: >
+      Out of Scope section is missing or contains only placeholder text.
+      Explicit scope boundaries are required — undeclared scope becomes
+      implicit scope.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-VISION-001
+    name: capability_map_coherent
+    description: >
+      Capabilities in the map do not significantly overlap; each is a
+      distinct unit of business capability. Where two capabilities share
+      a boundary, the boundary is explicit in the Notes column.
+    required: true
+    failure_message: >
+      Two or more capabilities appear to overlap without explicit boundary
+      documentation. Reconcile or document the boundary.
+
+  - id: AI-VISION-002
+    name: capability_clarity_justified
+    description: >
+      Every capability with Clarity = `unclear` or `unknown` has a Notes
+      column entry explaining WHAT is unclear (target-state ambiguity,
+      realisation approach undecided, data flow unmapped, etc.). This
+      gives the loop agent grounding for proposing meaningful PS at the
+      Vision → Probe transition.
+    required: true
+    failure_message: >
+      One or more unclear/unknown capabilities lack Notes explaining
+      what is unclear. Without this, PS proposals at the transition
+      lack grounding.
+
+  - id: AI-VISION-003
+    name: capability_map_aligns_with_intent
+    description: >
+      The in-scope capabilities in the capability map reflect the target
+      conceptual architecture described in INTENT.md. No major capability
+      described in INTENT.md is missing from the map, and no capability
+      in the map is unmotivated by INTENT.md.
+    required: true
+    failure_message: >
+      Capability map is inconsistent with INTENT.md target architecture.
+      Reconcile before transitioning to Probe.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+    - id: HG-VISION-001
+      name: architect_approves_vision_complete
+      description: >
+        Architect confirms the capability map (and optional conceptual sketch)
+        is complete and ready to source Problem Space candidates. The loop
+        agent will propose candidate PS at Vision → Probe transition; the
+        architect's approval of Vision signals readiness for that proposal pass.
+      required: true
+      failure_message: >
+        Architect approval pending. Run /jupiter:review when ready.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Vision complete when all required auto and AI checks pass and the
+    architect approves via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  Vision phase. Architecture-led transformation. Produce the conceptual
+  artifacts (capability map mandatory, HL conceptual sketch optional) from
+  which Problem Spaces will be derived in Probe.
+
+  STEP 1 — READ ALL CONTEXT
+  Load workspace/context/ fully (project.yml, policy/, standards/, landscape/,
+  adrs/, glossary/, data-products/). Understand existing guardrails and prior
+  decisions before sketching the target.
+
+  STEP 2 — CAPTURE OR REFINE INTENT
+  Ensure workspace/INTENT.md contains: pain statement (current manual /
+  fragmented state) and target conceptual architecture narrative. Refine
+  iteratively with the architect.
+
+  STEP 3 — DRAFT CAPABILITY MAP
+  Use templates/capability-map_template.md. Populate the Capabilities table
+  with CAP-{NNN} entries. For each capability:
+    - Name, Owner
+    - Current State (1 line — typically: manual, Excel-based, fragmented)
+    - Target State (1 line — what we want it to be)
+    - Clarity: `clear` if both target and realisation well-understood;
+               `unclear` if target known but realisation ambiguous;
+               `unknown` if target itself not yet defined
+    - Notes: explain WHAT is unclear/unknown — this grounds PS proposals later
+  Add a Mermaid diagram if helpful for clarity. Populate Out of Scope explicitly.
+
+  STEP 4 — OPTIONAL HL CONCEPTUAL SKETCH
+  If the architect already has enough confidence in part of the solution
+  shape, draft a high-level conceptual sketch at vision/conceptual-sketch.md.
+  Format is flexible — diagram, narrative, partial sketch. Not required.
+
+  STEP 5 — SELF-REVIEW
+  Verify all auto checks (AC-VISION-001..005) and AI checks (AI-VISION-001..003)
+  pass. The most important check: every unclear/unknown capability has Notes
+  explaining what's unclear — this is what the agent will use to propose PS.
+
+  STEP 6 — PRESENT FOR HUMAN GATE
+  When checks pass, present Vision artifacts (INTENT.md + capability-map.md +
+  conceptual-sketch.md if present) to the architect. Run /jupiter:review.
+  The human gate is non-negotiable — never auto-approve.
+
+  AT TRANSITION TO PROBE
+  After Vision is approved, the loop agent runs the initial PS proposal pass
+  at the start of Probe (see workflow/gates/probe-converge.yml agent_guidance
+  STEP 1). Capabilities with Clarity = unclear or unknown produce candidate
+  PS, each with draft problem_statement, draft derived_from (artifact:
+  vision/capability-map.md, source: CAP-{NNN}, gap: {Notes content}), and
+  proposed stakeholders.

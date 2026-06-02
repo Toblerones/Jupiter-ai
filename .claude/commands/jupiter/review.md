@@ -201,6 +201,18 @@ For the `design` phase:
 - Update initiative file: `phases.design.status = complete`
 - Append `phase_complete` event for the design phase.
 
+For `vision`, `probe`, or `converge` phases (transformation profile):
+- Update initiative file: `phases.{phase}.status = complete`
+- Append `phase_complete` event:
+```json
+{"event": "phase_complete", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}"}
+```
+
+For the `design_transformation` phase (transformation profile):
+- Update initiative file: `phases.design_transformation.human_gate_status.HG-DESIGN-001 = approved`. If `--panel` was used, also set `HG-DESIGN-002 = approved` (panel endorsement).
+- Update initiative file: `phases.design_transformation.status = complete`
+- Append `phase_complete` event for the design_transformation phase.
+
 **On `reject` or `refine`**:
 - Update initiative file: `phases.{phase}.status = in_progress`
 - Record feedback: `phases.{phase}.last_feedback = "{feedback}"`

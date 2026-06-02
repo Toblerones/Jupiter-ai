@@ -50,7 +50,12 @@ Welcome to Jupiter. What would you like to do?
   5. Import existing requirements
      — normalise a business requirements document; intent derived automatically
 
-Enter 1, 2, 3, 4, or 5 (or press Enter for 1):
+  6. Start an architecture-led transformation
+     — pain + target conceptual architecture as input; multi-stream inquiry via
+       Problem Spaces and Data Product Definitions; collaborative discovery with
+       upstream producers
+
+Enter 1, 2, 3, 4, 5, or 6 (or press Enter for 1):
 ```
 
 **Option 1 — New initiative**: Proceed to Step 3 (project identity questions). This is the default.
@@ -108,6 +113,8 @@ If no workspace exists yet, ask Q1 (project name) only to initialise the workspa
 Then run `/jupiter:assess --artifact {artifact_path}`.
 
 **Option 5 — Import existing requirements**: Proceed to Step 2b (requirements-first flow).
+
+**Option 6 — Architecture-led transformation**: Sets profile = `transformation`. Proceed to Step 3 (project identity questions) — the same Q1–Q6 flow applies, but Q6 captures pain PLUS the target conceptual architecture (the architect's understanding of where we want to go, not just what we have today). In Step 5, run `/jupiter:init --profile transformation`. After init, Step 6 runs the first vision iteration: the loop agent helps draft the capability map (mandatory) and optional HL conceptual sketch from the seed + loaded context. After Vision is approved, the next iterate proposes candidate Problem Spaces from capabilities flagged unclear or unknown in the capability map.
 
 ---
 
@@ -287,19 +294,21 @@ Context loaded:
 Running first intent iteration...
 ```
 
-### Step 6 — Run intent iteration
+### Step 6 — Run first phase iteration
 
-Invoke `/jupiter:iterate --phase intent`.
+For profile `architecture`, `discovery`, `spike`, or `assessment`: invoke `/jupiter:iterate --phase intent`. The loop agent loads the seed and context and produces the full INTENT.md. When gap = 0, status is READY FOR REVIEW.
 
-The loop agent loads the seed and context and produces the full INTENT.md. The gate report shows which checks pass. When gap = 0, status is READY FOR REVIEW — the architect runs `/jupiter:review` to confirm the intent before requirements begin.
+For profile `transformation`: invoke `/jupiter:iterate --phase vision`. The loop agent loads the seed (pain + target conceptual architecture) and context, then helps draft the capability map (mandatory) and optional HL conceptual sketch. When gap = 0, status is READY FOR REVIEW. After Vision is approved, the next iterate proposes candidate Problem Spaces from unclear / unknown capabilities.
+
+The gate report shows which checks pass. The architect runs `/jupiter:review` to approve before the next phase begins.
 
 After the gate report prints, show:
 ```
-Next: Run /jupiter:review to confirm the intent statement, or
+Next: Run /jupiter:review to confirm the {phase} statement, or
       /jupiter:iterate to refine it further.
 ```
 
-Then stop. The architect reads the produced INTENT.md, refines if needed (by running iterate again), and approves via review.
+Then stop. The architect reads the produced artifacts, refines if needed (by running iterate again), and approves via review.
 
 ---
 
@@ -327,6 +336,23 @@ Walk phase states in order. The first matching condition determines the action.
 | `DESIGN_COMPLETE` | `phases.design.status == complete` | Show completion → suggest `/jupiter:gaps` then `/jupiter:handoff` |
 | `BLOCKED` | Any phase `status == blocked` | Surface the blocker from the last gate report. Do not auto-iterate. |
 | `BUDGET_EXPIRED` | Any phase `status == budget_expired` | Prompt: "Time-box reached." → Run `/jupiter:review` to record findings |
+
+**Transformation profile** — additional states (evaluated when `profile == transformation`; the standard states above use different phase names and are not applicable for transformation initiatives):
+
+| State | Detection | Action |
+|-------|-----------|--------|
+| `VISION_LOOPING` | `phases.vision.status == in_progress` | Run `/jupiter:iterate --phase vision` |
+| `VISION_READY` | `phases.vision.status == ready_for_review` | Prompt: "Vision is ready for review." → Run `/jupiter:review` |
+| `PROBE_NOT_STARTED` | `phases.vision.status == complete` AND `phases.probe.status == not_started` | Run `/jupiter:iterate --phase probe` (triggers initial PS proposal pass) |
+| `PROBE_LOOPING` | `phases.probe.status == in_progress` | Run `/jupiter:iterate --phase probe` |
+| `PROBE_READY` | `phases.probe.status == ready_for_review` | Prompt: "Probe is ready for review." → Run `/jupiter:review` |
+| `CONVERGE_NOT_STARTED` | `phases.probe.status == complete` AND `phases.converge.status == not_started` | Run `/jupiter:iterate --phase converge` |
+| `CONVERGE_LOOPING` | `phases.converge.status == in_progress` | Run `/jupiter:iterate --phase converge` |
+| `CONVERGE_READY` | `phases.converge.status == ready_for_review` | Prompt: "Converge is ready for review." → Run `/jupiter:review` |
+| `DESIGN_T_NOT_STARTED` | `phases.converge.status == complete` AND `phases.design_transformation.status == not_started` | Run `/jupiter:iterate --phase design_transformation` |
+| `DESIGN_T_LOOPING` | `phases.design_transformation.status == in_progress` | Run `/jupiter:iterate --phase design_transformation` |
+| `DESIGN_T_READY` | `phases.design_transformation.status == ready_for_review` | Prompt: "SOAP is ready for panel review." → Run `/jupiter:review --panel` |
+| `DESIGN_T_COMPLETE` | `phases.design_transformation.status == complete` | Show completion → suggest `/jupiter:gaps` then `/jupiter:handoff` |
 
 For all looping states, print the state before running:
 ```

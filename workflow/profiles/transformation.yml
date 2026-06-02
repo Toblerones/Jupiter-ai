@@ -1,0 +1,124 @@
+# Jupiter Profile — Transformation
+# Architecture-led, hypothesis-driven, concurrent-stream methodology.
+# Used for transformation initiatives where: target conceptual architecture
+# is given upfront (not derived from requirements); requirements emerge from
+# Problem Space inquiry (OQ resolutions); multiple inquiry streams run
+# concurrently within the Probe phase; design phase adds upstream data
+# product change proposals and migration roadmap.
+#
+# Distinct from the standard architecture profile — see
+# workflow/profiles/architecture.yml for the requirements-first governance flow.
+
+version: "3.0"
+id: transformation
+label: "Architecture-Led Transformation"
+description: >
+  Transformation initiative using architecture-led methodology. Vision
+  captures pain + target conceptual architecture upfront. Probe opens
+  multiple concurrent Problem Spaces; each PS investigates a scoped area
+  of inquiry with its own stakeholders and strawman. Open Questions resolve
+  into REQs, ADRs, and context updates. Converge stabilises the catalogue
+  and ratifies ADRs. Design (Transformation) assembles the SOAP plus
+  upstream data product change proposals and migration roadmap.
+
+phases:
+  include: [vision, probe, converge, design_transformation]
+  exclude: [intent, requirements, design, assessment]
+
+gates:
+  human_required_on_all_phases: true
+  reviewer_panel_available: true
+  spec_check_available: true
+
+reviewer_panel:
+  enabled: true
+  default_roster: [ea, ba, da, sa, eng]
+  invocation: "/jupiter:review --panel"
+
+iteration:
+  budget: unlimited
+  stuck_threshold: 3
+  stuck_action: >
+    After {stuck_threshold} iterations with no gap reduction on the active
+    phase, surface a status report to the architect identifying the specific
+    checks that are not passing (per PS if in Probe / Converge) and request
+    guidance. Do not continue looping without direction.
+
+context:
+  density: standard
+  required:
+    - workspace/context/project.yml
+  optional:
+    - workspace/context/policy/
+    - workspace/context/standards/
+    - workspace/context/landscape/
+    - workspace/context/adrs/
+    - workspace/context/glossary/
+    - workspace/context/data-products/
+
+output:
+  vision:
+    artifact: workspace/INTENT.md
+    sub_artifacts:
+      capability_map:
+        path: "workspace/artifacts/transformation/vision/capability-map.md"
+        template: templates/capability-map_template.md
+        required: true
+      conceptual_sketch:
+        path: "workspace/artifacts/transformation/vision/conceptual-sketch.md"
+        required: false
+  probe:
+    work_units:
+      problem_spaces:
+        path: "workspace/artifacts/transformation/problem-spaces/"
+        pattern: "PS-{slug}.md"
+        template: templates/PS_template.md
+        notes:
+          path: "workspace/artifacts/transformation/notes/"
+          pattern: "PS-{slug}-notes.md"
+          template: templates/PS_notes_template.md
+      data_products:
+        path: "workspace/artifacts/transformation/data-products/"
+        pattern: "DPD-{NNN}.md"
+        template: templates/DPD_template.md
+        notes:
+          path: "workspace/artifacts/transformation/notes/"
+          pattern: "DPD-{NNN}-notes.md"
+          template: templates/DPD_notes_template.md
+  converge:
+    work_units:
+      problem_spaces:
+        path: "workspace/artifacts/transformation/problem-spaces/"
+        pattern: "PS-{slug}.md"
+        template: templates/PS_template.md
+      data_products:
+        path: "workspace/artifacts/transformation/data-products/"
+        pattern: "DPD-{NNN}.md"
+        template: templates/DPD_template.md
+  design_transformation:
+    artifact: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+    adrs: "workspace/artifacts/transformation/design/adrs/"
+    template_soap: templates/SOAP_template.md
+    template_adr: templates/ADR_template.md
+    migration_roadmap: "workspace/artifacts/transformation/design/migration-roadmap.md"
+    # Inputs from earlier phases (referenced, not produced here):
+    # - DPDs at workspace/artifacts/transformation/data-products/ (created in Probe/Converge)
+
+methodology_notes: |
+  This profile implements architecture-led transformation methodology:
+
+  - Target conceptual architecture is an INPUT to Vision, not derived.
+  - Requirements EMERGE from Probe via OQ resolution; they are not authored
+    upfront.
+  - Problem Spaces are scoped areas of inquiry (per Domain-Driven Design,
+    Lean / Product Discovery, Steve Blank's customer development framing),
+    distinct from solution space.
+  - Each PS has its own stakeholders, strawman, and inquiry stream.
+  - PS run concurrently within Probe — the architect manages architecture
+    holistically across all PS, not as siloed domain workstreams.
+  - Raw inquiry notes (architect-captured evidence) live separately from
+    structured PS files (agent-produced, context-aligned outputs). This
+    separation enforces Jupiter's context-driven output principle.
+  - Each structured update commits ONLY after agent-mediated context
+    cross-check + architect approval. See AI-PROBE-006 in
+    workflow/gates/probe-converge.yml — the context guardrail check.
