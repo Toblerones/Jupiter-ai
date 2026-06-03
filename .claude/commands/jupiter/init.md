@@ -69,7 +69,14 @@ artifacts/
       adrs/
 ```
 
-These hold the transformation-specific artifacts: Vision conceptual artifacts (capability map and optional HL conceptual sketch), Problem Spaces, Data Product Definitions, raw notes (PS and DPD discovery sessions), and Design (Transformation) outputs (SOAP, ADRs, migration roadmap).
+Also create the target-architecture context folder (it is in the transformation profile's `context.required`):
+
+```
+context/
+  target-architecture/        ← authoritative target state, loaded as a guardrail every iteration
+```
+
+These hold the transformation-specific artifacts: Vision conceptual artifacts (capability map and optional HL conceptual sketch), Problem Spaces, Data Product Definitions, raw notes (PS and DPD discovery sessions), and Design (Transformation) outputs (SOAP, ADRs, migration roadmap). The `context/target-architecture/` folder is where the architect places the converted target conceptual architecture (one or more files at domain / sub-domain / capability altitude) — see `templates/target-architecture_template.md` and `templates/target-architecture_GUIDE.md`. It starts empty; Vision is not complete until at least one authoritative domain-level file exists (gate AC-VISION-006).
 
 ### Step 2 — Guided setup (5 questions)
 

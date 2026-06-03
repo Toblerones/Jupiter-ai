@@ -186,10 +186,10 @@ ai_checks:
     description: >
       Every OQ resolution, every strawman update, and every REQ/ADR key
       created during Probe traces to (a) an authoritative context item
-      (workspace/context/policy, prior ADR, glossary entry, landscape
-      entry, data product spec, capability map entry), OR (b) a documented
-      activity_log entry in the PS file backed by a session in the notes
-      file. Structured content without context or evidence traceability
+      (workspace/context/target-architecture, policy, prior ADR, glossary
+      entry, landscape entry, data product spec, capability map entry), OR
+      (b) a documented activity_log entry in the PS file backed by a session
+      in the notes file. Structured content without context or evidence traceability
       risks introducing unauthoritative output — the very thing Jupiter's
       context-driven principle prevents. This is the GUARDRAIL against
       architect notes being typed directly into structured artifacts

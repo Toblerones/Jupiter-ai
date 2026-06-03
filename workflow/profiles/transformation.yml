@@ -48,6 +48,7 @@ context:
   density: standard
   required:
     - workspace/context/project.yml
+    - workspace/context/target-architecture/   # authoritative target state (the "lead"); loaded every iteration as a guardrail. See templates/target-architecture_GUIDE.md
   optional:
     - workspace/context/policy/
     - workspace/context/standards/
@@ -107,7 +108,14 @@ output:
 methodology_notes: |
   This profile implements architecture-led transformation methodology:
 
-  - Target conceptual architecture is an INPUT to Vision, not derived.
+  - Target conceptual architecture is an INPUT, not derived. It lives as
+    authoritative context under workspace/context/target-architecture/ (declared
+    in context.required) and is loaded as a guardrail on every iteration — NOT
+    narrated into INTENT. INTENT carries the pain/problem statement; the target
+    architecture is the loaded constraint. Files are authored by converting a
+    diagram per templates/target-architecture_GUIDE.md, modelled at two or more
+    altitudes (domain / sub-domain / capability) bound to capability-map keys,
+    with most-specific-wins alignment resolution downstream.
   - Requirements EMERGE from Probe via OQ resolution; they are not authored
     upfront.
   - Problem Spaces are scoped areas of inquiry (per Domain-Driven Design,

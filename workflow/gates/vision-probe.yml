@@ -25,7 +25,14 @@ auto_checks:
     name: intent_statement_complete
     description: >
       workspace/INTENT.md exists, is non-empty, and contains no placeholder
-      text ([REPLACE], [TODO], TBD).
+      text ([REPLACE], [TODO], TBD). In the transformation profile INTENT
+      carries the pain / problem statement, vision drivers, AND a target
+      architecture summary section. The architect may leave the target
+      architecture section as a placeholder — the loop fills/refines it during
+      Vision from the authoritative target architecture in
+      context/target-architecture/. INTENT's section is the narrative summary;
+      the authoritative, machine-checkable copy is the context guardrail
+      (AC-VISION-006).
     required: true
     failure_message: >
       INTENT.md is missing, empty, or still contains placeholder text.
@@ -75,6 +82,40 @@ auto_checks:
       Explicit scope boundaries are required — undeclared scope becomes
       implicit scope.
 
+  - id: AC-VISION-006
+    name: target_architecture_present
+    description: >
+      workspace/context/target-architecture/ contains at least one
+      domain-level target architecture file (frontmatter level: domain) with
+      status: authoritative and no placeholder text. This is the authoritative
+      target state — the "lead" in architecture-led — loaded as a guardrail on
+      every iteration. It is authored by converting a diagram per
+      templates/target-architecture_GUIDE.md.
+    required: true
+    failure_message: >
+      No authoritative domain-level target architecture found in
+      workspace/context/target-architecture/. The target conceptual
+      architecture is the mandatory input for the transformation profile.
+      Convert the target-state diagram into a target-architecture file
+      (templates/target-architecture_template.md + _GUIDE.md) and set its
+      status to authoritative.
+
+  - id: AC-VISION-007
+    name: target_architecture_bindings_valid
+    description: >
+      Every target architecture file binds correctly: each file with
+      level: capability or level: sub-domain has (a) a `scope` referencing a
+      real CAP-{NNN} present in the capability map, and (b) a `parent`
+      referencing an existing target architecture file in the same folder.
+      No orphan files (parent missing) and no dangling scope (CAP not in the
+      map). Domain-level files have parent: null.
+    required: true
+    failure_message: >
+      One or more target architecture files have invalid bindings — a `scope`
+      that does not match any CAP-{NNN} in the capability map, or a `parent`
+      that names no existing file. Fix the bindings (GUIDE §7) so the altitude
+      hierarchy is anchored and orphan-free.
+
 # ─── AI Checks ────────────────────────────────────────────────────────────────
 
 ai_checks:
@@ -105,16 +146,36 @@ ai_checks:
       lack grounding.
 
   - id: AI-VISION-003
-    name: capability_map_aligns_with_intent
+    name: capability_map_aligns_with_target_architecture
     description: >
-      The in-scope capabilities in the capability map reflect the target
-      conceptual architecture described in INTENT.md. No major capability
-      described in INTENT.md is missing from the map, and no capability
-      in the map is unmotivated by INTENT.md.
+      The in-scope capabilities in the capability map reflect the authoritative
+      target architecture in context/target-architecture/. Every building block
+      in a target architecture file that represents a business capability maps
+      to a CAP-{NNN} in the map (or is flagged conceptual-only), and no
+      capability in the map is unmotivated by the target architecture or INTENT.
+      The map is the analytical lens over the target architecture — they must
+      not disagree.
     required: true
     failure_message: >
-      Capability map is inconsistent with INTENT.md target architecture.
+      Capability map is inconsistent with the target architecture in
+      context/target-architecture/ — a building block has no corresponding
+      capability, or a capability has no basis in the target architecture.
       Reconcile before transitioning to Probe.
+
+  - id: AI-VISION-004
+    name: target_architecture_children_consistent
+    description: >
+      Each capability-level / sub-domain-level target architecture file refines
+      its parent without contradicting it — it may add or detail building
+      blocks, flows, and principles, but must not violate a parent principle
+      (TA-{SCOPE}-P{n}) or redefine a parent flow inconsistently. This enforces
+      the most-specific-wins altitude model: a child governs its area but stays
+      within the umbrella of its parent.
+    required: true
+    failure_message: >
+      One or more capability/sub-domain target architecture files contradict
+      their parent (a violated parent principle or an inconsistent flow).
+      Reconcile the child against the parent before transitioning to Probe.
 
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
@@ -149,16 +210,33 @@ agent_guidance: |
   which Problem Spaces will be derived in Probe.
 
   STEP 1 — READ ALL CONTEXT
-  Load workspace/context/ fully (project.yml, policy/, standards/, landscape/,
-  adrs/, glossary/, data-products/). Understand existing guardrails and prior
-  decisions before sketching the target.
+  Load workspace/context/ fully (project.yml, target-architecture/, policy/,
+  standards/, landscape/, adrs/, glossary/, data-products/). The
+  target-architecture/ files are the authoritative target state — the "lead" —
+  and govern everything downstream. Understand them and the existing guardrails
+  before drafting the capability map.
 
-  STEP 2 — CAPTURE OR REFINE INTENT
-  Ensure workspace/INTENT.md contains: pain statement (current manual /
-  fragmented state) and target conceptual architecture narrative. Refine
-  iteratively with the architect.
+  STEP 2 — CAPTURE INTENT
+  workspace/INTENT.md carries the pain / problem statement, vision drivers, and
+  a target architecture summary section. The architect may leave the target
+  architecture summary as a placeholder — fill / refine it from the authoritative
+  target architecture in context/target-architecture/. INTENT's section is a
+  narrative summary that points at the guardrail; the authoritative,
+  machine-checkable copy is the context files, not INTENT.
 
-  STEP 3 — DRAFT CAPABILITY MAP
+  The target architecture itself is authoritative context the architect PREPARES
+  under workspace/context/target-architecture/ — treated like policy/ and
+  standards/, loaded as a guardrail on every iteration. It is a precondition for
+  Vision (AC-VISION-006), converted from the target-state diagram per
+  templates/target-architecture_GUIDE.md (domain level mandatory; capability /
+  sub-domain levels only where a finer-grained target genuinely exists, each
+  bound to a CAP-{NNN} and a parent). The loop consumes it as a guardrail; it
+  does not author it.
+
+  STEP 3 — DRAFT CAPABILITY MAP (derived from the target architecture)
+  The capability map is the analytical lens over the target architecture — derive
+  it from the target-architecture files, not the other way round. Each building
+  block representing a business capability becomes a CAP-{NNN} (per AI-VISION-003).
   Use templates/capability-map_template.md. Populate the Capabilities table
   with CAP-{NNN} entries. For each capability:
     - Name, Owner
@@ -176,9 +254,11 @@ agent_guidance: |
   Format is flexible — diagram, narrative, partial sketch. Not required.
 
   STEP 5 — SELF-REVIEW
-  Verify all auto checks (AC-VISION-001..005) and AI checks (AI-VISION-001..003)
-  pass. The most important check: every unclear/unknown capability has Notes
-  explaining what's unclear — this is what the agent will use to propose PS.
+  Verify all auto checks (AC-VISION-001..007) and AI checks (AI-VISION-001..004)
+  pass. Two critical ones: every unclear/unknown capability has Notes explaining
+  what's unclear (this is what the agent uses to propose PS); and the target
+  architecture is present, correctly bound (real CAP scopes, existing parents),
+  and children do not contradict parents (AC-VISION-006/007, AI-VISION-004).
 
   STEP 6 — PRESENT FOR HUMAN GATE
   When checks pass, present Vision artifacts (INTENT.md + capability-map.md +

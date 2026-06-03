@@ -119,10 +119,10 @@ ai_checks:
     name: soap_aligns_with_context
     description: >
       The SOAP respects all authoritative context loaded for the initiative
-      — policy, prior ADRs, glossary, landscape, data products. No SOAP
-      section silently violates a context constraint. This is the design-
-      phase analog of AI-PROBE-006: outputs must trace to authoritative
-      sources.
+      — target architecture, policy, prior ADRs, glossary, landscape, data
+      products. No SOAP section silently violates a context constraint. This is
+      the design-phase analog of AI-PROBE-006: outputs must trace to, and stay
+      within, authoritative sources.
     required: true
     failure_message: >
       SOAP appears to violate one or more context constraints. Reconcile, or
