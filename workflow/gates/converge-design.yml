@@ -125,6 +125,22 @@ ai_checks:
       documented deferral. Either complete the producer alignment, or
       document the deferral explicitly.
 
+  - id: AI-CONVERGE-006
+    name: soap_no_open_emergent_elements
+    description: >
+      By the end of Converge the living SOAP has no emergent element still
+      marked `open`. Every §6 block, §2.3 requirement, §8 NFR, and §7 ADR row is
+      either `confirmed` (traced to a closed PS / resolved OQ / ratified ADR) or
+      explicitly `deferred` (a confirmed "not built this initiative" decision
+      with a documented reason). This is AI-CONVERGE-002 capability coverage at
+      the SOAP level — the SOAP is now ready to be FINALISED in Design, not
+      assembled from scratch.
+    required: true
+    failure_message: >
+      One or more emergent SOAP elements are still `open`. Close the underlying
+      PS to confirm them, or mark them `deferred` with a reason, before
+      transitioning to Design.
+
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
 human_gate:
@@ -208,4 +224,6 @@ agent_guidance: |
     - Ratified ADR list with their decisions
     - Addressed capabilities and any explicit deferrals
     - Confirmation that all PS are closed
+    - Confirmation that the living SOAP has no emergent element still `open`
+      (every one confirmed or explicitly deferred) — per AI-CONVERGE-006
   Request /jupiter:review when ready.

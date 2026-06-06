@@ -6,11 +6,13 @@
 version: "3.0"
 transition: "design_transformation → handoff"
 description: >
-  Design (Transformation) phase complete when the SOAP is fully populated
-  per templates/SOAP_template.md, ADRs are ratified, the migration roadmap
-  exists, every DPD is at status `aligned`/`implemented` or explicitly
-  noted as deferred, and the architect approves the SOAP for handoff
-  (reviewer panel endorsement is recommended).
+  Design (Transformation) phase complete when the living SOAP (born in Probe,
+  accreted through Converge) is FINALISED — fully populated per
+  templates/SOAP_template.md and with no emergent element left `open` (every one
+  confirmed or explicitly deferred), ADRs are ratified, the migration roadmap
+  exists, every DPD is at status `aligned`/`implemented` or explicitly noted as
+  deferred, and the architect approves the SOAP for handoff (reviewer panel
+  endorsement is recommended).
 
 # ─── Auto Checks ──────────────────────────────────────────────────────────────
 
@@ -29,19 +31,24 @@ auto_checks:
       Probe and Converge.
 
   - id: AC-DESIGN-002
-    name: soap_all_sections_populated
+    name: soap_finalised_no_open_elements
     description: >
-      Every required section of the SOAP per templates/SOAP_template.md has
-      substantive content and no placeholder text ([REPLACE], [TODO], TBD):
-      Document Control, Section 1 Executive Summary, Section 2 Business
-      Context & Requirements, Section 3 Current State Snapshot, Section 4
-      Business Architecture, Section 5 Target State Architecture, Section 6
-      Solution Architecture, Section 7 ADRs Summary, Section 8 Non-Functional
-      Architecture, Section 9 Delivery, Risks & Dependencies.
+      The living SOAP (born in Probe, accreted through Converge) is FINALISED.
+      Two conditions: (a) every required section per templates/SOAP_template.md
+      has substantive content and no placeholder text ([REPLACE], [TODO], TBD) —
+      Document Control, Section 1 Executive Summary, Section 2 Business Context &
+      Requirements, Section 3 Current State Snapshot, Section 4 Business
+      Architecture, Section 5 Target State Architecture, Section 6 Solution
+      Architecture, Section 7 ADRs Summary, Section 8 Non-Functional
+      Architecture, Section 9 Delivery, Risks & Dependencies; AND (b) no emergent
+      element (§2.3, §6, §7, §8) remains marked `open` — every one is `confirmed`
+      or explicitly `deferred`. The `open` state is legitimate during
+      Probe/Converge but is the handoff-blocking condition here.
     required: true
     failure_message: >
-      One or more SOAP sections are missing, empty, or contain placeholder
-      text. The failure message names the specific sections needing content.
+      The SOAP is not finalised — a section still has placeholder text, or an
+      emergent element is still marked `open`. Confirm it (close the underlying
+      PS) or mark it `deferred` with a reason before handoff.
 
   - id: AC-DESIGN-003
     name: all_ADRs_ratified
@@ -177,6 +184,10 @@ agent_guidance: |
 
   STEP 1 — LOAD INPUTS
   Read:
+    - The EXISTING living SOAP at
+      workspace/artifacts/transformation/design/{initiative_id}-SOAP.md — born in
+      Probe, accreted through Converge. You are FINALISING this file, not
+      creating it.
     - workspace/INTENT.md (vision narrative)
     - workspace/artifacts/transformation/vision/capability-map.md
     - workspace/artifacts/transformation/vision/conceptual-sketch.md (if present)
@@ -187,9 +198,13 @@ agent_guidance: |
     - Full workspace/context/ (policy, ADRs, glossary, landscape, data products)
     - Template at templates/SOAP_template.md (production SOAP shape)
 
-  STEP 2 — DRAFT SOAP FROM TEMPLATE
-  Use templates/SOAP_template.md as the structural skeleton. Populate every
-  section with substantive content drawn from the loaded inputs:
+  STEP 2 — FINALISE THE LIVING SOAP
+  The SOAP already exists — born in Probe, accreted through Converge. Do NOT
+  recreate it from scratch. Open the existing file and finalise it: drive every
+  emergent element still marked `open` to `confirmed` or explicit `deferred`,
+  reconcile cross-PS solution content into one coherent view, and verify every
+  section is substantively populated. Use the loaded inputs to fill any remaining
+  gaps (each section below indicates its source):
     - Document Control: Owner from project.yml lead_architect; populate
       Reference / Version / Status fields
     - Section 1 Executive Summary: from INTENT.md problem + vision drivers

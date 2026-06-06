@@ -5,6 +5,22 @@
 > This SOAP is intentionally high-level, focused on the business problem and proposed solution.
 > Detailed Specifications, such as Data, Security and similar concerns, are captured in dedicated architecture artifacts.
  - -
+## How to Read This SOAP — Living Artifact
+
+In the transformation flow this SOAP is a **living artifact**. It is created at the start of **Probe** and grows as Problem Spaces (PS) close — it is *not* assembled once at the end. It has two zones:
+
+- **Stable zone (§1–§5)** — set early from Vision (INTENT, capability map, target architecture). Gives the framing; changes little once established.
+- **Emergent zone (§2.3 Requirements, §6 Solution, §7 ADRs, §8 NFRs)** — grows through Probe and Converge. Every emergent element carries a **status marker**:
+
+| Marker | Meaning |
+|--------|---------|
+| `confirmed` | The source PS is closed; the design/requirement is settled and traceable to its PS / OQ / ADR. |
+| `open` | The source PS is still in inquiry. The element names its live Open Questions — this is what is still being resolved. |
+
+A *deferred* item is just a `confirmed` decision whose content is "not built this initiative" — a settled decision, not an open one.
+
+At any mid-project checkpoint you can walk a stakeholder top-to-bottom: stable framing → target → solution and requirements with confirmed-vs-open clearly marked. **At handoff, no emergent element may remain `open`** — every element is `confirmed` (deferrals included).
+ - -
 ## Document Control
 | Field | Value |
 | - - - - - - - - - | - - - - - - - - - - - - - - - - - - - - - - - |
@@ -51,7 +67,8 @@ High-level success criteria used to evaluate outcomes.
 Key regulatory, tax, compliance, or policy obligations influencing the solution.
 > [REPLACE: Reference specific mandates by name and effective date. If none apply, state explicitly.]
 ### 2.3 High-Level Business Requirements
-List of business requirements expressed at a capability or outcome level.
+*Emergent zone — grows as Open Questions resolve into REQs through Probe/Converge.*
+List of business requirements expressed at a capability or outcome level. Mark each row `open` or `confirmed` and cite its origin in the Link cell: `confirmed` rows trace to a resolved OQ / REQ key; `open` rows name the live OQ still being turned into a requirement.
 | # | Business Requirement | Link |
 | - -| - - - - - - - - - - -| - - - |
 | 1 | | |
@@ -116,6 +133,9 @@ Approved platforms, cloud providers, and enterprise technology standards this so
  - -
 ## 6. Solution Architecture
 *Represents the realisable subset of the Target State delivered by this initiative.*
+*Emergent zone — the heart of the mid-project walk-through. The loop grows this section from PS strawmans: each solution block / component below is marked `open` (its source PS is still in inquiry — list the live OQs) or `confirmed` (its source PS is closed — cite the PS / OQ / ADR it traces to). Keep this **high-level** throughout — shapes, key decisions, open questions, not a detailed component spec.*
+
+**Solution status (auto-summary):** `{X} confirmed · {Y} open` — refreshed each iteration from PS state.
 ### 6.1 Solution Overview
 Summary of the solution and its responsibilities.
 > [REPLACE: What is being built or changed, the primary architectural pattern chosen, and the key reasons for the approach. Reference the most significant ADRs.]

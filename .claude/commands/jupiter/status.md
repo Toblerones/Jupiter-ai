@@ -109,7 +109,7 @@ Phase Progress:
   [ ] Design (Transformation)  not started
 ```
 
-**Cross-PS / DPD dashboard** — when the current phase is `probe` or `converge` (the phases with `work_units`), include this block after the standard Gate Check Status section. Source: `phases.{phase}.work_units` in the initiative file (cached from PS / DPD file scans by the loop agent's Step 7b).
+**Cross-PS / DPD dashboard** — when the current phase is `probe` or `converge` (the phases with `work_units`), include this block after the standard Gate Check Status section. Source: `phases.{phase}.work_units` in the initiative file (cached from PS / DPD file scans by the loop agent's Step 7b). The `soap` sub-key (`work_units.soap`) is written by the loop agent's Step 7b from the gate report JSON `soap` block — use it to render the Living SOAP line.
 
 ```
 Problem Spaces ({n_total}; {n_converging} converging, {n_closed} closed):
@@ -123,10 +123,14 @@ Data Product Definitions ({n_total}; {n_aligned} aligned):
   DPD-001  Trade Capture Data Product            drafting       last activity 2026-05-30
   DPD-002  Tax Classification Data Product       discovering    last activity 2026-05-25
 
+Living SOAP:  3 confirmed · 4 open  (workspace/artifacts/transformation/design/{id}-SOAP.md)
+
 Phase Gap: sum of open + in-discussion OQs across all PS = {n}
 Cross-PS flags (from last gate report):
   ! PS-GL-LEDGER-FLOW: 9 days stale, no activity_log update
   ! OQ-DIRECT-TAX-007 references PS-SUBLEDGER-FLOW (one-sided)
 ```
+
+Source the Living SOAP line from `work_units.soap`: `confirmed` and `open` counts from the gate report JSON `soap` block; path from `work_units.soap.path`. If `work_units.soap` is absent (first iteration before SOAP skeleton exists), omit the line. If `open` > 0 and the phase is `converge`, append ` ← open elements block Converge close` as a warning flag.
 
 For other transformation phases (vision, design_transformation), use the standard status format with the transformation phase set — no per-instance dashboard is rendered (those phases produce a single artifact set, not work_units).

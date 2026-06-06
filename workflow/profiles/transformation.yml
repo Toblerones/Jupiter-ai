@@ -69,6 +69,14 @@ output:
         path: "workspace/artifacts/transformation/vision/conceptual-sketch.md"
         required: false
   probe:
+    # Living SOAP — born here (first Probe iteration), regenerated every
+    # iteration from PS state. Two zones: stable (§1–§5, from Vision) and
+    # emergent (§2.3, §6, §7, §8) whose elements carry open|confirmed markers.
+    # Same canonical path as design_transformation (kept under design/).
+    living_soap:
+      path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+      template: templates/SOAP_template.md
+      created_at: probe_start
     work_units:
       problem_spaces:
         path: "workspace/artifacts/transformation/problem-spaces/"
@@ -87,6 +95,11 @@ output:
           pattern: "DPD-{NNN}-notes.md"
           template: templates/DPD_notes_template.md
   converge:
+    # Living SOAP continues to accrete here — by end of Converge every emergent
+    # element is confirmed or explicitly deferred (no element left open).
+    living_soap:
+      path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+      template: templates/SOAP_template.md
     work_units:
       problem_spaces:
         path: "workspace/artifacts/transformation/problem-spaces/"
@@ -97,6 +110,9 @@ output:
         pattern: "DPD-{NNN}.md"
         template: templates/DPD_template.md
   design_transformation:
+    # The SOAP is NOT created here — it is the living artifact born in Probe
+    # (see probe.living_soap). This phase FINALISES it: every emergent element
+    # confirmed or deferred, then migration roadmap + ADR ratification + panel.
     artifact: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
     adrs: "workspace/artifacts/transformation/design/adrs/"
     template_soap: templates/SOAP_template.md
@@ -130,3 +146,13 @@ methodology_notes: |
   - Each structured update commits ONLY after agent-mediated context
     cross-check + architect approval. See AI-PROBE-006 in
     workflow/gates/probe-converge.yml — the context guardrail check.
+  - The SOAP is a LIVING artifact, not an end-assembly. It is born at the first
+    Probe iteration (Zone A §1–§5 projected from INTENT + capability map +
+    target architecture; Zone B §2.3/§6/§7/§8 created with every element marked
+    `open`) and regenerated each Probe/Converge iteration from PS state — as a PS
+    closes, its design is promoted into the SOAP and flips open→confirmed with a
+    trace to the PS/OQ/ADR. This gives a continuously walkable mid-project view:
+    confirmed design vs open inquiry, side by side. design_transformation
+    FINALISES it (no element left open) rather than assembling it from scratch.
+    The SOAP is DERIVED from PS strawmans each iteration — never hand-maintained
+    in parallel, same context-driven principle as AI-PROBE-006.

@@ -319,9 +319,24 @@ Findings get the standard dispositions (Resolve with assumption / Flag / Spawn /
 
 **For phases WITHOUT `work_units` (vision, design_transformation):** Step 3 produces a single artifact set following the relevant gate config's `agent_guidance`:
 - **`vision`**: produce/refine `workspace/INTENT.md` + `workspace/artifacts/transformation/vision/capability-map.md` (and optional `conceptual-sketch.md`) per `vision-probe.yml` agent_guidance.
-- **`design_transformation`**: assemble the SOAP at `workspace/artifacts/transformation/design/{initiative_id}-SOAP.md` from PS / DPD / REQ / ADR inputs, produce `migration-roadmap.md`, ratify outstanding ADRs. Follow `design-handoff.yml` agent_guidance.
+- **`design_transformation`**: **finalise** the living SOAP at `workspace/artifacts/transformation/design/{initiative_id}-SOAP.md` — it already exists (born in Probe, accreted through Converge). Drive every emergent element to `confirmed` or explicit `deferred` (none left `open`), reconcile cross-PS solution content into one coherent view, produce `migration-roadmap.md`, ratify outstanding ADRs. This is a finalisation pass, NOT a from-scratch assembly. Follow `design-handoff.yml` agent_guidance.
 
-**For phases WITH `work_units` (probe, converge):** Step 3 does NOT produce a single artifact — it iterates over the work_unit instances declared under the phase's `work_units:` block in `workflow/stages.yml`.
+**For phases WITH `work_units` (probe, converge):** Step 3 does NOT produce a single artifact — it iterates over the work_unit instances declared under the phase's `work_units:` block in `workflow/stages.yml`. It ALSO maintains the living SOAP (below).
+
+**Living SOAP maintenance (probe & converge — runs every iteration, in addition to the per-PS passes below).** The transformation SOAP is a *living* artifact, not an end-assembly. Maintain it at `workspace/artifacts/transformation/design/{initiative_id}-SOAP.md` using `templates/SOAP_template.md` as the structural skeleton:
+
+1. **At the first Probe iteration (skeleton birth).** Create the `workspace/artifacts/transformation/design/` folder if it does not yet exist, then create the SOAP from the template:
+   - **Zone A — stable (§1–§5)**: populate from already-approved Vision outputs — §1 from INTENT; §2.1/§2.2 from INTENT + policy context; §3 from the capability map current-state column; §4 from the capability map; §5 from `context/target-architecture/` and the optional conceptual sketch. Populate these substantively now; they change little afterward.
+   - **Zone B — emergent (§2.3 Requirements, §6 Solution, §7 ADRs, §8 NFR)**: create the structure with one block per in-scope capability / open PS, every element marked `open`, each naming its source CAP/PS. No `confirmed` content yet — Probe has only just begun.
+
+2. **Every Probe and Converge iteration (regenerate from PS state).** After the per-PS passes below, refresh the SOAP from current PS / DPD / REQ / ADR state — the SOAP is DERIVED, never hand-edited in parallel:
+   - For each PS now `closed` (or `converging` with settled strawman sections), promote its confirmed design into §6 (REQs into §2.3, NFRs into §8, ratified ADRs into §7). Flip those elements `open → confirmed` and add the trace (PS id / OQ key / ADR id).
+   - For each PS still `open`/`in-progress`, keep its §6 block marked `open` and list its live OQs inline, so the block reads as "still resolving: OQ-…".
+   - Refresh the §6 "Solution status (auto-summary)" line to the current `{X} confirmed · {Y} open` counts.
+   - Keep §6 HIGH-LEVEL — shapes, key decisions, open questions. Do not deepen into a detailed component spec during inquiry.
+   - **Context guardrail (AI-PROBE-006) applies**: every promoted SOAP element must trace to a closed PS / resolved OQ / ratified ADR / authoritative context. Promote nothing not yet settled — an `open` block honestly showing its OQs is the correct state, not a defect.
+
+3. **Architect approval.** Promotions that assert `confirmed` design are *substantive* updates — surface them for architect approval like other structured PS updates (item 4 below). Refreshing the status summary and re-listing a still-open block's OQs are bookkeeping and can be auto-applied.
 
 **For each Problem Space instance** (`workspace/artifacts/transformation/problem-spaces/PS-{slug}.md`):
 
@@ -411,12 +426,18 @@ AI checks for phases with `work_units` split into:
         "last_activity": "{ISO-8601 date}",
         "failing_checks": ["{check-id}", "..."]
       }
-    ]
+    ],
+    "soap": {
+      "path": "workspace/artifacts/transformation/design/{id}-SOAP.md",
+      "emergent_total": {n},
+      "confirmed": {n},
+      "open": {n}
+    }
   }
 }
 ```
 
-For phases without work_units (vision, design_transformation), the `work_units` block is omitted from the gate report JSON — the standard shape is used.
+The `soap` block reports the living SOAP's emergent-zone counts so `/jupiter:status` can render the walk-through summary without scanning the file. For phases without work_units (vision, design_transformation), the `work_units` block is omitted — the standard shape is used. design_transformation still finalises the SOAP, but reports completion through the standard auto/AI checks (AC-DESIGN-*, AI-DESIGN-*), not a `work_units.soap` summary.
 
 **7b — Initiative file**: in addition to the standard `phases.{phase}.{status, iteration_count, gate_result, artifact}` fields, sync `phases.{phase}.work_units.problem_spaces[]` and `phases.{phase}.work_units.data_products[]` from PS / DPD file scans. The initiative file mirrors actual file state as a **cache** — `/jupiter:status` reads it to render the cross-PS / DPD dashboard without scanning files every invocation. PS and DPD files remain the source of truth; the initiative file is rebuilt from them each iterate.
 

@@ -114,6 +114,24 @@ auto_checks:
       and Section 4.3 Decisions both empty). Add at least one entry so the
       gap-probe loop has something to analyse.
 
+  - id: AC-PROBE-010
+    name: living_soap_present
+    description: >
+      The living SOAP exists at
+      workspace/artifacts/transformation/design/{initiative_id}-SOAP.md and is
+      structurally complete per templates/SOAP_template.md: Zone A (§1–§5) is
+      populated from Vision (no placeholder text), and Zone B (§2.3, §6, §7, §8)
+      is present with every emergent element carrying a status marker
+      (`open` or `confirmed`). NOTE: `open` elements are EXPECTED during Probe —
+      an element marked `open` with its live OQs listed is a PASS, not a
+      placeholder. This check fails only if the SOAP is missing, Zone A has
+      placeholder text, or an emergent element has no status marker at all.
+    required: true
+    failure_message: >
+      Living SOAP is missing, Zone A (§1–§5) is not populated from Vision, or an
+      emergent element lacks an open|confirmed status marker. The SOAP is born at
+      the first Probe iteration — run /jupiter:iterate to generate the skeleton.
+
 # ─── AI Checks ────────────────────────────────────────────────────────────────
 
 ai_checks:
@@ -219,6 +237,25 @@ ai_checks:
       One or more DPD spec changes lack traceability to context or evidence,
       or accept producer input that contradicts authoritative context.
       Trace each spec change, or flag the conflict for reconciliation.
+
+  - id: AI-PROBE-008
+    name: soap_reflects_PS_state
+    description: >
+      The living SOAP is a faithful DERIVED view of current PS state. Every §6
+      block / §2.3 requirement / §8 NFR marked `confirmed` traces to a closed
+      (or settled-converging) PS, a resolved OQ, or a ratified ADR — nothing is
+      asserted as confirmed that the inquiry has not settled. Every element
+      marked `open` corresponds to a PS still in inquiry and names that PS's live
+      OQs. The §6 solution-status summary counts match the actual markers. No PS
+      that has closed is still shown as `open`, and no `open` block silently
+      asserts a decision. This is the SOAP-side analog of AI-PROBE-006: the SOAP
+      is derived from authoritative PS state, never hand-authored ahead of it.
+    required: true
+    failure_message: >
+      The living SOAP is out of step with PS state — a `confirmed` element with
+      no closed-PS/OQ/ADR trace, an `open` element that has actually been
+      resolved, or a status summary that does not match the markers. Regenerate
+      the SOAP from current PS state.
 
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
