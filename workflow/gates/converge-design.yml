@@ -141,6 +141,27 @@ ai_checks:
       PS to confirm them, or mark them `deferred` with a reason, before
       transitioning to Design.
 
+  - id: AI-CONVERGE-007
+    name: adr_depth_adequate
+    description: >
+      Every ADR — whether drafted during Probe or during Converge closure —
+      is complete per templates/ADR_template.md and substantive enough to be
+      ratified from the document alone (same bar as AI-RD-010 in the design
+      profile and AI-PROBE-009 in Probe): Context, Decision ("We will..."),
+      Rationale with at least two alternatives considered (each with trade-offs
+      and a stated rejection reason), Consequences (positive / negative /
+      mitigations), and References tracing to the driving OQ / PS and any
+      REQ keys. Ratification is a review of the proposal document, not a
+      rubber stamp — an ADR the architect cannot judge from its own content
+      is not ready for the gate.
+    required: true
+    failure_message: >
+      One or more ADRs are incomplete per templates/ADR_template.md or too
+      shallow to ratify from the document alone. Expand each: full Context,
+      declarative Decision, ≥2 alternatives with trade-offs and rejection
+      reasons, consequences with mitigations, and a trace to the driving
+      OQ/PS/REQ keys.
+
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
 human_gate:
@@ -175,6 +196,16 @@ agent_guidance: |
   ensures all capability gaps are addressed, and prepares the inputs for
   SOAP assembly in Design (Transformation).
 
+  SCOPE — FOCUSED vs FULL-SWEEP ITERATION (determine before anything else)
+  Same mechanic as Probe (see probe-converge.yml SCOPE section and
+  agents/loop.md "Scope derivation"): if phases.converge.feedback carries
+  unaddressed entries that all have a non-null scope, run a FOCUSED
+  iteration on those work units only — apply STEPs 2, 3 (for ADRs anchored
+  to the targeted PS), and 6 to the targeted instances; skip STEP 4
+  cross-PS reconciliation and STEP 5 capability coverage; no gap
+  recomputation, never READY FOR REVIEW. Convergence gate math
+  (AC-CONVERGE-*, AI-CONVERGE-*) is only authoritative on a full sweep.
+
   STEP 1 — IDENTIFY REMAINING OPEN WORK
   Across all PS:
     - List OQs still open or in-discussion
@@ -191,15 +222,29 @@ agent_guidance: |
     - If the question turned out not to matter: propose rejection with reason
   Architect approves each closure — the human gate principle extends here.
 
-  STEP 3 — RATIFY ADRs
+  STEP 3 — RATIFY ADRs (the ARB moment)
+  Most ADRs were drafted at Proposed during Probe as discussion anchors and
+  have accreted alternatives and trade-offs through the inquiry. Ratification
+  is the formal review of each proposal document — the architect judges from
+  the ADR itself, as an Architecture Review Board would.
   For each ADR at status: proposed:
-    - Verify the ADR has all required sections populated (Context, Decision,
-      Consequences)
-    - Verify the decision aligns with related context (prior ADRs, policy,
-      capability map, data product specs)
-    - Present to the architect for ratification (status → accepted)
+    - Verify the ADR is complete per templates/ADR_template.md: Context,
+      Decision ("We will..."), Rationale with at least two alternatives
+      considered (each with trade-offs and a stated rejection reason),
+      Consequences (positive / negative / mitigations), and References
+      tracing to the driving OQ / PS and any REQ keys (per AI-CONVERGE-007)
+    - Verify the decision aligns with related context (target architecture,
+      prior ADRs, policy, capability map, data product specs)
+    - Present to the architect for ratification (status → accepted). If the
+      architect cannot judge the decision from the document alone, the ADR
+      is not ready — expand it before presenting again
     - If superseded by a later decision, mark as superseded with explicit
       reference to the superseding ADR
+  If an OQ closed in STEP 2 produces a NEW ADR here in Converge, draft it
+  with the same discipline as Probe's ADR-ANCHORED DECISIONS mechanic:
+  templates/ADR_template.md, all context and guardrails loaded
+  (target-architecture, prior ADRs, policy, standards, landscape, glossary,
+  data-products), depth per AI-CONVERGE-007, architect approval to commit.
 
   STEP 4 — RECONCILE CROSS-PS DEPENDENCIES
     - Cross-PS OQ references: verify all references resolved

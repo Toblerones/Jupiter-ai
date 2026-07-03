@@ -86,15 +86,17 @@ last_updated: YYYY-MM-DD
 | OQ Key | Question / Why | Status | Assigned | Refs | Resolution |
 |---------------|---------------------------------------------------------------------------------------------------|---------------|----------|------------|---------------------------------------|
 | OQ-{SLUG}-001 | [REPLACE WITH question]?<br>_[REPLACE WITH 1-sentence rationale: architectural/process implication]_ | open | [name] | — | — |
-| OQ-{SLUG}-002 | [REPLACE WITH question]?<br>_[REPLACE WITH rationale]_ | in-discussion | [name] | PS-{OTHER} | — |
+| OQ-{SLUG}-002 | [REPLACE WITH question]?<br>_[REPLACE WITH rationale]_ | in-discussion | [name] | ADR-{NNN}-{slug} (proposed), PS-{OTHER} | — |
 | OQ-{SLUG}-003 | [REPLACE WITH question]?<br>_[REPLACE WITH rationale]_ | resolved | [name] | — | → REQ-{TYPE}-{DOMAIN}-{SEQ} |
 
 **Status values:** `open` | `in-discussion` | `resolved` | `deferred` | `rejected`
 
+**Decision-shaped OQs anchor on a Proposed ADR.** When an OQ is recognised as needing an architecture decision (it selects a technology or pattern, resolves a trade-off with long-term consequences, or constrains future options — the same significance test as the design profile), the ADR is drafted **immediately at status `Proposed`** from `templates/ADR_template.md`, with all authoritative context and guardrails loaded — not written at resolution as an after-the-fact record. The Proposed ADR is the **discussion anchor**: it carries the context, alternatives, and trade-offs stakeholders need to review and judge the decision (ARB-style). Reference it in the Refs column while the OQ is `in-discussion`.
+
 **Resolution outcomes** *(when status = `resolved`, the OQ **produces** one or more of):*
 
 - `→ REQ-{TYPE}-{DOMAIN}-{SEQ}` — crystallised into a requirement. The REQ is *created* at the moment of resolution.
-- `→ ADR-{NNN}-{slug}` — crystallised into an architecture decision.
+- `→ ADR-{NNN}-{slug}` — the decision is made and captured in the anchoring ADR (drafted at `Proposed` when the OQ entered `in-discussion` — see above). Resolution records that the decision was made; ratification (`Proposed` → `Accepted`) is the architect's explicit act, in-phase or at latest at the Converge gate.
 - `→ DPD-{NNN}` — contributed to a Data Product Definition (joint discovery with upstream producer).
 - `→ context: {path}` — updated context (glossary / landscape / data product spec).
 - `→ knowledge` — answer captured in notes only; no downstream artifact needed.

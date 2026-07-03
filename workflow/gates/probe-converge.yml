@@ -115,6 +115,24 @@ auto_checks:
       gap-probe loop has something to analyse.
 
   - id: AC-PROBE-010
+    name: every_referenced_ADR_exists
+    description: >
+      Every ADR key named in an OQ Refs or Resolution column has a
+      corresponding file at
+      workspace/artifacts/transformation/design/adrs/ADR-{NNN}-{slug}.md
+      following templates/ADR_template.md, with a valid status (Proposed |
+      Accepted | Superseded). A decision-shaped OQ at status in-discussion
+      references its Proposed ADR in the Refs column — the ADR is drafted
+      when the discussion opens, not written at resolution as an
+      after-the-fact record.
+    required: true
+    failure_message: >
+      One or more OQ-referenced ADR keys have no corresponding ADR file, or
+      the file lacks a valid status. Draft the ADR at status Proposed from
+      templates/ADR_template.md — the Proposed ADR is the discussion anchor
+      for the decision, not a record written after the fact.
+
+  - id: AC-PROBE-011
     name: living_soap_present
     description: >
       The living SOAP exists at
@@ -257,6 +275,27 @@ ai_checks:
       resolved, or a status summary that does not match the markers. Regenerate
       the SOAP from current PS state.
 
+  - id: AI-PROBE-009
+    name: adr_depth_adequate
+    description: >
+      Every ADR drafted during Probe is substantive enough to be reviewed and
+      judged from the document alone — the same bar as AI-RD-010 in the
+      design profile. Each ADR must contain: (1) at least two alternatives
+      evaluated, each with trade-offs stated (not just named); (2) concrete
+      consequences of the decision — what it enables, prevents, or costs —
+      with mitigations for negatives; (3) a trace to the driving OQ / PS and
+      any REQ keys or context constraints that shape it. The Proposed ADR is
+      the discussion anchor presented to stakeholders (ARB-style) — an ADR
+      that records a choice without showing the reasoning cannot anchor a
+      discussion and cannot be ratified.
+    required: true
+    failure_message: >
+      One or more ADRs are too shallow to anchor a decision review. For each,
+      verify: (1) at least two evaluated alternatives with trade-offs,
+      (2) concrete consequences with mitigations, (3) a trace to the driving
+      OQ/PS and any REQ keys or constraints. Expand thin ADRs — a decision
+      recorded without its reasoning cannot be reviewed or ratified.
+
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
 human_gate:
@@ -292,6 +331,19 @@ agent_guidance: |
   structured updates for architect approval. Never auto-commit substantive
   structured content without architect approval — the human gate principle
   extends to all material PS updates, not just phase transitions.
+
+  SCOPE — FOCUSED vs FULL-SWEEP ITERATION (determine before anything else)
+  Iterate is a generic trigger; targeting comes from recorded review feedback,
+  never from an iterate argument. Check phases.probe.feedback in the
+  initiative file: if unaddressed entries exist and all carry a non-null
+  scope (PS/DPD ids recorded by /jupiter:review — explicit --target or
+  architect-confirmed inference), run this iteration FOCUSED on those work
+  units only — deep pass on the touchpoint, full guardrail context still
+  loaded, per-instance checks only, no gap recomputation, never READY FOR
+  REVIEW. Otherwise run the full sweep (STEPs 2–7 over all PS). The complete
+  mechanic lives in agents/loop.md "Scope derivation". On a focused
+  iteration, apply STEPs 2, 4, and the strawman/ADR mechanics below to the
+  targeted instances only; skip STEP 3 and cross-PS reconciliation.
 
   STEP 1 — INITIAL PS PROPOSAL (run once at start of Probe)
   After Vision is approved, run a PS proposal pass:
@@ -396,6 +448,38 @@ agent_guidance: |
 
   Architect approves → strawman updates. Same context guardrail (AI-PROBE-006)
   applies to strawman edits as to OQ resolutions and REQ/ADR creation.
+
+  ADR-ANCHORED DECISIONS (cross-cutting mechanic, during STEP 2 and STEP 4):
+  When an OQ is recognised as decision-shaped — it selects a technology,
+  platform, or pattern; resolves a trade-off with long-term consequences; or
+  constrains future options (the same significance test as the design
+  profile, AI-RD-005) — draft the ADR IMMEDIATELY at status Proposed. Do not
+  wait for resolution: the Proposed ADR is the discussion anchor, the
+  artifact stakeholders read to understand, review, and judge the decision
+  (ARB-style). Drafting follows the same discipline as the design phase:
+    - Use templates/ADR_template.md — every section, no placeholders left.
+    - Load ALL authoritative context and guardrails first: workspace/context/
+      target-architecture/ (the lead), prior ADRs (workspace/context/adrs/
+      AND workspace/artifacts/transformation/design/adrs/), policy,
+      standards, landscape, glossary, data-products, and the capability map.
+      The same decision with different loaded constraints is a different ADR.
+    - Populate Context from the OQ's Why/rationale plus notes evidence;
+      populate Alternatives with trade-offs from notes sessions and context
+      cross-check; the Decision section carries the current recommended
+      position (usually the strawman Section 4.3 position). Depth per
+      AI-PROBE-009: ≥2 alternatives with trade-offs, concrete consequences
+      with mitigations, trace to the driving OQ/PS.
+    - Write to workspace/artifacts/transformation/design/adrs/
+      ADR-{NNN}-{slug}.md; reference the ADR key in the OQ's Refs column;
+      set the OQ to in-discussion. Mirror the position in strawman
+      Section 4.3.
+    - Every subsequent ADR update follows the AI-PROBE-006 guardrail —
+      traced to a notes session or authoritative context, architect approves.
+    - When the architect endorses the decision, the OQ resolves
+      → ADR-{NNN}-{slug}. Ratification (Proposed → Accepted) is the
+      architect's explicit act — in-phase if the architect ratifies
+      immediately, otherwise at the Converge ratification review
+      (AC-CONVERGE-004). Resolution and ratification are distinct events.
 
   CROSS-PS STRAWMAN RECONCILIATION (during STEP 3)
   When PS-A and PS-B reference the same component or decision (visible in

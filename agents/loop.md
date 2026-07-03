@@ -323,6 +323,18 @@ Findings get the standard dispositions (Resolve with assumption / Flag / Spawn /
 
 **For phases WITH `work_units` (probe, converge):** Step 3 does NOT produce a single artifact — it iterates over the work_unit instances declared under the phase's `work_units:` block in `workflow/stages.yml`. It ALSO maintains the living SOAP (below).
 
+**Scope derivation — focused vs full-sweep iteration (determine FIRST, before any work-unit pass).** Iterate is a generic trigger; the iteration's scope is derived from state, never from an invocation argument. Read `phases.{phase}.feedback` from the initiative file (a list of scoped entries written by `/jupiter:review` — see review.md Step 4b):
+
+- **Unaddressed entries exist and ALL have a non-null `scope`** → this is a **FOCUSED ITERATION** on the union of those scopes:
+  - Load the full authoritative context as always — the guardrails (target-architecture, prior ADRs, policy, standards, landscape, glossary, data-products) are non-negotiable regardless of scope; AI-PROBE-006 traceability applies to every focused update.
+  - Of the work units, load ONLY: the targeted PS/DPD files + their notes files, plus a one-hop dependency closure — any PS named in a target's Section 4.4 Open Dependencies or cross-PS OQ refs (load those dependency PS files for reference, not their notes; do not run their loops).
+  - Apply the feedback: run the three-loop strawman mechanic, the ADR-anchored decisions mechanic, and the raw→structured pass for the targeted instances only, going deeper on the touchpoint than a sweep would.
+  - Living SOAP: refresh ONLY the targeted PS's §6 blocks and the §6 status-summary counts — no full regeneration.
+  - Checks: run per-instance auto/AI checks for the targeted instances only. SKIP cross-instance checks (AI-PROBE-001, AI-PROBE-003, cross-PS reconciliation) — they are only meaningful over the full set.
+  - **A focused iteration has NO gate authority.** Do not recompute `gap`; carry the last full sweep's gap forward marked stale (see Step 7a scope block). Status is always LOOPING — never READY FOR REVIEW.
+  - Mark each incorporated feedback entry `addressed: true` (add `addressed_in: {iteration}`), so the next plain iterate reverts to a full sweep.
+- **No unaddressed entries, or any unaddressed entry is phase-wide (`scope: null`)** → **FULL SWEEP**, exactly as described below: all work units, cross-instance checks, full SOAP regeneration, real gap. Phase-wide feedback cannot be scoped down — it requires the full pass. Mark incorporated entries `addressed: true` here too.
+
 **Living SOAP maintenance (probe & converge — runs every iteration, in addition to the per-PS passes below).** The transformation SOAP is a *living* artifact, not an end-assembly. Maintain it at `workspace/artifacts/transformation/design/{initiative_id}-SOAP.md` using `templates/SOAP_template.md` as the structural skeleton:
 
 1. **At the first Probe iteration (skeleton birth).** Create the `workspace/artifacts/transformation/design/` folder if it does not yet exist, then create the SOAP from the template:
@@ -346,6 +358,7 @@ Findings get the standard dispositions (Resolve with assumption / Flag / Spawn /
    - **Loop 1 (at PS open, once)**: draft initial strawman from source capability + conceptual sketch + context + `initial-design` notes; populate Sections 4.1 (narrative), 4.2 (components), 4.3 (decisions)
    - **Loop 2 (each iteration)**: scan strawman for gaps (components unspecified, data unsourced, decisions unstated, assumptions unvalidated); propose candidate OQs with draft Question + draft Why/rationale
    - **Loop 3 (each iteration)**: when OQs resolve, propose strawman edits in Format B (Existing / Proposed / Why with trace to evidence)
+   - **ADR-anchored decisions (each iteration)**: when an OQ is recognised as decision-shaped (selects a technology/pattern, resolves a long-consequence trade-off, constrains future options), draft the ADR **immediately at status `Proposed`** per the ADR-ANCHORED DECISIONS mechanic in `probe-converge.yml` agent_guidance — `templates/ADR_template.md`, all context and guardrails loaded (same discipline as the design phase), ≥2 alternatives with trade-offs (AI-PROBE-009). Write it to `workspace/artifacts/transformation/design/adrs/`, reference it in the OQ's Refs column, set the OQ `in-discussion`. The Proposed ADR is the discussion anchor stakeholders review (ARB-style); OQ resolution `→ ADR-{NNN}` records the decision, ratification (`Proposed → Accepted`) is the architect's explicit act, at latest at Converge
 
 3. **Apply the raw→structured pattern**: read notes-file session entries newer than the PS's `last_updated`; cross-check content against the authoritative context loaded in Step 1 (whatever the profile's `context` block declares) plus the capability map; propose structured updates — OQ resolutions / strawman edits / new OQs / new PS candidates / context updates / REQ/ADR/DPD creation — each with explicit traceability (e.g. *"based on session 2026-06-04 + context check against policy/finance/tax-recognition-policy.md"*). **Flag contradictions** for architect reconciliation rather than silently accepting.
 
@@ -377,6 +390,7 @@ Auto checks for phases with `work_units` evaluate as follows:
 - **Per-DPD checks** (e.g. `AC-PROBE-008 every_DPD_has_required_fields`): iterate over every DPD instance.
 - **Aggregate checks** (e.g. `AC-PROBE-009 every_strawman_has_anchors`): scoped to PS instances; FAIL if any fails.
 - **Gap contribution**: each failing required check counts ONCE toward `gap`, regardless of how many instances triggered it. The check's failure_message lists the failing instances by id.
+- **Focused iterations**: evaluate per-instance checks for the targeted instances only; record results per instance but do NOT recompute the aggregate gap (no gate authority — see Scope derivation above).
 
 ### Extension to Step 5 — AI checks (transformation phases with work_units)
 
@@ -385,6 +399,7 @@ AI checks for phases with `work_units` split into:
 - **Per-instance AI checks**: iterate over instances (e.g. evaluating an individual PS strawman's internal coherence).
 - **Cross-instance AI checks** (e.g. `AI-PROBE-001 PS_scopes_distinct`, `AI-PROBE-003 strawmans_dont_contradict`): evaluate the *set* of instances together — compare pairs, identify global inconsistencies.
 - **Context-alignment AI checks** (`AI-PROBE-006`, `AI-PROBE-007`): for every structured update proposed this iteration, verify traceability to authoritative context or notes evidence. Untraceable updates → FAIL with the specific update text and what it should trace to.
+- **Focused iterations**: run per-instance and context-alignment checks for the targeted instances only; SKIP cross-instance checks (they need the full set). The skipped checks retain their last full-sweep result, marked stale via the gate report's `scope` block.
 
 ### Extension to Step 7 — State and log (transformation phases with work_units)
 
@@ -405,6 +420,12 @@ AI checks for phases with `work_units` split into:
   "narrative": "...",
   "source_findings": [...],
   "process_gaps": [...],
+  "scope": {
+    "type": "focused",
+    "targets": ["PS-{slug}", "..."],
+    "feedback_addressed": ["{first 80 chars of each entry}", "..."],
+    "gap_stale_from_iteration": "{n of last full sweep}"
+  },
   "work_units": {
     "problem_spaces": [
       {
@@ -436,6 +457,8 @@ AI checks for phases with `work_units` split into:
   }
 }
 ```
+
+The `scope` block appears ONLY on focused iterations (omit it entirely on full sweeps). When present: `gap` and `status` carry the last full sweep's values (stale — a focused iteration has no gate authority and never reports `ready_for_review`); the `work_units` arrays list only the targeted instances with fresh data, and `/jupiter:status` should render non-targeted instances from the initiative-file cache marked as of the last full sweep.
 
 The `soap` block reports the living SOAP's emergent-zone counts so `/jupiter:status` can render the walk-through summary without scanning the file. For phases without work_units (vision, design_transformation), the `work_units` block is omitted — the standard shape is used. design_transformation still finalises the SOAP, but reports completion through the standard auto/AI checks (AC-DESIGN-*, AI-DESIGN-*), not a `work_units.soap` summary.
 

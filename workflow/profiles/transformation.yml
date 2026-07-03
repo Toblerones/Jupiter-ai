@@ -17,9 +17,10 @@ description: >
   captures pain + target conceptual architecture upfront. Probe opens
   multiple concurrent Problem Spaces; each PS investigates a scoped area
   of inquiry with its own stakeholders and strawman. Open Questions resolve
-  into REQs, ADRs, and context updates. Converge stabilises the catalogue
-  and ratifies ADRs. Design (Transformation) assembles the SOAP plus
-  upstream data product change proposals and migration roadmap.
+  into REQs and context updates; decision-shaped OQs anchor on Proposed
+  ADRs drafted when discussion opens. Converge stabilises the catalogue
+  and ratifies ADRs (the ARB moment). Design (Transformation) assembles the
+  SOAP plus upstream data product change proposals and migration roadmap.
 
 phases:
   include: [vision, probe, converge, design_transformation]
@@ -77,6 +78,18 @@ output:
       path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
       template: templates/SOAP_template.md
       created_at: probe_start
+    # ADRs are born HERE, not in design_transformation. A decision-shaped OQ
+    # gets its ADR drafted at status Proposed the moment discussion opens —
+    # the ADR is the discussion anchor (ARB-style proposal), not an
+    # after-the-fact record. Same template and context discipline as the
+    # design profile. See ADR-ANCHORED DECISIONS in
+    # workflow/gates/probe-converge.yml.
+    adrs:
+      path: "workspace/artifacts/transformation/design/adrs/"
+      pattern: "ADR-{NNN}-{slug}.md"
+      template: templates/ADR_template.md
+      created_at: oq_in_discussion
+      initial_status: proposed
     work_units:
       problem_spaces:
         path: "workspace/artifacts/transformation/problem-spaces/"
@@ -100,6 +113,13 @@ output:
     living_soap:
       path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
       template: templates/SOAP_template.md
+    # ADRs continue to accrete and are RATIFIED here (Proposed → Accepted at
+    # the Converge review — the ARB moment). No ADR remains Proposed at
+    # Converge exit (AC-CONVERGE-004); depth per AI-CONVERGE-007.
+    adrs:
+      path: "workspace/artifacts/transformation/design/adrs/"
+      pattern: "ADR-{NNN}-{slug}.md"
+      template: templates/ADR_template.md
     work_units:
       problem_spaces:
         path: "workspace/artifacts/transformation/problem-spaces/"
@@ -134,6 +154,16 @@ methodology_notes: |
     with most-specific-wins alignment resolution downstream.
   - Requirements EMERGE from Probe via OQ resolution; they are not authored
     upfront.
+  - ADRs are drafted DURING Probe as discussion anchors, not written at the
+    end as records. When an OQ is recognised as decision-shaped, the loop
+    agent drafts the ADR at status Proposed from templates/ADR_template.md
+    with the same context discipline as the design profile — all guardrails
+    loaded (target-architecture, prior ADRs, policy, standards, landscape,
+    glossary, data-products) — so the Proposed ADR carries the alternatives
+    and trade-offs reviewers need to judge the decision (ARB-style, per
+    AI-PROBE-009 depth). OQ resolution → ADR records that the decision was
+    made; ratification (Proposed → Accepted) is the architect's explicit
+    act, no later than the Converge gate (AC-CONVERGE-004, AI-CONVERGE-007).
   - Problem Spaces are scoped areas of inquiry (per Domain-Driven Design,
     Lean / Product Discovery, Steve Blank's customer development framing),
     distinct from solution space.
@@ -146,6 +176,17 @@ methodology_notes: |
   - Each structured update commits ONLY after agent-mediated context
     cross-check + architect approval. See AI-PROBE-006 in
     workflow/gates/probe-converge.yml — the context guardrail check.
+  - Iteration is a generic trigger; SCOPE IS STATE. Refine/reject feedback on
+    Probe/Converge can be scoped to specific PS/DPD ids at review time
+    (/jupiter:review --target, or architect-confirmed inference from the
+    feedback text — explicit target always wins; multiple targets supported).
+    Pending scoped feedback makes the next iterate a FOCUSED iteration: deep
+    pass on the touchpoint work units with full guardrail context, partial
+    gate report, gap carried stale. A focused iteration has no gate
+    authority — only a full sweep (no pending scoped feedback) recomputes
+    gap and can reach READY FOR REVIEW. This mirrors how a human architect
+    works: targeted discussion on one problem space, periodic holistic
+    review across all of them.
   - The SOAP is a LIVING artifact, not an end-assembly. It is born at the first
     Probe iteration (Zone A §1–§5 projected from INTENT + capability map +
     target architecture; Zone B §2.3/§6/§7/§8 created with every element marked

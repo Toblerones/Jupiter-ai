@@ -99,6 +99,9 @@ Invoke `agents/loop.md` with:
 **Transformation profile additional inputs:** when the active profile is `transformation` and the current phase is `probe` or `converge` (phases with `work_units` declared in `workflow/stages.yml`), additionally pass:
 - The `work_units` block from `workflow/stages.yml` for the current phase (so the loop agent knows which instance types to iterate over and which templates to use)
 - The current list of PS files under `workspace/artifacts/transformation/problem-spaces/` and DPD files under `workspace/artifacts/transformation/data-products/`
+- The `phases.{phase}.feedback` list from the initiative file, if present (scoped feedback entries recorded by `/jupiter:review` — see review.md Step 4b)
+
+**Focused iteration (transformation `probe`/`converge`)**: this command takes no targeting arguments — iterate stays a generic trigger. Scope is *state*, not a parameter: if the initiative file carries unaddressed feedback entries with a non-null `scope`, the loop agent runs a **focused iteration** on those work units (deep pass on the targeted PS/DPD only, partial gate report, gap carried stale from the last full sweep) instead of a full sweep. When no pending scoped feedback exists, the iteration is a full sweep exactly as described above. The mechanic is defined in the loop agent's "Transformation Profile — Phase Extensions" section.
 
 The loop agent's "Transformation Profile — Phase Extensions" section in `agents/loop.md` consumes these inputs and applies the per-instance iteration logic.
 
@@ -124,3 +127,4 @@ After the gate report, print the next action clearly:
 - If status is LOOPING: "Run /jupiter:iterate to continue."
 - If status is READY FOR REVIEW: "Run /jupiter:review to record human gate decision."
 - If status is BLOCKED: "Resolve the blocker listed above before continuing."
+- If the iteration was focused (gate report carries a `scope` block): "Focused iteration on {targets} complete. Gap shown is from the last full sweep (iteration {n}) and may be stale. Run /jupiter:iterate again for a full gate evaluation."
