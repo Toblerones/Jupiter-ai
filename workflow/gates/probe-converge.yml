@@ -296,6 +296,31 @@ ai_checks:
       OQ/PS and any REQ keys or constraints. Expand thin ADRs — a decision
       recorded without its reasoning cannot be reviewed or ratified.
 
+  - id: AI-PROBE-010
+    name: ps_reads_as_document
+    description: >
+      Every PS file reads as a coherent, human-readable document — as if a
+      single architect wrote it once, top to bottom, after the latest
+      iteration. Specifically: (1) no meta-commentary, agent inference,
+      feedback annotations, or provenance narration in body sections (traces
+      belong in the Activity Log, the OQ Refs/Resolution columns, and the
+      iteration report — never woven into prose); (2) no statement materially
+      repeated across sections — each fact has exactly one home section
+      (problem in §1, boundaries in §2/§3, design position in §4, questions
+      in §5) and is referenced elsewhere by key, not restated; (3) refinements
+      are incorporated by rewriting the affected text in place, not by
+      appending corrections or "(updated)" markers alongside the original.
+      A cold reader should not be able to tell how many iterations produced
+      the file. See EDITORIAL DISCIPLINE in agent_guidance.
+    required: true
+    failure_message: >
+      One or more PS files have degraded readability: inline commentary or
+      inference in body sections, statements repeated across sections, or
+      feedback applied as annotation instead of rewritten prose. Rewrite the
+      affected sections in place — move traces to the Activity Log / OQ
+      columns, deduplicate to the single-home rule, and do a full coherence
+      read of each flagged PS before recommitting.
+
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
 human_gate:
@@ -495,3 +520,32 @@ agent_guidance: |
   interpreter; the structured layer in PS files is the audited output. Direct
   architect edits to structured PS sections are discouraged — they bypass the
   context check that gives Jupiter its rigor.
+
+  EDITORIAL DISCIPLINE (cross-cutting — applies to EVERY PS write):
+  The PS is a document, not a conversation. After any iteration it must read
+  as if a single architect wrote it once, top to bottom — a cold reader
+  should not be able to tell how many iterations produced it. Checked by
+  AI-PROBE-010.
+    - Refine = REWRITE IN PLACE. When applying architect feedback, replace
+      the wording and restructure the sentence. Never append a correction,
+      a clarifying note, an "(updated per feedback)" marker, or your own
+      inference alongside the text it modifies. If you disagree with the
+      feedback or have an observation, say so in the iteration report to
+      the architect — never inside the artifact.
+    - Traces have designated homes: Activity Log entries, the OQ
+      Refs/Resolution columns, and the iteration report. Prose sections
+      carry ZERO trace commentary. This is how AI-PROBE-006 and readability
+      coexist — traceability is satisfied at the proposal/log layer, not by
+      narrating provenance in the body ("per policy X, as noted in session
+      Y..." woven into prose is a defect, not diligence).
+    - Single-home rule: every fact lives in exactly one section — problem
+      in §1, boundaries in §2/§3, design position in §4, questions in §5.
+      Other sections REFER by key (OQ-{...}, component name, ADR key),
+      never restate. Do not re-derive shared facts into whichever section
+      you are currently editing.
+    - Coherence pass before commit: after applying approved edits, re-read
+      the WHOLE PS file and remove any duplication or dangling references
+      the edit introduced. An edit is not done when the diff is applied;
+      it is done when the document still reads as one document.
+  This discipline applies equally to the living SOAP and DPD files — any
+  structured artifact the loop agent writes.

@@ -206,6 +206,15 @@ agent_guidance: |
   recomputation, never READY FOR REVIEW. Convergence gate math
   (AC-CONVERGE-*, AI-CONVERGE-*) is only authoritative on a full sweep.
 
+  EDITORIAL DISCIPLINE: PS, SOAP, and DPD files are still edited throughout
+  Converge (OQ closures, strawman finalisation, SOAP promotion). The
+  EDITORIAL DISCIPLINE rules in probe-converge.yml agent_guidance apply
+  unchanged — rewrite in place, traces only in their designated homes,
+  single-home rule, full coherence read before commit. Closure is when this
+  matters most: a PS marked `closed` is the permanent record handed to
+  Design, and it must read as a clean document, not an accretion of
+  iteration residue.
+
   STEP 1 — IDENTIFY REMAINING OPEN WORK
   Across all PS:
     - List OQs still open or in-discussion
