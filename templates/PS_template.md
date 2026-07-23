@@ -35,29 +35,65 @@ last_updated: YYYY-MM-DD
 
 ---
 
-## 2. Scope
+## 2. Scope & Boundaries
 
-*What this PS investigates — the area of inquiry.*
+*What this PS investigates, and the explicit edges that keep it from drifting into adjacent territory.*
 
-[REPLACE WITH a clear statement of what is in scope. Bulleted list of in-scope topics, systems, or processes is fine.]
+**In scope**
 
----
+[REPLACE WITH what this PS investigates — a bulleted list of in-scope topics, systems, or processes is fine.]
 
-## 3. Out of Scope
+**Out of scope**
 
-*Explicit boundaries — what is NOT in this PS even if related. Prevents drift into adjacent territory.*
-
-[REPLACE WITH explicit out-of-scope items. If something related is owned by another PS, reference it — e.g. "Deferred tax provision — owned by PS-DEFERRED-TAX."]
+[REPLACE WITH explicit boundaries — what is NOT in this PS even if related. Prevents drift into adjacent territory. If something related is owned by another PS, reference it by key — e.g. "Deferred tax provision — owned by PS-DEFERRED-TAX."]
 
 ---
 
-## 4. Strawman (Current Understanding)
+## 3. Problem Analysis
 
-*The architect's current working hypothesis for the solution within this PS. Loop agent proposes the initial draft at PS open and proposes updates as OQs resolve and notes evidence accumulates — each change traced to context or evidence (per AI-PROBE-006); the architect approves all changes. 4.1 carries the picture; 4.2/4.3 are structured anchors for the gap-probe loop; 4.4 surfaces cross-PS / cross-DPD dependencies.*
+*The analysis of what makes THIS problem hard. Adaptive by design: carry only the focus areas this specific problem turns on. A data-ownership conflict, a process gap, a capability void, and a regulatory seam are different problems and warrant different analysis — not a fixed section set.*
 
-### 4.1 Narrative
+<!--
+ADAPTIVE ZONE. Choose the 2–4 focus areas this problem actually turns on.
+Each focus area is a ### sub-heading YOU pick, carrying real analysis
+(a table, a Mermaid diagram, prose — whatever the dimension needs).
 
-[Free-form narrative + Mermaid diagram. Current understanding of the solution shape for this PS. Updated as inquiry progresses.]
+  - Fit, don't fill. Do NOT complete a fixed set of headings; choose what
+    fits, invent what the menu lacks, and OMIT any dimension this problem
+    does not have.
+  - Analyse, don't recap. Do NOT restate §1 (problem) or §2 (scope) here.
+  - A PS whose §3 sub-headings match every other PS's has not been
+    analysed — it has been filled in (AI-PROBE-011).
+  - §3 is guarded like every other structured layer: each focus area's
+    content traces to authoritative context or a notes-file session
+    (AI-PROBE-006). Free-form is not a licence for ungrounded prose.
+
+Example lenses (illustrative, NOT a checklist):
+  authority / ownership map · current-vs-target flow · stakeholder tension ·
+  build / buy / partner · constraint & regulatory analysis · data lineage ·
+  failure modes & bottlenecks · cost / impact · dependency seam
+-->
+
+### [REPLACE WITH a focus area this problem turns on]
+
+[REPLACE WITH the analysis for that dimension.]
+
+### [REPLACE WITH a second focus area this problem demands]
+
+[REPLACE WITH the analysis.]
+
+---
+
+## 4. Strawman (current solution hypothesis)
+
+*The current best guess at the SOLUTION shape within this PS — nothing else. The loop agent drafts it at PS open and proposes refinements as OQs resolve and notes evidence accumulates — each change traced to context or evidence (per AI-PROBE-006); the architect approves all changes. 4.2/4.3 are the structured anchors the gap-probe loop reads and the living SOAP promotes (4.2 → SOAP §6, 4.3 → SOAP §7); 4.4 surfaces cross-PS / cross-DPD dependencies.*
+
+<!-- Reference §1/§2/§3 by their content — do NOT restate the problem, scope, or
+     analysis here. If a sub-section has nothing yet, leave it empty; don't pad. -->
+
+### 4.1 Shape
+
+[One Mermaid diagram of the current solution shape, when there is one to draw. Optionally ONE line stating the current position — the thesis, not a recap. e.g. "Current position: settlement handled centrally by the tax engine; the open bet is jurisdictional MTM variance (OQ-DIRECT-TAX-002)." NOT a recap of §1/§2/§3.]
 
 ### 4.2 Components
 
@@ -124,6 +160,6 @@ last_updated: YYYY-MM-DD
 
 ## 7. Notes Reference
 
-*Raw inquiry notes (SME discussions, document reviews, async resolutions) live in a separate file, organised chronologically by session. This PS file contains only the **structured layer** — strawman, OQs with resolutions, derived_from. Raw evidence is captured by the architect; the loop agent reads notes + context and proposes structured updates here for architect approval. The raw-vs-structured separation enforces Jupiter's context-driven output principle.*
+*Raw inquiry notes (SME discussions, document reviews, async resolutions) live in a separate file, organised chronologically by session. This PS file contains only the **structured layer** — problem analysis, strawman, OQs with resolutions, derived_from. Raw evidence is captured by the architect; the loop agent reads notes + context and proposes structured updates here for architect approval. The raw-vs-structured separation enforces Jupiter's context-driven output principle.*
 
 **Notes file:** `workspace/artifacts/transformation/notes/PS-{SLUG}-notes.md`

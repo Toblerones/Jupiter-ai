@@ -167,6 +167,11 @@ methodology_notes: |
   - Problem Spaces are scoped areas of inquiry (per Domain-Driven Design,
     Lean / Product Discovery, Steve Blank's customer development framing),
     distinct from solution space.
+  - Each PS carries its analysis in an ADAPTIVE Problem Analysis section (§3):
+    the focus areas are chosen to fit what makes that specific problem hard —
+    not a fixed template body. A PS whose analysis reads like every other PS's
+    has been filled in, not analysed (AI-PROBE-011). The strawman (§4) is the
+    solution hypothesis only; its promotable anchors (4.2/4.3) feed the SOAP.
   - Each PS has its own stakeholders, strawman, and inquiry stream.
   - PS run concurrently within Probe — the architect manages architecture
     holistically across all PS, not as siloed domain workstreams.

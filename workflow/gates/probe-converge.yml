@@ -32,10 +32,12 @@ auto_checks:
   - id: AC-PROBE-002
     name: every_PS_has_scope_boundaries
     description: >
-      Every PS has both Scope and Out of Scope sections populated.
+      Every PS has a populated Scope & Boundaries section (§2) carrying both
+      an in-scope statement and explicit out-of-scope boundaries.
     required: true
     failure_message: >
-      One or more PS lack explicit scope boundaries.
+      One or more PS lack explicit scope boundaries (in-scope and out-of-scope)
+      in §2.
 
   - id: AC-PROBE-003
     name: every_PS_has_strawman
@@ -150,6 +152,20 @@ auto_checks:
       emergent element lacks an open|confirmed status marker. The SOAP is born at
       the first Probe iteration — run /jupiter:iterate to generate the skeleton.
 
+  - id: AC-PROBE-012
+    name: every_PS_has_problem_analysis
+    description: >
+      Every PS has a non-empty Problem Analysis section (§3) containing at
+      least one chosen focus-area sub-heading (### ...) with content below it —
+      not the template placeholder, not a bare heading. This is a PRESENCE
+      floor only: it asserts §3 exists and was populated. Whether the chosen
+      focus areas actually FIT the problem — rather than being generic filler
+      or the same set as every other PS — is judged by AI-PROBE-011, not here.
+    required: true
+    failure_message: >
+      One or more PS have an empty or placeholder Problem Analysis (§3). Add
+      the focus areas this problem turns on, each with substantive content.
+
 # ─── AI Checks ────────────────────────────────────────────────────────────────
 
 ai_checks:
@@ -159,7 +175,7 @@ ai_checks:
     description: >
       PS scopes do not significantly overlap; each PS has a coherent area
       of inquiry. Where two PS share a boundary, the boundary is explicit
-      in both PS's Out of Scope sections.
+      in both PS's Scope & Boundaries (§2) out-of-scope statement.
     required: true
     failure_message: >
       Two or more PS appear to have overlapping scope. Reconcile boundaries
@@ -220,8 +236,9 @@ ai_checks:
   - id: AI-PROBE-006
     name: structured_updates_context_aligned
     description: >
-      Every OQ resolution, every strawman update, and every REQ/ADR key
-      created during Probe traces to (a) an authoritative context item
+      Every OQ resolution, every Problem Analysis (§3) focus area, every
+      strawman update, and every REQ/ADR key created during Probe traces to
+      (a) an authoritative context item
       (workspace/context/target-architecture, policy, prior ADR, glossary
       entry, landscape entry, data product spec, capability map entry), OR
       (b) a documented activity_log entry in the PS file backed by a session
@@ -232,9 +249,9 @@ ai_checks:
       without context cross-check.
     required: true
     failure_message: >
-      One or more structured updates (OQ resolution, strawman content, or
-      REQ/ADR key) lack traceability to authoritative context or
-      activity_log evidence. Untraceable structured content violates
+      One or more structured updates (OQ resolution, problem-analysis content,
+      strawman content, or REQ/ADR key) lack traceability to authoritative
+      context or activity_log evidence. Untraceable structured content violates
       Jupiter's context-driven output principle. Either trace it, or
       remove it.
 
@@ -306,8 +323,11 @@ ai_checks:
       belong in the Activity Log, the OQ Refs/Resolution columns, and the
       iteration report — never woven into prose); (2) no statement materially
       repeated across sections — each fact has exactly one home section
-      (problem in §1, boundaries in §2/§3, design position in §4, questions
-      in §5) and is referenced elsewhere by key, not restated; (3) refinements
+      (problem in §1, boundaries in §2, problem analysis in §3, solution
+      position in §4, questions in §5), referenced elsewhere by key rather than
+      restated — §3 analyses the problem without recapping §1/§2, and §4.1
+      Shape states the current solution position without recapping §1/§2/§3;
+      (3) refinements
       are incorporated by rewriting the affected text in place, not by
       appending corrections or "(updated)" markers alongside the original.
       A cold reader should not be able to tell how many iterations produced
@@ -320,6 +340,32 @@ ai_checks:
       affected sections in place — move traces to the Activity Log / OQ
       columns, deduplicate to the single-home rule, and do a full coherence
       read of each flagged PS before recommitting.
+
+  - id: AI-PROBE-011
+    name: problem_analysis_fits
+    description: >
+      Every PS's Problem Analysis (§3) is shaped to its specific problem, not
+      mechanically filled. (1) The focus-area sub-headings are SELECTED to fit
+      what makes THIS problem hard — a data-ownership conflict carries an
+      ownership/authority analysis, a process gap a current-vs-target flow, a
+      capability void a build/buy/partner axis, a regulatory seam a constraint
+      analysis; a PS does not carry a focus area its problem does not have.
+      (2) Each focus area contains substantive analysis, not a restated §1/§2
+      or a bare heading. (3) FULL-SWEEP ONLY: across all PS the §3 focus areas
+      are not uniform — if every PS carries the same headings in the same
+      shape, the analysis was *filled in*, not *done*, and free-form has failed
+      its purpose. This check carries the completeness guarantee the free-form
+      §3 gave up structurally; it is judgment, not the section-presence floor
+      (that is AC-PROBE-012). Aspects (1) and (2) are per-instance and run on
+      every iteration including focused; aspect (3) is cross-instance and only
+      meaningful — hence only evaluated — on a full sweep.
+    required: true
+    failure_message: >
+      One or more PS have a Problem Analysis (§3) that does not fit its problem:
+      generic filler, a restated problem/scope, or — across the set — the same
+      focus areas mechanically repeated in every PS. Rewrite §3 to the
+      dimensions this specific problem turns on; if it reads like every other
+      PS's analysis, it has not been done.
 
 # ─── Human Gate ───────────────────────────────────────────────────────────────
 
@@ -368,7 +414,9 @@ agent_guidance: |
   REVIEW. Otherwise run the full sweep (STEPs 2–7 over all PS). The complete
   mechanic lives in agents/loop.md "Scope derivation". On a focused
   iteration, apply STEPs 2, 4, and the strawman/ADR mechanics below to the
-  targeted instances only; skip STEP 3 and cross-PS reconciliation.
+  targeted instances only; skip STEP 3 and cross-PS reconciliation. The §3-fit
+  aspect of AI-PROBE-011 is checked on the targeted PS; its cross-PS sameness
+  aspect waits for the full sweep.
 
   STEP 1 — INITIAL PS PROPOSAL (run once at start of Probe)
   After Vision is approved, run a PS proposal pass:
@@ -437,6 +485,29 @@ agent_guidance: |
   commit. Bookkeeping (status updates on architect-closed OQs, activity_log
   summary derived from notes-file sessions) can be auto-applied.
 
+  PROBLEM ANALYSIS (§3) — FIT, DON'T FILL (cross-cutting mechanic):
+  §3 is the adaptive heart of the PS: the analysis of what makes THIS problem
+  hard, carried in focus areas chosen to fit it — not a fixed section set.
+    - SELECT focus areas from what the problem actually turns on. A data-
+      ownership conflict wants an authority/ownership map; a process gap a
+      current-vs-target flow; a capability void a build/buy/partner axis; a
+      regulatory seam a constraint analysis. Use the example menu in
+      templates/PS_template.md as a starting point, invent what it lacks, and
+      OMIT any dimension this problem does not have.
+    - FIT, DON'T FILL. Do not carry a focus area just because another PS has
+      it. If every PS's §3 looks the same, the analysis was filled in, not
+      done — AI-PROBE-011 fails the gate on that (cross-instance, full sweep).
+    - §3 ANALYSES, it does not recap. The problem lives in §1, scope in §2 —
+      §3 references them and adds analysis; it never restates them
+      (AI-PROBE-010).
+    - §3 IS GUARDED like every other structured layer. Each focus area's
+      content traces to authoritative context or a notes-file session
+      (AI-PROBE-006) — free-form is not a licence for ungrounded prose.
+    - §3 FEEDS the gap probe (LOOP 2) and the strawman: unknowns the analysis
+      exposes become candidate OQs; settled analysis informs the §4 solution
+      shape. Analysis that hardens into a component or decision graduates DOWN
+      into §4.2 / §4.3 — §3 holds the reasoning, §4 holds the promotable anchor.
+
   STRAWMAN-DRIVEN ELICITATION (cross-cutting mechanic):
   The strawman in each PS Section 4 is the architect's working hypothesis.
   The loop agent supports it across three nested loops tied to the steps above.
@@ -447,11 +518,17 @@ agent_guidance: |
     - The HL conceptual sketch, if present
     - Authoritative context (existing data products, prior ADRs, glossary, landscape)
     - Any `initial-design` notes the architect captured in the PS notes file
-  Populate Section 4.1 (narrative), 4.2 (components anchored from context),
-  4.3 (decisions if any are implied by the source). Architect approves/refines.
+  Draft the §3 Problem Analysis (the focus areas the source capability's gap
+  turns on — see PROBLEM ANALYSIS above; FIT, DON'T FILL), then populate §4:
+  Section 4.1 Shape (a diagram / one-line position if one is implied yet),
+  4.2 (components anchored from context), 4.3 (decisions if any are implied by
+  the source). Architect approves/refines.
 
   LOOP 2 — GAP PROBE (during STEP 2 each iteration)
-  Scan the strawman for gaps that should become Open Questions:
+  Scan the §3 problem analysis AND the §4 strawman for gaps that should become
+  Open Questions:
+    - A §3 focus area that surfaces an unknown it cannot yet resolve (an
+      unowned boundary, an unquantified constraint, an unvalidated cause)
     - Components mentioned but unspecified (no responsibility / interface / NFR)
     - Data referenced but unsourced (no producer / no DPD)
     - Process steps mentioned but undetailed (who triggers? when?)
@@ -459,8 +536,8 @@ agent_guidance: |
     - Assumptions made but unvalidated
     - Constraints applied but unjustified
   Each gap becomes a candidate OQ with draft Question + draft Why/rationale.
-  Architect approves → OQs added to Section 5 register. The strawman is
-  the *probe* — the instrument used to find unknowns.
+  Architect approves → OQs added to Section 5 register. The §3 analysis and the
+  strawman are the *probe* — the instruments used to find unknowns.
 
   LOOP 3 — STRAWMAN UPDATE FROM OQ RESOLUTION (during STEP 4)
   When OQs resolve (context-aligned per AI-PROBE-006), identify which
@@ -539,10 +616,12 @@ agent_guidance: |
       narrating provenance in the body ("per policy X, as noted in session
       Y..." woven into prose is a defect, not diligence).
     - Single-home rule: every fact lives in exactly one section — problem
-      in §1, boundaries in §2/§3, design position in §4, questions in §5.
-      Other sections REFER by key (OQ-{...}, component name, ADR key),
-      never restate. Do not re-derive shared facts into whichever section
-      you are currently editing.
+      in §1, boundaries in §2, problem analysis in §3, solution position in
+      §4, questions in §5. Other sections REFER by key (OQ-{...}, component
+      name, ADR key), never restate. §3 analyses the problem without recapping
+      §1/§2; §4.1 Shape states the current solution position without recapping
+      §1/§2/§3. Do not re-derive shared facts into whichever section you are
+      currently editing.
     - Coherence pass before commit: after applying approved edits, re-read
       the WHOLE PS file and remove any duplication or dangling references
       the edit introduced. An edit is not done when the diff is applied;

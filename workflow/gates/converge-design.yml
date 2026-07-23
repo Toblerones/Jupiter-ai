@@ -213,7 +213,9 @@ agent_guidance: |
   single-home rule, full coherence read before commit. Closure is when this
   matters most: a PS marked `closed` is the permanent record handed to
   Design, and it must read as a clean document, not an accretion of
-  iteration residue.
+  iteration residue. The §3 Problem Analysis fit expectation (AI-PROBE-011)
+  carries into closure too — a closed PS's analysis must still read as fitted
+  to its problem, not generic filler.
 
   STEP 1 — IDENTIFY REMAINING OPEN WORK
   Across all PS:
