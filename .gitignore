@@ -1,3 +1,5 @@
 archival/
 GENESIS
 .claude/settings.local.json
+tmp/
+*.tsbuildinfo
