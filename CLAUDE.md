@@ -80,6 +80,7 @@ All commands use the `/jupiter:` namespace.
 | `/jupiter:spawn --type poc\|discovery\|spike` | Create a time-boxed child initiative |
 | `/jupiter:gaps` | REQ key traceability check across requirements and design |
 | `/jupiter:handoff` | Generate architecture handoff package |
+| `/jupiter:present --audience <name>` | Project the governed model into a human-facing HTML presentation (derived, read-only) |
 | `/jupiter:assess --artifact <path>` | Evaluate an externally-produced artifact |
 
 ---
@@ -89,6 +90,7 @@ All commands use the `/jupiter:` namespace.
 | Agent | Role |
 |-------|------|
 | `agents/loop.md` | The core loop agent — runs gate checks, produces artifacts, emits events |
+| `agents/render.md` | Render agent — projects the governed model into a human-facing presentation (invoked by `/jupiter:present`) |
 | `agents/reviewer-ea.md` | Enterprise Architect — strategic fit, enterprise standards, portfolio impact |
 | `agents/reviewer-ba.md` | Business Architect — business capability coverage, stakeholder impact |
 | `agents/reviewer-da.md` | Data Architect — data model, governance, integration integrity |
@@ -147,6 +149,8 @@ workspace/
         findings.md                ← assessment findings report
     handoff/
       handoff-{version}.yml        ← handoff manifest (produced by /jupiter:handoff)
+    presentation/
+      {name}.html                  ← human-facing presentation (produced by /jupiter:present)
 ```
 
 ---
@@ -176,7 +180,7 @@ workflow/
 
 `workspace/log.jsonl` is the source of truth for initiative state. It is append-only — never modify existing lines.
 
-Seven event types:
+Eight event types:
 
 | Event | When emitted |
 |-------|-------------|
@@ -187,6 +191,7 @@ Seven event types:
 | `initiative_spawned` | `/jupiter:spawn` creates a child initiative |
 | `gaps_checked` | `/jupiter:gaps` completes |
 | `handoff_created` | `/jupiter:handoff` completes |
+| `presentation_created` | `/jupiter:present` completes |
 
 ---
 
@@ -233,6 +238,8 @@ ADR status values: `Proposed` → `Accepted` or `Superseded`. No ADR may be `Pro
 **4. Commands are thin dispatchers.** Each command: validate → load config → invoke agent → write event → report. No business logic in commands.
 
 **5. Reviewer agents are pure evaluation agents.** Reviewers produce a structured text report and stop. They do not emit events, maintain state, or make decisions.
+
+**6. Presentations are derived projections.** `/jupiter:present` renders audience-facing output from the governed model — load-all-context, feature-per-ask, truth-state preserved, no internal language. Read-only; never hand-edited; regenerate any time. The render agent preserves truth-state mechanically; the architect judges the storyline.
 
 ---
 
