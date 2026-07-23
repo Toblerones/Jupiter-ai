@@ -1,0 +1,274 @@
+# Jupiter Gate Config — Vision → Probe (Transformation profile)
+# Defines the checks the loop agent runs to confirm Vision outputs are ready
+# to enter Probe. Vision must produce a populated capability map (mandatory)
+# and may produce an HL conceptual sketch (optional). Problem Space candidates
+# in Probe will be derived from gaps in these conceptual artifacts.
+#
+# Check ordering: auto checks first (deterministic), then AI checks (judgment),
+# then human gate. Gate run happens inside /jupiter:iterate.
+# Gap = count of required checks failing. Phase complete = gap 0 + human gate approved.
+
+version: "3.0"
+transition: "vision → probe"
+description: >
+  Vision phase complete when the conceptual artifacts (capability map mandatory,
+  HL conceptual sketch optional) are populated, capabilities have clarity flags
+  with justification for unclear/unknown entries, and the artifacts collectively
+  give the loop agent enough material to derive Problem Space candidates at the
+  Vision → Probe transition.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-VISION-001
+    name: intent_statement_complete
+    description: >
+      workspace/INTENT.md exists, is non-empty, and contains no placeholder
+      text ([REPLACE], [TODO], TBD). In the transformation profile INTENT
+      carries the pain / problem statement, vision drivers, AND a target
+      architecture summary section. The architect may leave the target
+      architecture section as a placeholder — the loop fills/refines it during
+      Vision from the authoritative target architecture in
+      context/target-architecture/. INTENT's section is the narrative summary;
+      the authoritative, machine-checkable copy is the context guardrail
+      (AC-VISION-006).
+    required: true
+    failure_message: >
+      INTENT.md is missing, empty, or still contains placeholder text.
+      A populated vision statement is required before Probe can begin.
+
+  - id: AC-VISION-002
+    name: capability_map_exists
+    description: >
+      workspace/artifacts/transformation/vision/capability-map.md exists.
+    required: true
+    failure_message: >
+      Capability map file is missing. Capability map is MANDATORY in the
+      transformation profile — it is the primary source of Problem Space
+      candidates. Use templates/capability-map_template.md to create it.
+
+  - id: AC-VISION-003
+    name: capability_map_has_capabilities
+    description: >
+      The capability map contains at least one CAP-{NNN} entry in the
+      Capabilities table with required fields populated (Capability name,
+      Owner, Current State, Target State, Clarity).
+    required: true
+    failure_message: >
+      Capability map has no populated CAP-* entries. Populate the
+      Capabilities table before transitioning to Probe.
+
+  - id: AC-VISION-004
+    name: every_capability_has_clarity
+    description: >
+      Every CAP-{NNN} entry has a Clarity flag with one of the values:
+      `clear`, `unclear`, `unknown`. No placeholder text in the Clarity column.
+    required: true
+    failure_message: >
+      One or more capabilities lack a Clarity flag. Clarity drives PS
+      proposal — capabilities marked `unclear` or `unknown` are the
+      primary source of Problem Space candidates.
+
+  - id: AC-VISION-005
+    name: out_of_scope_section_present
+    description: >
+      The capability map's Out of Scope Capabilities section is populated
+      with either explicit out-of-scope entries or an explicit "None — all
+      related capabilities are in scope" statement.
+    required: true
+    failure_message: >
+      Out of Scope section is missing or contains only placeholder text.
+      Explicit scope boundaries are required — undeclared scope becomes
+      implicit scope.
+
+  - id: AC-VISION-006
+    name: target_architecture_present
+    description: >
+      workspace/context/target-architecture/ contains at least one
+      domain-level target architecture file (frontmatter level: domain) with
+      status: authoritative and no placeholder text. This is the authoritative
+      target state — the "lead" in architecture-led — loaded as a guardrail on
+      every iteration. It is authored by converting a diagram per
+      templates/target-architecture_GUIDE.md.
+    required: true
+    failure_message: >
+      No authoritative domain-level target architecture found in
+      workspace/context/target-architecture/. The target conceptual
+      architecture is the mandatory input for the transformation profile.
+      Convert the target-state diagram into a target-architecture file
+      (templates/target-architecture_template.md + _GUIDE.md) and set its
+      status to authoritative.
+
+  - id: AC-VISION-007
+    name: target_architecture_bindings_valid
+    description: >
+      Every target architecture file binds correctly: each file with
+      level: capability or level: sub-domain has (a) a `scope` referencing a
+      real CAP-{NNN} present in the capability map, and (b) a `parent`
+      referencing an existing target architecture file in the same folder.
+      No orphan files (parent missing) and no dangling scope (CAP not in the
+      map). Domain-level files have parent: null.
+    required: true
+    failure_message: >
+      One or more target architecture files have invalid bindings — a `scope`
+      that does not match any CAP-{NNN} in the capability map, or a `parent`
+      that names no existing file. Fix the bindings (GUIDE §7) so the altitude
+      hierarchy is anchored and orphan-free.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-VISION-001
+    name: capability_map_coherent
+    description: >
+      Capabilities in the map do not significantly overlap; each is a
+      distinct unit of business capability. Where two capabilities share
+      a boundary, the boundary is explicit in the Notes column.
+    required: true
+    failure_message: >
+      Two or more capabilities appear to overlap without explicit boundary
+      documentation. Reconcile or document the boundary.
+
+  - id: AI-VISION-002
+    name: capability_clarity_justified
+    description: >
+      Every capability with Clarity = `unclear` or `unknown` has a Notes
+      column entry explaining WHAT is unclear (target-state ambiguity,
+      realisation approach undecided, data flow unmapped, etc.). This
+      gives the loop agent grounding for proposing meaningful PS at the
+      Vision → Probe transition.
+    required: true
+    failure_message: >
+      One or more unclear/unknown capabilities lack Notes explaining
+      what is unclear. Without this, PS proposals at the transition
+      lack grounding.
+
+  - id: AI-VISION-003
+    name: capability_map_aligns_with_target_architecture
+    description: >
+      The in-scope capabilities in the capability map reflect the authoritative
+      target architecture in context/target-architecture/. Every building block
+      in a target architecture file that represents a business capability maps
+      to a CAP-{NNN} in the map (or is flagged conceptual-only), and no
+      capability in the map is unmotivated by the target architecture or INTENT.
+      The map is the analytical lens over the target architecture — they must
+      not disagree.
+    required: true
+    failure_message: >
+      Capability map is inconsistent with the target architecture in
+      context/target-architecture/ — a building block has no corresponding
+      capability, or a capability has no basis in the target architecture.
+      Reconcile before transitioning to Probe.
+
+  - id: AI-VISION-004
+    name: target_architecture_children_consistent
+    description: >
+      Each capability-level / sub-domain-level target architecture file refines
+      its parent without contradicting it — it may add or detail building
+      blocks, flows, and principles, but must not violate a parent principle
+      (TA-{SCOPE}-P{n}) or redefine a parent flow inconsistently. This enforces
+      the most-specific-wins altitude model: a child governs its area but stays
+      within the umbrella of its parent.
+    required: true
+    failure_message: >
+      One or more capability/sub-domain target architecture files contradict
+      their parent (a violated parent principle or an inconsistent flow).
+      Reconcile the child against the parent before transitioning to Probe.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+    - id: HG-VISION-001
+      name: architect_approves_vision_complete
+      description: >
+        Architect confirms the capability map (and optional conceptual sketch)
+        is complete and ready to source Problem Space candidates. The loop
+        agent will propose candidate PS at Vision → Probe transition; the
+        architect's approval of Vision signals readiness for that proposal pass.
+      required: true
+      failure_message: >
+        Architect approval pending. Run /jupiter:review when ready.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Vision complete when all required auto and AI checks pass and the
+    architect approves via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  Vision phase. Architecture-led transformation. Produce the conceptual
+  artifacts (capability map mandatory, HL conceptual sketch optional) from
+  which Problem Spaces will be derived in Probe.
+
+  STEP 1 — READ ALL CONTEXT
+  Load workspace/context/ fully (project.yml, target-architecture/, policy/,
+  standards/, landscape/, adrs/, glossary/, data-products/). The
+  target-architecture/ files are the authoritative target state — the "lead" —
+  and govern everything downstream. Understand them and the existing guardrails
+  before drafting the capability map.
+
+  STEP 2 — CAPTURE INTENT
+  workspace/INTENT.md carries the pain / problem statement, vision drivers, and
+  a target architecture summary section. The architect may leave the target
+  architecture summary as a placeholder — fill / refine it from the authoritative
+  target architecture in context/target-architecture/. INTENT's section is a
+  narrative summary that points at the guardrail; the authoritative,
+  machine-checkable copy is the context files, not INTENT.
+
+  The target architecture itself is authoritative context the architect PREPARES
+  under workspace/context/target-architecture/ — treated like policy/ and
+  standards/, loaded as a guardrail on every iteration. It is a precondition for
+  Vision (AC-VISION-006), converted from the target-state diagram per
+  templates/target-architecture_GUIDE.md (domain level mandatory; capability /
+  sub-domain levels only where a finer-grained target genuinely exists, each
+  bound to a CAP-{NNN} and a parent). The loop consumes it as a guardrail; it
+  does not author it.
+
+  STEP 3 — DRAFT CAPABILITY MAP (derived from the target architecture)
+  The capability map is the analytical lens over the target architecture — derive
+  it from the target-architecture files, not the other way round. Each building
+  block representing a business capability becomes a CAP-{NNN} (per AI-VISION-003).
+  Use templates/capability-map_template.md. Populate the Capabilities table
+  with CAP-{NNN} entries. For each capability:
+    - Name, Owner
+    - Current State (1 line — typically: manual, Excel-based, fragmented)
+    - Target State (1 line — what we want it to be)
+    - Clarity: `clear` if both target and realisation well-understood;
+               `unclear` if target known but realisation ambiguous;
+               `unknown` if target itself not yet defined
+    - Notes: explain WHAT is unclear/unknown — this grounds PS proposals later
+  Add a Mermaid diagram if helpful for clarity. Populate Out of Scope explicitly.
+
+  STEP 4 — OPTIONAL HL CONCEPTUAL SKETCH
+  If the architect already has enough confidence in part of the solution
+  shape, draft a high-level conceptual sketch at vision/conceptual-sketch.md.
+  Format is flexible — diagram, narrative, partial sketch. Not required.
+
+  STEP 5 — SELF-REVIEW
+  Verify all auto checks (AC-VISION-001..007) and AI checks (AI-VISION-001..004)
+  pass. Two critical ones: every unclear/unknown capability has Notes explaining
+  what's unclear (this is what the agent uses to propose PS); and the target
+  architecture is present, correctly bound (real CAP scopes, existing parents),
+  and children do not contradict parents (AC-VISION-006/007, AI-VISION-004).
+
+  STEP 6 — PRESENT FOR HUMAN GATE
+  When checks pass, present Vision artifacts (INTENT.md + capability-map.md +
+  conceptual-sketch.md if present) to the architect. Run /jupiter:review.
+  The human gate is non-negotiable — never auto-approve.
+
+  AT TRANSITION TO PROBE
+  After Vision is approved, the loop agent runs the initial PS proposal pass
+  at the start of Probe (see workflow/gates/probe-converge.yml agent_guidance
+  STEP 1). Capabilities with Clarity = unclear or unknown produce candidate
+  PS, each with draft problem_statement, draft derived_from (artifact:
+  vision/capability-map.md, source: CAP-{NNN}, gap: {Notes content}), and
+  proposed stakeholders.

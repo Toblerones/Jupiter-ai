@@ -1,0 +1,204 @@
+# Jupiter Profile — Transformation
+# Architecture-led, hypothesis-driven, concurrent-stream methodology.
+# Used for transformation initiatives where: target conceptual architecture
+# is given upfront (not derived from requirements); requirements emerge from
+# Problem Space inquiry (OQ resolutions); multiple inquiry streams run
+# concurrently within the Probe phase; design phase adds upstream data
+# product change proposals and migration roadmap.
+#
+# Distinct from the standard architecture profile — see
+# workflow/profiles/architecture.yml for the requirements-first governance flow.
+
+version: "3.0"
+id: transformation
+label: "Architecture-Led Transformation"
+description: >
+  Transformation initiative using architecture-led methodology. Vision
+  captures pain + target conceptual architecture upfront. Probe opens
+  multiple concurrent Problem Spaces; each PS investigates a scoped area
+  of inquiry with its own stakeholders and strawman. Open Questions resolve
+  into REQs and context updates; decision-shaped OQs anchor on Proposed
+  ADRs drafted when discussion opens. Converge stabilises the catalogue
+  and ratifies ADRs (the ARB moment). Design (Transformation) assembles the
+  SOAP plus upstream data product change proposals and migration roadmap.
+
+phases:
+  include: [vision, probe, converge, design_transformation]
+  exclude: [intent, requirements, design, assessment]
+
+gates:
+  human_required_on_all_phases: true
+  reviewer_panel_available: true
+  spec_check_available: true
+
+reviewer_panel:
+  enabled: true
+  default_roster: [ea, ba, da, sa, eng]
+  invocation: "/jupiter:review --panel"
+
+iteration:
+  budget: unlimited
+  stuck_threshold: 3
+  stuck_action: >
+    After {stuck_threshold} iterations with no gap reduction on the active
+    phase, surface a status report to the architect identifying the specific
+    checks that are not passing (per PS if in Probe / Converge) and request
+    guidance. Do not continue looping without direction.
+
+context:
+  density: standard
+  required:
+    - workspace/context/project.yml
+    - workspace/context/target-architecture/   # authoritative target state (the "lead"); loaded every iteration as a guardrail. See templates/target-architecture_GUIDE.md
+  optional:
+    - workspace/context/policy/
+    - workspace/context/standards/
+    - workspace/context/landscape/
+    - workspace/context/adrs/
+    - workspace/context/glossary/
+    - workspace/context/data-products/
+
+output:
+  vision:
+    artifact: workspace/INTENT.md
+    sub_artifacts:
+      capability_map:
+        path: "workspace/artifacts/transformation/vision/capability-map.md"
+        template: templates/capability-map_template.md
+        required: true
+      conceptual_sketch:
+        path: "workspace/artifacts/transformation/vision/conceptual-sketch.md"
+        required: false
+  probe:
+    # Living SOAP — born here (first Probe iteration), regenerated every
+    # iteration from PS state. Two zones: stable (§1–§5, from Vision) and
+    # emergent (§2.3, §6, §7, §8) whose elements carry open|confirmed markers.
+    # Same canonical path as design_transformation (kept under design/).
+    living_soap:
+      path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+      template: templates/SOAP_template.md
+      created_at: probe_start
+    # ADRs are born HERE, not in design_transformation. A decision-shaped OQ
+    # gets its ADR drafted at status Proposed the moment discussion opens —
+    # the ADR is the discussion anchor (ARB-style proposal), not an
+    # after-the-fact record. Same template and context discipline as the
+    # design profile. See ADR-ANCHORED DECISIONS in
+    # workflow/gates/probe-converge.yml.
+    adrs:
+      path: "workspace/artifacts/transformation/design/adrs/"
+      pattern: "ADR-{NNN}-{slug}.md"
+      template: templates/ADR_template.md
+      created_at: oq_in_discussion
+      initial_status: proposed
+    work_units:
+      problem_spaces:
+        path: "workspace/artifacts/transformation/problem-spaces/"
+        pattern: "PS-{slug}.md"
+        template: templates/PS_template.md
+        notes:
+          path: "workspace/artifacts/transformation/notes/"
+          pattern: "PS-{slug}-notes.md"
+          template: templates/PS_notes_template.md
+      data_products:
+        path: "workspace/artifacts/transformation/data-products/"
+        pattern: "DPD-{NNN}.md"
+        template: templates/DPD_template.md
+        notes:
+          path: "workspace/artifacts/transformation/notes/"
+          pattern: "DPD-{NNN}-notes.md"
+          template: templates/DPD_notes_template.md
+  converge:
+    # Living SOAP continues to accrete here — by end of Converge every emergent
+    # element is confirmed or explicitly deferred (no element left open).
+    living_soap:
+      path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+      template: templates/SOAP_template.md
+    # ADRs continue to accrete and are RATIFIED here (Proposed → Accepted at
+    # the Converge review — the ARB moment). No ADR remains Proposed at
+    # Converge exit (AC-CONVERGE-004); depth per AI-CONVERGE-007.
+    adrs:
+      path: "workspace/artifacts/transformation/design/adrs/"
+      pattern: "ADR-{NNN}-{slug}.md"
+      template: templates/ADR_template.md
+    work_units:
+      problem_spaces:
+        path: "workspace/artifacts/transformation/problem-spaces/"
+        pattern: "PS-{slug}.md"
+        template: templates/PS_template.md
+      data_products:
+        path: "workspace/artifacts/transformation/data-products/"
+        pattern: "DPD-{NNN}.md"
+        template: templates/DPD_template.md
+  design_transformation:
+    # The SOAP is NOT created here — it is the living artifact born in Probe
+    # (see probe.living_soap). This phase FINALISES it: every emergent element
+    # confirmed or deferred, then migration roadmap + ADR ratification + panel.
+    artifact: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+    adrs: "workspace/artifacts/transformation/design/adrs/"
+    template_soap: templates/SOAP_template.md
+    template_adr: templates/ADR_template.md
+    migration_roadmap: "workspace/artifacts/transformation/design/migration-roadmap.md"
+    # Inputs from earlier phases (referenced, not produced here):
+    # - DPDs at workspace/artifacts/transformation/data-products/ (created in Probe/Converge)
+
+methodology_notes: |
+  This profile implements architecture-led transformation methodology:
+
+  - Target conceptual architecture is an INPUT, not derived. It lives as
+    authoritative context under workspace/context/target-architecture/ (declared
+    in context.required) and is loaded as a guardrail on every iteration — NOT
+    narrated into INTENT. INTENT carries the pain/problem statement; the target
+    architecture is the loaded constraint. Files are authored by converting a
+    diagram per templates/target-architecture_GUIDE.md, modelled at two or more
+    altitudes (domain / sub-domain / capability) bound to capability-map keys,
+    with most-specific-wins alignment resolution downstream.
+  - Requirements EMERGE from Probe via OQ resolution; they are not authored
+    upfront.
+  - ADRs are drafted DURING Probe as discussion anchors, not written at the
+    end as records. When an OQ is recognised as decision-shaped, the loop
+    agent drafts the ADR at status Proposed from templates/ADR_template.md
+    with the same context discipline as the design profile — all guardrails
+    loaded (target-architecture, prior ADRs, policy, standards, landscape,
+    glossary, data-products) — so the Proposed ADR carries the alternatives
+    and trade-offs reviewers need to judge the decision (ARB-style, per
+    AI-PROBE-009 depth). OQ resolution → ADR records that the decision was
+    made; ratification (Proposed → Accepted) is the architect's explicit
+    act, no later than the Converge gate (AC-CONVERGE-004, AI-CONVERGE-007).
+  - Problem Spaces are scoped areas of inquiry (per Domain-Driven Design,
+    Lean / Product Discovery, Steve Blank's customer development framing),
+    distinct from solution space.
+  - Each PS carries its analysis in an ADAPTIVE Problem Analysis section (§3):
+    the focus areas are chosen to fit what makes that specific problem hard —
+    not a fixed template body. A PS whose analysis reads like every other PS's
+    has been filled in, not analysed (AI-PROBE-011). The strawman (§4) is the
+    solution hypothesis only; its promotable anchors (4.2/4.3) feed the SOAP.
+  - Each PS has its own stakeholders, strawman, and inquiry stream.
+  - PS run concurrently within Probe — the architect manages architecture
+    holistically across all PS, not as siloed domain workstreams.
+  - Raw inquiry notes (architect-captured evidence) live separately from
+    structured PS files (agent-produced, context-aligned outputs). This
+    separation enforces Jupiter's context-driven output principle.
+  - Each structured update commits ONLY after agent-mediated context
+    cross-check + architect approval. See AI-PROBE-006 in
+    workflow/gates/probe-converge.yml — the context guardrail check.
+  - Iteration is a generic trigger; SCOPE IS STATE. Refine/reject feedback on
+    Probe/Converge can be scoped to specific PS/DPD ids at review time
+    (/jupiter:review --target, or architect-confirmed inference from the
+    feedback text — explicit target always wins; multiple targets supported).
+    Pending scoped feedback makes the next iterate a FOCUSED iteration: deep
+    pass on the touchpoint work units with full guardrail context, partial
+    gate report, gap carried stale. A focused iteration has no gate
+    authority — only a full sweep (no pending scoped feedback) recomputes
+    gap and can reach READY FOR REVIEW. This mirrors how a human architect
+    works: targeted discussion on one problem space, periodic holistic
+    review across all of them.
+  - The SOAP is a LIVING artifact, not an end-assembly. It is born at the first
+    Probe iteration (Zone A §1–§5 projected from INTENT + capability map +
+    target architecture; Zone B §2.3/§6/§7/§8 created with every element marked
+    `open`) and regenerated each Probe/Converge iteration from PS state — as a PS
+    closes, its design is promoted into the SOAP and flips open→confirmed with a
+    trace to the PS/OQ/ADR. This gives a continuously walkable mid-project view:
+    confirmed design vs open inquiry, side by side. design_transformation
+    FINALISES it (no element left open) rather than assembling it from scratch.
+    The SOAP is DERIVED from PS strawmans each iteration — never hand-maintained
+    in parallel, same context-driven principle as AI-PROBE-006.

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Architecture Peer Review — Meridian Invoice Processing SOAP v1.2</title>
+<style>:root {
+  --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+  --text: #0f172a; --muted: #64748b; --heading: #1e293b;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; background: var(--bg); color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px; line-height: 1.55;
+}
+.page { max-width: 1000px; margin: 0 auto; padding: 32px 24px 96px; }
+
+.header { margin-bottom: 24px; }
+.header h1 {
+  font-size: 28px; font-weight: 700; color: var(--heading);
+  margin: 0 0 4px; letter-spacing: -0.01em;
+}
+.header .subtitle {
+  font-size: 18px; font-weight: 500; color: var(--muted); margin: 0 0 16px;
+}
+.metadata {
+  display: flex; flex-wrap: wrap; gap: 8px 24px;
+  font-size: 14px; color: var(--muted); margin-bottom: 16px;
+}
+.metadata .field strong { color: var(--text); font-weight: 600; margin-right: 4px; }
+
+.verdict-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px 28px; margin-bottom: 24px;
+  border-left: 6px solid var(--verdict-color, #0f172a);
+}
+.verdict-badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; color: #fff;
+  background: var(--verdict-color, #0f172a);
+  padding: 4px 10px; border-radius: 4px; margin-bottom: 12px;
+}
+.verdict-title {
+  font-size: 22px; font-weight: 600; margin: 0 0 12px; color: var(--heading);
+}
+.verdict-summary { font-size: 15px; margin: 0 0 16px; color: var(--text); }
+
+.counts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.count-chip {
+  display: inline-flex; align-items: center;
+  font-size: 13px; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  background: #f1f5f9; color: var(--muted);
+}
+.count-chip .count-num { font-weight: 700; margin-right: 6px; }
+.count-chip.has.blocker     { background: #fef2f2; color: #b91c1c; }
+.count-chip.has.major       { background: #fff7ed; color: #c2410c; }
+.count-chip.has.minor       { background: #fefce8; color: #a16207; }
+.count-chip.has.observation { background: #eff6ff; color: #1d4ed8; }
+
+.open-q-line { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+.section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px 28px; margin-bottom: 20px;
+}
+.section h2 {
+  font-size: 18px; font-weight: 600; color: var(--heading);
+  margin: 0 0 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.section p { margin: 0 0 12px; }
+.section p:last-child { margin-bottom: 0; }
+.section ul, .section ol { margin: 0 0 12px; padding-left: 24px; }
+.section ul:last-child, .section ol:last-child { margin-bottom: 0; }
+.section li { margin-bottom: 6px; }
+
+.sev {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.05em; padding: 2px 7px; border-radius: 4px;
+  color: #fff; margin-right: 4px; vertical-align: 1px;
+}
+.sev-blocker     { background: #dc2626; }
+.sev-major       { background: #ea580c; }
+.sev-minor       { background: #ca8a04; }
+.sev-observation { background: #2563eb; }
+
+.table-wrap {
+  overflow-x: auto; margin: 12px 0 16px;
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.report-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.report-table th {
+  background: #f1f5f9; text-align: left; font-weight: 600;
+  color: var(--heading); padding: 10px 14px;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.report-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top;
+}
+.report-table tbody tr:last-child td { border-bottom: none; }
+.warn-icon { color: #dc2626; font-weight: 700; margin-left: 2px; }
+
+.checklist { list-style: none; padding-left: 0; margin: 0; }
+.checklist li {
+  display: flex; align-items: start; gap: 10px; padding: 8px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.checklist li:last-child { border-bottom: none; }
+.checklist input[type=checkbox] {
+  margin-top: 4px; width: 16px; height: 16px;
+  flex-shrink: 0; accent-color: #16a34a;
+}
+.checklist input[type=checkbox]:checked + span {
+  color: var(--muted); text-decoration: line-through;
+}
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9em; background: #f1f5f9;
+  padding: 1px 5px; border-radius: 3px; color: #0f172a;
+}
+
+.footer {
+  text-align: center; font-size: 12px; color: var(--muted);
+  margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+@media print {
+  body { background: #fff; }
+  .page { max-width: none; padding: 16px; }
+  .section, .verdict-card { break-inside: avoid; }
+  .verdict-badge, .sev, .count-chip, .report-table td[style] {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="header">
+<h1>Architecture Peer Review</h1><p class="subtitle">Meridian Invoice Processing SOAP v1.2</p><div class="metadata"><span class="field"><strong>Reviewer:</strong> M. Tan (Enterprise Architect)</span><span class="field"><strong>Submitted by:</strong> Payments Delivery Team</span><span class="field"><strong>Date:</strong> 2026-05-30</span><span class="field"><strong>Purpose:</strong> Pre-Review peer review</span></div>
+</div>
+<div class="verdict-card" style="--verdict-color:#ea580c"><div class="verdict-badge">VERDICT</div><div class="verdict-title">CONDITIONAL <span style="color:#ea580c">— NOT YET REVIEW-READY</span></div><p class="verdict-summary">The submission and PO validation design is sound and the service decomposition is appropriate for the scope. Two issues must be resolved before this can be tabled for review: a compliance violation in the storage design (legal obligation, not negotiable) and missing NFR design for the system&#x27;s stated performance target. Once these are addressed and two ADRs are drafted, this should be ready to submit.</p><div class="counts"><span class="count-chip has blocker"><span class="count-num">1</span>blocker</span><span class="count-chip has major"><span class="count-num">3</span>major</span><span class="count-chip has minor"><span class="count-num">1</span>minor</span><span class="count-chip has observation"><span class="count-num">1</span>observation</span></div><div class="open-q-line">Open questions: 2</div></div>
+<section class="section"><h2>Are we doing the right thing?</h2><p>The problem is correctly framed. Digitising invoice approval addresses a genuine operational and compliance risk — the current spreadsheet process has no audit trail and creates ATO exposure. The business case is credible and the scope (submission → validation → approval → archival) is appropriately bounded for a first release. There is no obvious overreach into adjacent finance processes that would have inflated complexity.</p>
+<p>The requirements baseline supports the design with one notable exception:</p>
+<p><span class="sev sev-major">MAJOR</span> <strong>No business basis recorded for the 30-second NFR target.</strong> REQ-NFR-PROC-001 states 30 seconds as a hard SLA at 500 concurrent users but no rationale is documented. The design will lock around this number — if it came from a stakeholder workshop it should be captured, and if 45 seconds would still deliver the value, the constraint should be relaxed before design proceeds. This is a requirements artifact issue more than a SOAP issue, but it materially affects the architecture commitment.</p>
+<p>The security requirement (REQ-S-AUTH-001 — $10k threshold) is well-formed and the compliance requirement (REQ-C-COMP-001 — 7-year retention) is unambiguous. The functional requirements are clear and testable.</p></section><section class="section"><h2>Are we doing things right?</h2><p>The architecture approach is sound at the level it operates: a clear separation of submission, PO validation, approval workflow, and storage, with the API gateway and PO validation patterns matching what the organisation has used successfully in adjacent services. The synchronous PO check is the right call for the consistency requirement. The complexity is proportional to the problem — there is no over-engineering.</p>
+<p>Two design issues need resolution before review:</p>
+<p><span class="sev sev-blocker">BLOCKER</span> <strong>Storage design does not meet the compliance obligation.</strong> §3.4 specifies a standard PostgreSQL table for invoice records. The 7-year tamper-evident retention obligation (REQ-C-COMP-001, ATO Recordkeeping) cannot be satisfied with a mutable relational table. The SOAP needs a write-once archival tier (e.g. S3 Object Lock, Azure Immutable Blob) for completed invoices, plus a documented retention lifecycle. This is a legal obligation, not a design preference. An ADR is required documenting the archival storage decision.</p>
+<p><span class="sev sev-major">MAJOR</span> <strong>No NFR design.</strong> Nothing in §3 or §5 addresses the 30-second SLA. There is no caching strategy, no async/queue design for the approval workflow, no horizontal scaling consideration, and no sizing for the deployment. The team has committed to a performance target the design does not back. Add an NFR section covering load profile and architectural response.</p>
+<p><span class="sev sev-major">MAJOR</span> <strong>Email-based approval workflow deviates from standards without an ADR.</strong> §3.4 uses email for approval notifications. Architecture standard STD-003 requires event-driven async for multi-step approvals. The deviation may be defensible (low volume, existing email infrastructure) but it must be recorded as an ADR — the review board will require this.</p>
+<p><span class="sev sev-minor">MINOR</span> <strong>Server-side enforcement of the $10k threshold not designed.</strong> §3.5 references RBAC but does not specify where the $10k threshold check runs. If enforced only in the UI, this is a control bypass risk. Clarify that the Approval Workflow Service performs server-side enforcement with an audit log entry per decision.</p>
+<p><span class="sev sev-observation">OBSERVATION</span> <strong>PII handling for supplier data is well-handled</strong> — §4.2 applies data classification, addresses residency, and includes a deletion workflow. This is a notable strength.</p></section><section class="section"><h2>Standards Conformance</h2><div class="table-wrap"><table class="report-table">
+<thead><tr>
+<th>Decision / Component (SOAP ref)</th>
+<th>Standard</th>
+<th>Status</th>
+<th>Notes</th>
+</tr></thead><tbody>
+<tr>
+<td>API layer (§3.2)</td>
+<td>STD-001 API gateway pattern</td>
+<td style="background:#16a34a1a;border-left:4px solid #16a34a;font-weight:500">Conformant</td>
+<td></td>
+</tr>
+<tr>
+<td>PO validation (§3.3)</td>
+<td>STD-005 synchronous service call</td>
+<td style="background:#16a34a1a;border-left:4px solid #16a34a;font-weight:500">Conformant</td>
+<td></td>
+</tr>
+<tr>
+<td>Approval notification (§3.4)</td>
+<td>STD-003 event-driven async approvals</td>
+<td style="background:#dc26261a;border-left:4px solid #dc2626;font-weight:500">Deviation (no ADR)</td>
+<td>ADR required — see MAJOR finding in §2</td>
+</tr>
+<tr>
+<td>Data classification (§4.2)</td>
+<td>STD-007 PII handling</td>
+<td style="background:#16a34a1a;border-left:4px solid #16a34a;font-weight:500">Conformant</td>
+<td>Supplier data classified, residency addressed</td>
+</tr>
+<tr>
+<td>Approval audit (§3.5)</td>
+<td>STD-011 audit trail for financial ops</td>
+<td style="background:#dc26261a;border-left:4px solid #dc2626;font-weight:500">Gap</td>
+<td>No audit log designed for threshold decisions</td>
+</tr>
+<tr>
+<td>Storage tier (§3.4)</td>
+<td>STD-009 data lifecycle / retention</td>
+<td style="background:#dc26261a;border-left:4px solid #dc2626;font-weight:500">Deviation (no ADR)</td>
+<td>Linked to BLOCKER in §2; ADR required</td>
+</tr>
+</tbody></table></div></section><section class="section"><h2>Regulatory &amp; Policy Compliance</h2><div class="table-wrap"><table class="report-table">
+<thead><tr>
+<th>Obligation</th>
+<th>Source</th>
+<th>Assessment</th>
+<th>Confidence</th>
+</tr></thead><tbody>
+<tr>
+<td>7-year tamper-evident retention</td>
+<td>ATO Recordkeeping / data-retention-policy.md</td>
+<td>Not met — PostgreSQL standard table; no immutability or archival tier present</td>
+<td style="background:#16a34a1a;border-left:4px solid #16a34a;font-weight:500">High</td>
+</tr>
+<tr>
+<td>PII handling for supplier data</td>
+<td>GDPR Art. 5, 17 / gdpr-policy.md</td>
+<td>Met — classification, residency, deletion workflow present</td>
+<td style="background:#ca8a041a;border-left:4px solid #ca8a04;font-weight:500">Medium</td>
+</tr>
+<tr>
+<td>Audit trail for approvals above threshold</td>
+<td>Internal financial controls policy</td>
+<td>Partial — RBAC referenced; server-side enforcement and audit log absent</td>
+<td style="background:#16a34a1a;border-left:4px solid #16a34a;font-weight:500">High</td>
+</tr>
+<tr>
+<td>Data residency (supplier data)</td>
+<td>Privacy Act 1988</td>
+<td>Not assessable — hosting region not specified in SOAP</td>
+<td style="background:#dc26261a;border-left:4px solid #dc2626;font-weight:500">Low <span class="warn-icon">⚠</span></td>
+</tr>
+</tbody></table></div>
+<p><strong>Specialist input needed (Low-confidence rows):</strong></p>
+<ul><li><em>Privacy Act residency</em>: confirm hosting region in §5 (Deployment) and have privacy counsel review. The 1988 Privacy Act treatment of supplier PII held offshore has nuance the reviewer is not equipped to call definitively.</li></ul></section><section class="section"><h2>ADR Coverage</h2><div class="table-wrap"><table class="report-table">
+<thead><tr>
+<th>Decision</th>
+<th>ADR Status</th>
+</tr></thead><tbody>
+<tr>
+<td>Synchronous PO validation</td>
+<td>ADR-014 (Accepted)</td>
+</tr>
+<tr>
+<td>API gateway selection</td>
+<td>ADR-008 (Accepted)</td>
+</tr>
+<tr>
+<td>Email-based approval notification</td>
+<td><strong>Missing — required</strong></td>
+</tr>
+<tr>
+<td>Archival storage tier</td>
+<td><strong>Missing — required</strong></td>
+</tr>
+<tr>
+<td>Database technology selection (PostgreSQL)</td>
+<td>Implicit — recommend ADR if non-default for this domain</td>
+</tr>
+</tbody></table></div>
+<p>Two significant decisions in §3.4 are not documented as ADRs. The review board will ask. Draft these before submission.</p></section><section class="section"><h2>Open Questions</h2><p>1. <strong>What is the business basis for the 30-second SLA target?</strong> Required to validate REQ-NFR-PROC-001 — confirm with Finance Owner.</p>
+<p>2. <strong>What is the intended hosting region?</strong> Required to complete the Privacy Act residency assessment — confirm with delivery lead, and have privacy counsel review.</p></section><section class="section"><h2>Pre-Review Readiness Checklist</h2><p>Once the SOAP author has worked through this list, the package should be review-ready.</p>
+<ul class="checklist"><li><input type="checkbox"><span><span class="sev sev-blocker">BLOCKER</span> Storage redesigned with write-once archival tier; retention lifecycle documented</span></li><li><input type="checkbox"><span><span class="sev sev-blocker">BLOCKER</span> ADR drafted for archival storage decision (status: Proposed)</span></li><li><input type="checkbox"><span><span class="sev sev-major">MAJOR</span> NFR section added to SOAP — load profile + architectural response for 30s SLA</span></li><li><input type="checkbox"><span><span class="sev sev-major">MAJOR</span> 30s SLA business rationale documented in requirements artifact</span></li><li><input type="checkbox"><span><span class="sev sev-major">MAJOR</span> ADR drafted for email approval pattern deviation (status: Proposed)</span></li><li><input type="checkbox"><span><span class="sev sev-major">MAJOR</span> Server-side audit log designed for approval workflow (STD-011 gap)</span></li><li><input type="checkbox"><span><span class="sev sev-minor">MINOR</span> §3.5 updated to specify server-side $10k threshold enforcement</span></li><li><input type="checkbox"><span>Open Q1 answered — SLA rationale confirmed with Finance Owner</span></li><li><input type="checkbox"><span>Open Q2 answered — hosting region added to §5; privacy counsel consulted</span></li></ul></section><section class="section"><h2>Sign-off</h2><div class="table-wrap"><table class="report-table">
+<thead><tr>
+<th>Reviewed by</th>
+<th>Date</th>
+<th>Decision</th>
+<th>Notes</th>
+</tr></thead><tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table></div></section>
+<div class="footer">Generated by Jupiter — architecture peer review</div>
+</div>
+</body>
+</html>

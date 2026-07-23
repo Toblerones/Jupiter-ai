@@ -1,0 +1,630 @@
+# Jupiter Gate Config — Probe → Converge (Transformation profile)
+# Defines the checks for completing Probe and transitioning into Converge.
+# Probe runs Problem Spaces concurrently. Each PS contains a structured layer
+# (strawman, OQs with resolutions) plus a separate notes file for raw evidence.
+# The loop agent processes notes against context to propose structured updates;
+# the architect approves before commit.
+#
+# Check ordering: auto checks first (deterministic), then AI checks (judgment),
+# then human gate. Gap = count of required checks failing.
+
+version: "3.0"
+transition: "probe → converge"
+description: >
+  Probe phase complete when all Problem Spaces have advanced beyond initial
+  open state, core PS artifacts are populated, structured updates trace to
+  authoritative context or activity_log evidence (no unauthoritative content),
+  cross-PS coherence holds, and architect approves transition into Converge.
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-PROBE-001
+    name: every_PS_has_problem_statement
+    description: >
+      Every PS file under workspace/artifacts/transformation/problem-spaces/
+      has a non-empty Problem Statement section (no placeholder text).
+    required: true
+    failure_message: >
+      One or more PS lack a substantive Problem Statement.
+
+  - id: AC-PROBE-002
+    name: every_PS_has_scope_boundaries
+    description: >
+      Every PS has a populated Scope & Boundaries section (§2) carrying both
+      an in-scope statement and explicit out-of-scope boundaries.
+    required: true
+    failure_message: >
+      One or more PS lack explicit scope boundaries (in-scope and out-of-scope)
+      in §2.
+
+  - id: AC-PROBE-003
+    name: every_PS_has_strawman
+    description: >
+      Every PS has a non-placeholder Strawman section.
+    required: true
+    failure_message: >
+      One or more PS lack an initial strawman.
+
+  - id: AC-PROBE-004
+    name: every_OQ_has_rationale
+    description: >
+      Every Open Question entry has a non-empty Why/rationale (italic line
+      below the question). The "Why this matters" line is required so
+      reviewers and stakeholders see the architectural intent.
+    required: true
+    failure_message: >
+      One or more OQs lack rationale. Add the architectural / process
+      implication for each question.
+
+  - id: AC-PROBE-005
+    name: every_resolved_OQ_has_resolution
+    description: >
+      Every OQ with status = resolved has a Resolution column populated
+      with one of: → REQ-{TYPE}-{DOMAIN}-{SEQ}, → ADR-{NNN}-{slug},
+      → context: {path}, or → knowledge.
+    required: true
+    failure_message: >
+      One or more resolved OQs lack a Resolution outcome. Resolution is
+      the bridge from inquiry to downstream artifacts.
+
+  - id: AC-PROBE-006
+    name: every_PS_has_derived_from
+    description: >
+      Every PS frontmatter has derived_from populated with artifact, source,
+      and gap fields. Provides traceability from PS back to the Vision
+      artifact gap that motivated it.
+    required: true
+    failure_message: >
+      One or more PS lack derived_from frontmatter. Traceability to Vision
+      is required — every PS should have a documented origin.
+
+  - id: AC-PROBE-007
+    name: every_PS_has_notes_file
+    description: >
+      Every PS-{SLUG}.md has a corresponding PS-{SLUG}-notes.md file at
+      workspace/artifacts/transformation/notes/.
+    required: true
+    failure_message: >
+      One or more PS lack a notes file. Raw inquiry evidence must live
+      under workspace/artifacts/transformation/notes/ — structured updates
+      in the PS file derive from this evidence via context cross-check.
+
+  - id: AC-PROBE-008
+    name: every_DPD_has_required_fields
+    description: >
+      Every DPD file under workspace/artifacts/transformation/data-products/
+      has id, name, status, sources, producer, and current draft spec
+      (Section 3) populated. A DPD without these fields cannot be
+      collaboratively progressed.
+    required: true
+    failure_message: >
+      One or more DPDs lack required frontmatter or Section 3 spec content.
+      Populate before continuing collaborative discovery.
+
+  - id: AC-PROBE-009
+    name: every_strawman_has_anchors
+    description: >
+      Every PS strawman (Section 4) has at least one entry in Section 4.2
+      (Components) OR Section 4.3 (Decisions). Without these structured
+      anchors the loop agent cannot perform gap analysis on the strawman
+      to surface candidate Open Questions.
+    required: true
+    failure_message: >
+      One or more strawmans lack structured anchors (Section 4.2 Components
+      and Section 4.3 Decisions both empty). Add at least one entry so the
+      gap-probe loop has something to analyse.
+
+  - id: AC-PROBE-010
+    name: every_referenced_ADR_exists
+    description: >
+      Every ADR key named in an OQ Refs or Resolution column has a
+      corresponding file at
+      workspace/artifacts/transformation/design/adrs/ADR-{NNN}-{slug}.md
+      following templates/ADR_template.md, with a valid status (Proposed |
+      Accepted | Superseded). A decision-shaped OQ at status in-discussion
+      references its Proposed ADR in the Refs column — the ADR is drafted
+      when the discussion opens, not written at resolution as an
+      after-the-fact record.
+    required: true
+    failure_message: >
+      One or more OQ-referenced ADR keys have no corresponding ADR file, or
+      the file lacks a valid status. Draft the ADR at status Proposed from
+      templates/ADR_template.md — the Proposed ADR is the discussion anchor
+      for the decision, not a record written after the fact.
+
+  - id: AC-PROBE-011
+    name: living_soap_present
+    description: >
+      The living SOAP exists at
+      workspace/artifacts/transformation/design/{initiative_id}-SOAP.md and is
+      structurally complete per templates/SOAP_template.md: Zone A (§1–§5) is
+      populated from Vision (no placeholder text), and Zone B (§2.3, §6, §7, §8)
+      is present with every emergent element carrying a status marker
+      (`open` or `confirmed`). NOTE: `open` elements are EXPECTED during Probe —
+      an element marked `open` with its live OQs listed is a PASS, not a
+      placeholder. This check fails only if the SOAP is missing, Zone A has
+      placeholder text, or an emergent element has no status marker at all.
+    required: true
+    failure_message: >
+      Living SOAP is missing, Zone A (§1–§5) is not populated from Vision, or an
+      emergent element lacks an open|confirmed status marker. The SOAP is born at
+      the first Probe iteration — run /jupiter:iterate to generate the skeleton.
+
+  - id: AC-PROBE-012
+    name: every_PS_has_problem_analysis
+    description: >
+      Every PS has a non-empty Problem Analysis section (§3) containing at
+      least one chosen focus-area sub-heading (### ...) with content below it —
+      not the template placeholder, not a bare heading. This is a PRESENCE
+      floor only: it asserts §3 exists and was populated. Whether the chosen
+      focus areas actually FIT the problem — rather than being generic filler
+      or the same set as every other PS — is judged by AI-PROBE-011, not here.
+    required: true
+    failure_message: >
+      One or more PS have an empty or placeholder Problem Analysis (§3). Add
+      the focus areas this problem turns on, each with substantive content.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-PROBE-001
+    name: PS_scopes_distinct
+    description: >
+      PS scopes do not significantly overlap; each PS has a coherent area
+      of inquiry. Where two PS share a boundary, the boundary is explicit
+      in both PS's Scope & Boundaries (§2) out-of-scope statement.
+    required: true
+    failure_message: >
+      Two or more PS appear to have overlapping scope. Reconcile boundaries
+      or merge the PS.
+
+  - id: AI-PROBE-002
+    name: cross_PS_refs_are_mutual
+    description: >
+      When an OQ in PS-A references PS-B in the Refs column, PS-B either
+      has a corresponding OQ that references PS-A or has scope that
+      explicitly absorbs the question. Dangling cross-PS references are
+      flagged.
+    required: true
+    failure_message: >
+      Cross-PS references are one-sided. Reconcile by adding the
+      corresponding OQ in the referenced PS, or reroute the question
+      to whichever PS owns it.
+
+  - id: AI-PROBE-003
+    name: strawmans_dont_contradict
+    description: >
+      PS strawmans are internally consistent at the architecture level.
+      No two PS strawmans propose contradictory designs for shared concerns
+      (e.g. two PS proposing different storage models for the same entity,
+      or different data ownership models for shared data).
+    required: true
+    failure_message: >
+      Two or more PS strawmans contradict each other on a shared concern.
+      Architect reconciliation needed before Converge.
+
+  - id: AI-PROBE-004
+    name: vision_capabilities_covered
+    description: >
+      Every capability in the Vision capability map with Clarity = `unclear`
+      or `unknown` has at least one PS with derived_from referencing that
+      capability, OR an explicit deferral note in the capability map's
+      Notes column. Silent dropping of capabilities is the failure mode
+      this prevents.
+    required: true
+    failure_message: >
+      One or more unclear/unknown capabilities from Vision have no covering
+      PS and no documented deferral. Either open a PS, document the
+      deferral, or reclassify the capability.
+
+  - id: AI-PROBE-005
+    name: candidate_PS_acknowledged
+    description: >
+      Candidate PS that the loop agent proposed but the architect did not
+      open are explicitly listed in a deferred state (e.g. in the capability
+      map's Notes column with "PS proposal deferred: {reason}"). Silent
+      dropping of proposed PS is the failure mode this prevents.
+    required: true
+    failure_message: >
+      One or more agent-proposed PS were neither opened nor explicitly
+      deferred. Acknowledge each proposal — open it, defer it with reason,
+      or reject it with reason.
+
+  - id: AI-PROBE-006
+    name: structured_updates_context_aligned
+    description: >
+      Every OQ resolution, every Problem Analysis (§3) focus area, every
+      strawman update, and every REQ/ADR key created during Probe traces to
+      (a) an authoritative context item
+      (workspace/context/target-architecture, policy, prior ADR, glossary
+      entry, landscape entry, data product spec, capability map entry), OR
+      (b) a documented activity_log entry in the PS file backed by a session
+      in the notes file. Structured content without context or evidence traceability
+      risks introducing unauthoritative output — the very thing Jupiter's
+      context-driven principle prevents. This is the GUARDRAIL against
+      architect notes being typed directly into structured artifacts
+      without context cross-check.
+    required: true
+    failure_message: >
+      One or more structured updates (OQ resolution, problem-analysis content,
+      strawman content, or REQ/ADR key) lack traceability to authoritative
+      context or activity_log evidence. Untraceable structured content violates
+      Jupiter's context-driven output principle. Either trace it, or
+      remove it.
+
+  - id: AI-PROBE-007
+    name: DPD_spec_changes_context_aligned
+    description: >
+      Every change to a DPD Section 3 (Current Draft Specification) traces
+      to (a) an authoritative context item (workspace/context/...), (b) a
+      DPD notes file session entry, or (c) a PS notes entry from the
+      originating PS. Producer feedback captured in DPD notes counts as
+      evidence — but producer input that contradicts our authoritative
+      context must be flagged for reconciliation, not silently accepted.
+      This extends the AI-PROBE-006 guardrail to DPDs: "consume from
+      authoritative source only" applies to collaborative data product
+      definition as well.
+    required: true
+    failure_message: >
+      One or more DPD spec changes lack traceability to context or evidence,
+      or accept producer input that contradicts authoritative context.
+      Trace each spec change, or flag the conflict for reconciliation.
+
+  - id: AI-PROBE-008
+    name: soap_reflects_PS_state
+    description: >
+      The living SOAP is a faithful DERIVED view of current PS state. Every §6
+      block / §2.3 requirement / §8 NFR marked `confirmed` traces to a closed
+      (or settled-converging) PS, a resolved OQ, or a ratified ADR — nothing is
+      asserted as confirmed that the inquiry has not settled. Every element
+      marked `open` corresponds to a PS still in inquiry and names that PS's live
+      OQs. The §6 solution-status summary counts match the actual markers. No PS
+      that has closed is still shown as `open`, and no `open` block silently
+      asserts a decision. This is the SOAP-side analog of AI-PROBE-006: the SOAP
+      is derived from authoritative PS state, never hand-authored ahead of it.
+    required: true
+    failure_message: >
+      The living SOAP is out of step with PS state — a `confirmed` element with
+      no closed-PS/OQ/ADR trace, an `open` element that has actually been
+      resolved, or a status summary that does not match the markers. Regenerate
+      the SOAP from current PS state.
+
+  - id: AI-PROBE-009
+    name: adr_depth_adequate
+    description: >
+      Every ADR drafted during Probe is substantive enough to be reviewed and
+      judged from the document alone — the same bar as AI-RD-010 in the
+      design profile. Each ADR must contain: (1) at least two alternatives
+      evaluated, each with trade-offs stated (not just named); (2) concrete
+      consequences of the decision — what it enables, prevents, or costs —
+      with mitigations for negatives; (3) a trace to the driving OQ / PS and
+      any REQ keys or context constraints that shape it. The Proposed ADR is
+      the discussion anchor presented to stakeholders (ARB-style) — an ADR
+      that records a choice without showing the reasoning cannot anchor a
+      discussion and cannot be ratified.
+    required: true
+    failure_message: >
+      One or more ADRs are too shallow to anchor a decision review. For each,
+      verify: (1) at least two evaluated alternatives with trade-offs,
+      (2) concrete consequences with mitigations, (3) a trace to the driving
+      OQ/PS and any REQ keys or constraints. Expand thin ADRs — a decision
+      recorded without its reasoning cannot be reviewed or ratified.
+
+  - id: AI-PROBE-010
+    name: ps_reads_as_document
+    description: >
+      Every PS file reads as a coherent, human-readable document — as if a
+      single architect wrote it once, top to bottom, after the latest
+      iteration. Specifically: (1) no meta-commentary, agent inference,
+      feedback annotations, or provenance narration in body sections (traces
+      belong in the Activity Log, the OQ Refs/Resolution columns, and the
+      iteration report — never woven into prose); (2) no statement materially
+      repeated across sections — each fact has exactly one home section
+      (problem in §1, boundaries in §2, problem analysis in §3, solution
+      position in §4, questions in §5), referenced elsewhere by key rather than
+      restated — §3 analyses the problem without recapping §1/§2, and §4.1
+      Shape states the current solution position without recapping §1/§2/§3;
+      (3) refinements
+      are incorporated by rewriting the affected text in place, not by
+      appending corrections or "(updated)" markers alongside the original.
+      A cold reader should not be able to tell how many iterations produced
+      the file. See EDITORIAL DISCIPLINE in agent_guidance.
+    required: true
+    failure_message: >
+      One or more PS files have degraded readability: inline commentary or
+      inference in body sections, statements repeated across sections, or
+      feedback applied as annotation instead of rewritten prose. Rewrite the
+      affected sections in place — move traces to the Activity Log / OQ
+      columns, deduplicate to the single-home rule, and do a full coherence
+      read of each flagged PS before recommitting.
+
+  - id: AI-PROBE-011
+    name: problem_analysis_fits
+    description: >
+      Every PS's Problem Analysis (§3) is shaped to its specific problem, not
+      mechanically filled. (1) The focus-area sub-headings are SELECTED to fit
+      what makes THIS problem hard — a data-ownership conflict carries an
+      ownership/authority analysis, a process gap a current-vs-target flow, a
+      capability void a build/buy/partner axis, a regulatory seam a constraint
+      analysis; a PS does not carry a focus area its problem does not have.
+      (2) Each focus area contains substantive analysis, not a restated §1/§2
+      or a bare heading. (3) FULL-SWEEP ONLY: across all PS the §3 focus areas
+      are not uniform — if every PS carries the same headings in the same
+      shape, the analysis was *filled in*, not *done*, and free-form has failed
+      its purpose. This check carries the completeness guarantee the free-form
+      §3 gave up structurally; it is judgment, not the section-presence floor
+      (that is AC-PROBE-012). Aspects (1) and (2) are per-instance and run on
+      every iteration including focused; aspect (3) is cross-instance and only
+      meaningful — hence only evaluated — on a full sweep.
+    required: true
+    failure_message: >
+      One or more PS have a Problem Analysis (§3) that does not fit its problem:
+      generic filler, a restated problem/scope, or — across the set — the same
+      focus areas mechanically repeated in every PS. Rewrite §3 to the
+      dimensions this specific problem turns on; if it reads like every other
+      PS's analysis, it has not been done.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+    - id: HG-PROBE-001
+      name: architect_approves_probe_complete
+      description: >
+        Architect confirms all Problem Spaces are at status `converging`
+        or `closed`, the REQ/ADR catalogue accumulated during Probe
+        reflects the inquiry outcomes, cross-PS dependencies are reconciled,
+        and the initiative is ready to enter Converge for final closure
+        and stabilisation.
+      required: true
+      failure_message: >
+        Architect approval pending. Run /jupiter:review when ready.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Probe complete when all required auto and AI checks pass and the
+    architect approves via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  Probe phase. Architecture-led transformation. Multiple Problem Spaces run
+  concurrently as work units. Architect leads inquiry; loop agent supports by
+  reading raw notes, cross-checking against authoritative context, and proposing
+  structured updates for architect approval. Never auto-commit substantive
+  structured content without architect approval — the human gate principle
+  extends to all material PS updates, not just phase transitions.
+
+  SCOPE — FOCUSED vs FULL-SWEEP ITERATION (determine before anything else)
+  Iterate is a generic trigger; targeting comes from recorded review feedback,
+  never from an iterate argument. Check phases.probe.feedback in the
+  initiative file: if unaddressed entries exist and all carry a non-null
+  scope (PS/DPD ids recorded by /jupiter:review — explicit --target or
+  architect-confirmed inference), run this iteration FOCUSED on those work
+  units only — deep pass on the touchpoint, full guardrail context still
+  loaded, per-instance checks only, no gap recomputation, never READY FOR
+  REVIEW. Otherwise run the full sweep (STEPs 2–7 over all PS). The complete
+  mechanic lives in agents/loop.md "Scope derivation". On a focused
+  iteration, apply STEPs 2, 4, and the strawman/ADR mechanics below to the
+  targeted instances only; skip STEP 3 and cross-PS reconciliation. The §3-fit
+  aspect of AI-PROBE-011 is checked on the targeted PS; its cross-PS sameness
+  aspect waits for the full sweep.
+
+  STEP 1 — INITIAL PS PROPOSAL (run once at start of Probe)
+  After Vision is approved, run a PS proposal pass:
+  - Read workspace/artifacts/transformation/vision/capability-map.md and the
+    optional conceptual-sketch.md.
+  - For each CAP-{NNN} with Clarity = `unclear` or `unknown`:
+    Propose a candidate PS with:
+      - id (PS-{SLUG} where SLUG is derived from the capability name)
+      - draft problem_statement (drawn from the Notes column of the capability)
+      - draft derived_from: artifact: vision/capability-map.md, source:
+        CAP-{NNN}, gap: {Notes content}
+      - suggested stakeholders based on the Owner field
+  - Cluster candidate PS that share SMEs / data / process where appropriate.
+  - Present the candidate PS list to the architect for approval.
+  - Architect approves which PS to open; others must be noted in the capability
+    map Notes column as deferred — silent dropping violates AI-PROBE-005.
+
+  STEP 2 — PER-ITERATION SCAN OF ALL OPEN PS
+  Read every PS file under workspace/artifacts/transformation/problem-spaces/
+  AND its corresponding notes file under workspace/artifacts/transformation/
+  notes/. Per PS:
+    - Count OQs by status (open / in-discussion / resolved / deferred / rejected)
+    - Identify last activity_log entry date
+    - Identify last notes-file session date
+    - Note current PS status (open / in-progress / converging / closed)
+
+  STEP 3 — IDENTIFY CROSS-PS ISSUES
+    - Cross-PS OQ references: mutual / one-sided / dangling
+    - Scope overlaps between PS
+    - Strawman contradictions on shared concerns
+    - Stale PS (last activity older than threshold — flag for architect)
+
+  STEP 4 — PROCESS NEW NOTES (RAW → STRUCTURED, CONTEXT-ALIGNED)
+  For each PS, read notes-file session entries newer than the PS's last_updated:
+    - For each new session entry, cross-check content against authoritative
+      context (workspace/context/policy, prior ADRs, glossary, landscape,
+      data-products, capability-map).
+    - Propose structured updates with explicit traceability:
+        OQ resolution: → REQ / ADR / context-update / knowledge
+        Strawman updates (additions or refinements)
+        New OQs that surfaced in the session (with Why/rationale)
+    - For each proposal, include the trace — e.g. "OQ-X resolution proposal
+      based on notes 2026-06-04 + context check against policy/X.md".
+    - Flag CONTRADICTIONS: if notes say X but context says X', do not
+      proceed — surface the conflict for the architect to reconcile.
+    - This is the AI-PROBE-006 guardrail in action: structured outputs only
+      land when traceable to context or evidence.
+
+  STEP 5 — PROPOSE NEW PS (if needed)
+    - Capability-map check: any capabilities with no covering PS that should
+      have one (per AI-PROBE-004).
+    - Notes-driven: any session that surfaced "this is actually its own space"
+      → propose a new PS candidate with draft problem_statement and derived_from.
+
+  STEP 6 — REPORT CROSS-PS DASHBOARD
+  Output a per-PS status grid:
+    PS_ID | status | open OQ count | in-discussion OQ count | last activity
+  Plus:
+    - Cross-PS flags
+    - Suggested focus (stale PS, candidate PS not yet opened)
+    - Phase gap (sum of open + in-discussion OQs across all PS)
+
+  STEP 7 — ARCHITECT REVIEW
+  All substantive proposals (new OQs, new PS, strawman updates, OQ resolutions
+  with downstream REQ/ADR/context outputs) require architect approval before
+  commit. Bookkeeping (status updates on architect-closed OQs, activity_log
+  summary derived from notes-file sessions) can be auto-applied.
+
+  PROBLEM ANALYSIS (§3) — FIT, DON'T FILL (cross-cutting mechanic):
+  §3 is the adaptive heart of the PS: the analysis of what makes THIS problem
+  hard, carried in focus areas chosen to fit it — not a fixed section set.
+    - SELECT focus areas from what the problem actually turns on. A data-
+      ownership conflict wants an authority/ownership map; a process gap a
+      current-vs-target flow; a capability void a build/buy/partner axis; a
+      regulatory seam a constraint analysis. Use the example menu in
+      templates/PS_template.md as a starting point, invent what it lacks, and
+      OMIT any dimension this problem does not have.
+    - FIT, DON'T FILL. Do not carry a focus area just because another PS has
+      it. If every PS's §3 looks the same, the analysis was filled in, not
+      done — AI-PROBE-011 fails the gate on that (cross-instance, full sweep).
+    - §3 ANALYSES, it does not recap. The problem lives in §1, scope in §2 —
+      §3 references them and adds analysis; it never restates them
+      (AI-PROBE-010).
+    - §3 IS GUARDED like every other structured layer. Each focus area's
+      content traces to authoritative context or a notes-file session
+      (AI-PROBE-006) — free-form is not a licence for ungrounded prose.
+    - §3 FEEDS the gap probe (LOOP 2) and the strawman: unknowns the analysis
+      exposes become candidate OQs; settled analysis informs the §4 solution
+      shape. Analysis that hardens into a component or decision graduates DOWN
+      into §4.2 / §4.3 — §3 holds the reasoning, §4 holds the promotable anchor.
+
+  STRAWMAN-DRIVEN ELICITATION (cross-cutting mechanic):
+  The strawman in each PS Section 4 is the architect's working hypothesis.
+  The loop agent supports it across three nested loops tied to the steps above.
+
+  LOOP 1 — INITIAL STRAWMAN DRAFT (during STEP 1, at PS open)
+  When proposing a new PS, also draft the initial strawman from:
+    - The source capability in the capability map (derived_from)
+    - The HL conceptual sketch, if present
+    - Authoritative context (existing data products, prior ADRs, glossary, landscape)
+    - Any `initial-design` notes the architect captured in the PS notes file
+  Draft the §3 Problem Analysis (the focus areas the source capability's gap
+  turns on — see PROBLEM ANALYSIS above; FIT, DON'T FILL), then populate §4:
+  Section 4.1 Shape (a diagram / one-line position if one is implied yet),
+  4.2 (components anchored from context), 4.3 (decisions if any are implied by
+  the source). Architect approves/refines.
+
+  LOOP 2 — GAP PROBE (during STEP 2 each iteration)
+  Scan the §3 problem analysis AND the §4 strawman for gaps that should become
+  Open Questions:
+    - A §3 focus area that surfaces an unknown it cannot yet resolve (an
+      unowned boundary, an unquantified constraint, an unvalidated cause)
+    - Components mentioned but unspecified (no responsibility / interface / NFR)
+    - Data referenced but unsourced (no producer / no DPD)
+    - Process steps mentioned but undetailed (who triggers? when?)
+    - Decisions implied but unstated (which approach? why?)
+    - Assumptions made but unvalidated
+    - Constraints applied but unjustified
+  Each gap becomes a candidate OQ with draft Question + draft Why/rationale.
+  Architect approves → OQs added to Section 5 register. The §3 analysis and the
+  strawman are the *probe* — the instruments used to find unknowns.
+
+  LOOP 3 — STRAWMAN UPDATE FROM OQ RESOLUTION (during STEP 4)
+  When OQs resolve (context-aligned per AI-PROBE-006), identify which
+  strawman sections are affected and propose specific edits in this format:
+
+    Existing (Section 4.X): "<current text>"
+    Proposed:               "<new text>"
+    Why:                    OQ-{SLUG}-{NNN} resolved {date};
+                            aligns with {context path or notes session}
+
+  Architect approves → strawman updates. Same context guardrail (AI-PROBE-006)
+  applies to strawman edits as to OQ resolutions and REQ/ADR creation.
+
+  ADR-ANCHORED DECISIONS (cross-cutting mechanic, during STEP 2 and STEP 4):
+  When an OQ is recognised as decision-shaped — it selects a technology,
+  platform, or pattern; resolves a trade-off with long-term consequences; or
+  constrains future options (the same significance test as the design
+  profile, AI-RD-005) — draft the ADR IMMEDIATELY at status Proposed. Do not
+  wait for resolution: the Proposed ADR is the discussion anchor, the
+  artifact stakeholders read to understand, review, and judge the decision
+  (ARB-style). Drafting follows the same discipline as the design phase:
+    - Use templates/ADR_template.md — every section, no placeholders left.
+    - Load ALL authoritative context and guardrails first: workspace/context/
+      target-architecture/ (the lead), prior ADRs (workspace/context/adrs/
+      AND workspace/artifacts/transformation/design/adrs/), policy,
+      standards, landscape, glossary, data-products, and the capability map.
+      The same decision with different loaded constraints is a different ADR.
+    - Populate Context from the OQ's Why/rationale plus notes evidence;
+      populate Alternatives with trade-offs from notes sessions and context
+      cross-check; the Decision section carries the current recommended
+      position (usually the strawman Section 4.3 position). Depth per
+      AI-PROBE-009: ≥2 alternatives with trade-offs, concrete consequences
+      with mitigations, trace to the driving OQ/PS.
+    - Write to workspace/artifacts/transformation/design/adrs/
+      ADR-{NNN}-{slug}.md; reference the ADR key in the OQ's Refs column;
+      set the OQ to in-discussion. Mirror the position in strawman
+      Section 4.3.
+    - Every subsequent ADR update follows the AI-PROBE-006 guardrail —
+      traced to a notes session or authoritative context, architect approves.
+    - When the architect endorses the decision, the OQ resolves
+      → ADR-{NNN}-{slug}. Ratification (Proposed → Accepted) is the
+      architect's explicit act — in-phase if the architect ratifies
+      immediately, otherwise at the Converge ratification review
+      (AC-CONVERGE-004). Resolution and ratification are distinct events.
+
+  CROSS-PS STRAWMAN RECONCILIATION (during STEP 3)
+  When PS-A and PS-B reference the same component or decision (visible in
+  Section 4.2 / 4.3 entries), check strawman consistency. Flag mismatches
+  with a proposed reconciliation: which PS owns the decision, what the
+  other should defer to. Cross-PS dependencies should be captured in
+  Section 4.4 (Open dependencies) of each PS that depends on the other.
+
+  THE GUARDRAIL (AI-PROBE-006):
+  Every structured update committed in Probe must trace to either an
+  authoritative context item OR a documented notes-file session. The architect
+  captures raw evidence in the notes file; the loop agent is the context-aware
+  interpreter; the structured layer in PS files is the audited output. Direct
+  architect edits to structured PS sections are discouraged — they bypass the
+  context check that gives Jupiter its rigor.
+
+  EDITORIAL DISCIPLINE (cross-cutting — applies to EVERY PS write):
+  The PS is a document, not a conversation. After any iteration it must read
+  as if a single architect wrote it once, top to bottom — a cold reader
+  should not be able to tell how many iterations produced it. Checked by
+  AI-PROBE-010.
+    - Refine = REWRITE IN PLACE. When applying architect feedback, replace
+      the wording and restructure the sentence. Never append a correction,
+      a clarifying note, an "(updated per feedback)" marker, or your own
+      inference alongside the text it modifies. If you disagree with the
+      feedback or have an observation, say so in the iteration report to
+      the architect — never inside the artifact.
+    - Traces have designated homes: Activity Log entries, the OQ
+      Refs/Resolution columns, and the iteration report. Prose sections
+      carry ZERO trace commentary. This is how AI-PROBE-006 and readability
+      coexist — traceability is satisfied at the proposal/log layer, not by
+      narrating provenance in the body ("per policy X, as noted in session
+      Y..." woven into prose is a defect, not diligence).
+    - Single-home rule: every fact lives in exactly one section — problem
+      in §1, boundaries in §2, problem analysis in §3, solution position in
+      §4, questions in §5. Other sections REFER by key (OQ-{...}, component
+      name, ADR key), never restate. §3 analyses the problem without recapping
+      §1/§2; §4.1 Shape states the current solution position without recapping
+      §1/§2/§3. Do not re-derive shared facts into whichever section you are
+      currently editing.
+    - Coherence pass before commit: after applying approved edits, re-read
+      the WHOLE PS file and remove any duplication or dangling references
+      the edit introduced. An edit is not done when the diff is applied;
+      it is done when the document still reads as one document.
+  This discipline applies equally to the living SOAP and DPD files — any
+  structured artifact the loop agent writes.

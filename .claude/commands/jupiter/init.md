@@ -10,7 +10,7 @@ Initialise a new Jupiter workspace for an architecture initiative.
 
 **Arguments:**
 - `--project <name>` — project name (prompted if omitted)
-- `--profile <profile>` — workflow profile: `architecture` (default), `assessment`, `discovery`, `spike`, `requirements-first`
+- `--profile <profile>` — workflow profile: `architecture` (default), `assessment`, `discovery`, `spike`, `requirements-first`, `transformation`
 - `--source-document <path>` — path to the raw business requirements document (required when profile is `requirements-first`)
 
 ## What this command does
@@ -55,6 +55,28 @@ workspace/
   INTENT.md
   log.jsonl
 ```
+
+**Transformation variant:** If `--profile transformation`, also create these directories under `workspace/artifacts/`:
+
+```
+artifacts/
+  transformation/
+    vision/
+    problem-spaces/
+    data-products/
+    notes/
+    design/
+      adrs/
+```
+
+Also create the target-architecture context folder (it is in the transformation profile's `context.required`):
+
+```
+context/
+  target-architecture/        ← authoritative target state, loaded as a guardrail every iteration
+```
+
+These hold the transformation-specific artifacts: Vision conceptual artifacts (capability map and optional HL conceptual sketch), Problem Spaces, Data Product Definitions, raw notes (PS and DPD discovery sessions), and Design (Transformation) outputs (SOAP, ADRs, migration roadmap). The `context/target-architecture/` folder is where the architect places the converted target conceptual architecture (one or more files at domain / sub-domain / capability altitude) — see `templates/target-architecture_template.md` and `templates/target-architecture_GUIDE.md`. It starts empty; Vision is not complete until at least one authoritative domain-level file exists (gate AC-VISION-006).
 
 ### Step 2 — Guided setup (5 questions)
 
@@ -207,6 +229,56 @@ phases:
 context_hash: null
 ```
 
+**Transformation variant:** When profile is `transformation`, use this structure instead:
+
+```yaml
+initiative:
+  id: "{initiative-id}"
+  title: "{Q1 answer}"
+  profile: "transformation"
+  status: not_started
+  created: "{ISO-8601 date}"
+
+phases:
+  vision:
+    status: not_started
+    artifact: workspace/INTENT.md
+    iteration_count: 0
+    gate_result: null
+    sub_artifacts:
+      capability_map: workspace/artifacts/transformation/vision/capability-map.md
+      conceptual_sketch: workspace/artifacts/transformation/vision/conceptual-sketch.md   # optional
+
+  probe:
+    status: not_started
+    iteration_count: 0
+    gate_result: null
+    work_units:
+      problem_spaces: []     # populated as PS are opened during Probe (each entry: {id, status, oq_open, oq_in_discussion, oq_resolved, oq_deferred, last_activity})
+      data_products: []      # populated as DPDs are opened (each entry: {id, name, status, last_activity})
+
+  converge:
+    status: not_started
+    iteration_count: 0
+    gate_result: null
+    work_units:
+      problem_spaces: []     # mirrors probe.work_units.problem_spaces; status field tracks closure
+      data_products: []      # mirrors probe.work_units.data_products
+
+  design_transformation:
+    status: not_started
+    artifact: "workspace/artifacts/transformation/design/{initiative-id}-SOAP.md"
+    iteration_count: 0
+    gate_result: null
+    sub_artifacts:
+      migration_roadmap: workspace/artifacts/transformation/design/migration-roadmap.md
+    human_gate_status:
+      HG-DESIGN-001: pending     # architect approves SOAP for handoff
+      HG-DESIGN-002: pending     # reviewer panel endorses SOAP
+
+context_hash: null
+```
+
 ### Step 6 — Emit event
 
 Append to `workspace/log.jsonl`:
@@ -247,4 +319,16 @@ Next step:
   Run /jupiter:iterate --phase requirements to begin.
   The loop agent will read {source_document}, derive the intent statement,
   and normalise requirements to Jupiter format in the first iteration.
+```
+
+For `transformation` profile, print instead:
+```
+Next step:
+  1. Edit workspace/INTENT.md with the initiating problem statement and the
+     target conceptual architecture (the "where we want to go" — a narrative
+     sketch is fine; the loop agent will elaborate).
+  2. Run /jupiter:iterate to begin the vision phase. The loop agent will help
+     draft the capability map (mandatory) and optional HL conceptual sketch.
+     From those, candidate Problem Spaces are proposed at the Vision → Probe
+     transition.
 ```

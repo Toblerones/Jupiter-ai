@@ -32,6 +32,27 @@ This means the architect describes the problem; the loop agent draws out the bus
 
 The design phase produces the full SOAP and ADRs in one flow. The loop agent loads the SOAP template from `templates/SOAP_template.md` as context and writes every section with substantive content. The architect approves the SOAP, ratifies all ADRs, and confirms stakeholder review (HG-RD-002, HG-RD-003, HG-RD-004) via `/jupiter:review --panel`. The design phase is complete only when all three design human gates are approved.
 
+### Transformation profile
+
+The `transformation` profile uses a four-phase topology instead of the standard three:
+
+| Phase | Produces | Human gate required |
+|-------|---------|---------------------|
+| Vision | Capability map, conceptual sketch, INTENT | Yes |
+| Probe | Problem Space files, OQs, REQs, ADRs, Living SOAP skeleton | Yes (per PS close) |
+| Converge | All PS closed, REQ catalogue stable, ADRs ratified, SOAP fully accreted | Yes |
+| Design (Transformation) | SOAP finalised, migration roadmap, handoff package | Yes |
+
+**Living SOAP** — the transformation profile's SOAP is not assembled at the end. It is a living artifact:
+
+- **Born** at the first Probe iterate: skeleton created from Vision (INTENT, capability map, target-arch). Zone A (§1–§5) is projected from Vision and barely changes. Zone B (§2.3, §6, §7, §8) is created with every emergent element marked `open`, each naming its source PS.
+- **Accretes** every Probe/Converge iterate: when a PS closes, its strawman components and decisions are promoted into SOAP §6; the corresponding `open` element flips to `confirmed` with a trace to the PS / OQ / ADR. Open elements stay visible, showing their live Open Questions.
+- **Finalised** in Design (Transformation): no new sections are assembled from scratch — every remaining `open` element is driven to `confirmed` or explicitly `deferred` (a "not built this initiative" decision with a documented reason).
+
+**Status markers** — `open` means the source PS is still in inquiry (valid during Probe/Converge, handoff-blocking at Design). `confirmed` means the source PS is closed and the element traces to a PS / OQ / ADR. Deferral is a `confirmed` decision, not a third state.
+
+**SOAP is DERIVED, never hand-maintained.** Every update to the SOAP must trace to authoritative context (PS state, OQ resolution, ADR ratification). Raw notes and the SOAP are separate; only structured PS outputs flow into the SOAP.
+
 ### Gate checks
 
 Every phase has gate checks defined in `workflow/gates/`. Three types:
@@ -105,6 +126,19 @@ workspace/
       {id}-SOAP.md                  ← Solution On A Page (SOAP)
       adrs/
         ADR-{NNN}-{slug}.md        ← Architecture Decision Records
+    transformation/                ← transformation profile only
+      vision/
+        capability-map.md          ← capability gap/clarity register (Vision phase output)
+        conceptual-sketch.md       ← optional target-state sketch
+      problem-spaces/
+        {PS-ID}.md                 ← one file per Problem Space
+      data-products/
+        {DPD-ID}.md                ← Data Product Definitions
+      design/
+        {id}-SOAP.md               ← LIVING SOAP: born Probe, accretes Converge, finalised Design
+        migration-roadmap.md       ← phased delivery sequence (Design phase)
+        adrs/
+          ADR-{NNN}-{slug}.md      ← Architecture Decision Records
     spawn/
       {child-id}-{type}.md         ← spike / discovery / poc reports
     assessment/
@@ -130,6 +164,7 @@ workflow/
     assessment-requirements.yml    ← gate checks for Requirements/Analysis assessment
   profiles/
     architecture.yml               ← standard governance profile (all 3 phases)
+    transformation.yml             ← architecture-led transformation profile (Vision/Probe/Converge/Design)
     assessment.yml                 ← evaluate-only profile
     discovery.yml                  ← exploration profile (time-boxed)
     spike.yml                      ← technical investigation profile (time-boxed)

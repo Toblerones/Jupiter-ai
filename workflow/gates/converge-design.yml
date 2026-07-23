@@ -1,0 +1,285 @@
+# Jupiter Gate Config — Converge → Design (Transformation profile)
+# Defines the checks for completing Converge and transitioning into
+# Design (Transformation). Converge finalises all PS, stabilises the
+# REQ catalogue, ratifies ADRs, and prepares inputs for SOAP assembly.
+
+version: "3.0"
+transition: "converge → design_transformation"
+description: >
+  Converge phase complete when all Problem Spaces are at status `closed`,
+  all OQs are resolved (or explicitly deferred / rejected), the REQ catalogue
+  is stable, ADRs accumulated during Probe and Converge are ratified, all
+  capability gaps from Vision are addressed, and the architect approves
+  transition into Design (Transformation).
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-CONVERGE-001
+    name: all_PS_at_closed
+    description: >
+      Every PS file has status: closed in the frontmatter. No PS remains
+      at open, in-progress, or converging.
+    required: true
+    failure_message: >
+      One or more PS are not yet closed. Converge cannot complete while
+      Problem Spaces are still being worked.
+
+  - id: AC-CONVERGE-002
+    name: no_open_or_in_discussion_OQs
+    description: >
+      No OQ across any PS remains at status `open` or `in-discussion`.
+      Every OQ has a terminal status: resolved, deferred, or rejected.
+    required: true
+    failure_message: >
+      One or more OQs are still open or in-discussion. All OQs must reach
+      a terminal state before Converge completes.
+
+  - id: AC-CONVERGE-003
+    name: all_resolved_OQs_have_resolution
+    description: >
+      Every resolved OQ has its Resolution column populated with a valid
+      outcome (→ REQ, → ADR, → context, → knowledge).
+    required: true
+    failure_message: >
+      One or more resolved OQs lack a Resolution outcome.
+
+  - id: AC-CONVERGE-004
+    name: all_ADRs_ratified
+    description: >
+      Every ADR file under workspace/artifacts/transformation/design/adrs/
+      has status: accepted or superseded. No ADR remains at status: proposed.
+    required: true
+    failure_message: >
+      One or more ADRs are still at status: proposed. Ratify each ADR
+      (accept or supersede) before transitioning to Design.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-CONVERGE-001
+    name: req_catalogue_consistent
+    description: >
+      REQ keys produced across all PS during Probe and Converge form a
+      consistent set. No two requirements impose mutually exclusive
+      constraints. REQ keys are unique and follow the format
+      REQ-{TYPE}-{DOMAIN}-{SEQ}.
+    required: true
+    failure_message: >
+      REQ catalogue has internal inconsistencies. Reconcile conflicting
+      requirements before Design.
+
+  - id: AI-CONVERGE-002
+    name: all_capability_gaps_addressed
+    description: >
+      Every capability in Vision's capability map marked unclear or unknown
+      is now either covered by a closed PS that produced requirements /
+      decisions, OR explicitly deferred with a documented reason. No
+      silent gaps.
+    required: true
+    failure_message: >
+      One or more capability gaps from Vision are not addressed. Either
+      reopen a PS to close the gap, or document the deferral explicitly.
+
+  - id: AI-CONVERGE-003
+    name: REQs_trace_to_OQ_or_PS
+    description: >
+      Every REQ key carries either derived_from referencing an OQ key
+      (typical — REQ produced at OQ resolution time) OR derived_from
+      referencing a PS for non-question-driven requirements that came
+      from confident parts of the strawman. No requirement is untraceable
+      to a PS or OQ origin.
+    required: true
+    failure_message: >
+      One or more REQs lack traceability to an OQ or PS. Requirements that
+      appear ex nihilo violate the OQ → REQ production principle.
+
+  - id: AI-CONVERGE-004
+    name: design_inputs_ready
+    description: >
+      The REQ catalogue + ADR set + context updates accumulated during
+      Probe and Converge are sufficient to assemble a SOAP. No critical
+      design questions remain unaddressed at the catalogue level (e.g.
+      no security REQs despite a declared security context, no performance
+      NFRs despite stated scale targets, no data architecture decisions
+      despite data-flow concerns).
+    required: true
+    failure_message: >
+      Insufficient inputs for SOAP assembly. Identify missing categories
+      and reopen the relevant PS, or document the gap as explicitly
+      deferred to the build phase.
+
+  - id: AI-CONVERGE-005
+    name: DPDs_aligned_or_deferred
+    description: >
+      Every Data Product Definition is at status `aligned` or `implemented`,
+      OR explicitly deferred with a documented reason. No DPD silently stuck
+      at `discovering` or `drafting` — that signals stalled producer
+      engagement that the architect must address before Design assembles a
+      SOAP depending on unresolved DPDs.
+    required: true
+    failure_message: >
+      One or more DPDs remain at `discovering` or `drafting` without a
+      documented deferral. Either complete the producer alignment, or
+      document the deferral explicitly.
+
+  - id: AI-CONVERGE-006
+    name: soap_no_open_emergent_elements
+    description: >
+      By the end of Converge the living SOAP has no emergent element still
+      marked `open`. Every §6 block, §2.3 requirement, §8 NFR, and §7 ADR row is
+      either `confirmed` (traced to a closed PS / resolved OQ / ratified ADR) or
+      explicitly `deferred` (a confirmed "not built this initiative" decision
+      with a documented reason). This is AI-CONVERGE-002 capability coverage at
+      the SOAP level — the SOAP is now ready to be FINALISED in Design, not
+      assembled from scratch.
+    required: true
+    failure_message: >
+      One or more emergent SOAP elements are still `open`. Close the underlying
+      PS to confirm them, or mark them `deferred` with a reason, before
+      transitioning to Design.
+
+  - id: AI-CONVERGE-007
+    name: adr_depth_adequate
+    description: >
+      Every ADR — whether drafted during Probe or during Converge closure —
+      is complete per templates/ADR_template.md and substantive enough to be
+      ratified from the document alone (same bar as AI-RD-010 in the design
+      profile and AI-PROBE-009 in Probe): Context, Decision ("We will..."),
+      Rationale with at least two alternatives considered (each with trade-offs
+      and a stated rejection reason), Consequences (positive / negative /
+      mitigations), and References tracing to the driving OQ / PS and any
+      REQ keys. Ratification is a review of the proposal document, not a
+      rubber stamp — an ADR the architect cannot judge from its own content
+      is not ready for the gate.
+    required: true
+    failure_message: >
+      One or more ADRs are incomplete per templates/ADR_template.md or too
+      shallow to ratify from the document alone. Expand each: full Context,
+      declarative Decision, ≥2 alternatives with trade-offs and rejection
+      reasons, consequences with mitigations, and a trace to the driving
+      OQ/PS/REQ keys.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+    - id: HG-CONVERGE-001
+      name: architect_approves_converge_complete
+      description: >
+        Architect confirms all Problem Spaces are closed, the REQ catalogue
+        and ADR set are stable, context updates from Probe and Converge are
+        absorbed, capability gaps are addressed or explicitly deferred, and
+        the initiative is ready for SOAP assembly in Design (Transformation).
+      required: true
+      failure_message: >
+        Architect approval pending. Run /jupiter:review when ready.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Converge complete when all required auto and AI checks pass and the
+    architect approves via /jupiter:review.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  Converge phase. The Probe inquiry has produced a body of REQs, ADRs, and
+  context updates across multiple PS. Converge stabilises this output:
+  closes remaining OQs, reconciles cross-PS dependencies, ratifies ADRs,
+  ensures all capability gaps are addressed, and prepares the inputs for
+  SOAP assembly in Design (Transformation).
+
+  SCOPE — FOCUSED vs FULL-SWEEP ITERATION (determine before anything else)
+  Same mechanic as Probe (see probe-converge.yml SCOPE section and
+  agents/loop.md "Scope derivation"): if phases.converge.feedback carries
+  unaddressed entries that all have a non-null scope, run a FOCUSED
+  iteration on those work units only — apply STEPs 2, 3 (for ADRs anchored
+  to the targeted PS), and 6 to the targeted instances; skip STEP 4
+  cross-PS reconciliation and STEP 5 capability coverage; no gap
+  recomputation, never READY FOR REVIEW. Convergence gate math
+  (AC-CONVERGE-*, AI-CONVERGE-*) is only authoritative on a full sweep.
+
+  EDITORIAL DISCIPLINE: PS, SOAP, and DPD files are still edited throughout
+  Converge (OQ closures, strawman finalisation, SOAP promotion). The
+  EDITORIAL DISCIPLINE rules in probe-converge.yml agent_guidance apply
+  unchanged — rewrite in place, traces only in their designated homes,
+  single-home rule, full coherence read before commit. Closure is when this
+  matters most: a PS marked `closed` is the permanent record handed to
+  Design, and it must read as a clean document, not an accretion of
+  iteration residue. The §3 Problem Analysis fit expectation (AI-PROBE-011)
+  carries into closure too — a closed PS's analysis must still read as fitted
+  to its problem, not generic filler.
+
+  STEP 1 — IDENTIFY REMAINING OPEN WORK
+  Across all PS:
+    - List OQs still open or in-discussion
+    - List ADRs still at status: proposed
+    - List capability gaps from Vision without a covering PS resolution
+    - List cross-PS dependencies still unreconciled
+
+  STEP 2 — CLOSE REMAINING OQs
+  For each open / in-discussion OQ:
+    - If architect notes / sessions support resolution: propose resolution
+      with context-aligned outcome (→ REQ / ADR / context / knowledge)
+    - If the question genuinely cannot be answered in this initiative:
+      propose deferral with reason
+    - If the question turned out not to matter: propose rejection with reason
+  Architect approves each closure — the human gate principle extends here.
+
+  STEP 3 — RATIFY ADRs (the ARB moment)
+  Most ADRs were drafted at Proposed during Probe as discussion anchors and
+  have accreted alternatives and trade-offs through the inquiry. Ratification
+  is the formal review of each proposal document — the architect judges from
+  the ADR itself, as an Architecture Review Board would.
+  For each ADR at status: proposed:
+    - Verify the ADR is complete per templates/ADR_template.md: Context,
+      Decision ("We will..."), Rationale with at least two alternatives
+      considered (each with trade-offs and a stated rejection reason),
+      Consequences (positive / negative / mitigations), and References
+      tracing to the driving OQ / PS and any REQ keys (per AI-CONVERGE-007)
+    - Verify the decision aligns with related context (target architecture,
+      prior ADRs, policy, capability map, data product specs)
+    - Present to the architect for ratification (status → accepted). If the
+      architect cannot judge the decision from the document alone, the ADR
+      is not ready — expand it before presenting again
+    - If superseded by a later decision, mark as superseded with explicit
+      reference to the superseding ADR
+  If an OQ closed in STEP 2 produces a NEW ADR here in Converge, draft it
+  with the same discipline as Probe's ADR-ANCHORED DECISIONS mechanic:
+  templates/ADR_template.md, all context and guardrails loaded
+  (target-architecture, prior ADRs, policy, standards, landscape, glossary,
+  data-products), depth per AI-CONVERGE-007, architect approval to commit.
+
+  STEP 4 — RECONCILE CROSS-PS DEPENDENCIES
+    - Cross-PS OQ references: verify all references resolved
+    - Strawman contradictions: surface any remaining conflicts for the architect
+    - REQ catalogue consistency: cross-check for conflicting requirements
+
+  STEP 5 — VERIFY CAPABILITY COVERAGE
+  Re-read the Vision capability map. For each unclear / unknown capability,
+  verify it is covered by a closed PS that produced requirements / decisions.
+  Surface any gaps for architect attention. Per AI-CONVERGE-002, silent
+  capability gaps are not acceptable.
+
+  STEP 6 — TRANSITION PS TO CLOSED
+  As each PS satisfies the converging → closed criteria (all OQs at terminal
+  status, strawman finalised, REQs/ADRs/context updates produced), update
+  status to `closed` with architect approval.
+
+  STEP 7 — PRESENT FOR HUMAN GATE
+  Once all auto and AI checks pass, present the consolidated state to the
+  architect:
+    - REQ catalogue summary (count by type, traceability summary)
+    - Ratified ADR list with their decisions
+    - Addressed capabilities and any explicit deferrals
+    - Confirmation that all PS are closed
+    - Confirmation that the living SOAP has no emergent element still `open`
+      (every one confirmed or explicitly deferred) — per AI-CONVERGE-006
+  Request /jupiter:review when ready.

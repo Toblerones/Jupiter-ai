@@ -7,7 +7,7 @@ Run with `--peer` in a **separate session** to act as an independent challenger 
 ## Usage
 
 ```
-/jupiter:review [--initiative <id>] [--panel] [--spec] [--decision <approve|reject|refine>] [--feedback "<text>"]
+/jupiter:review [--initiative <id>] [--panel] [--spec] [--decision <approve|reject|refine>] [--feedback "<text>"] [--target <id>[,<id>...]]
 /jupiter:review --peer [--initiative <id>] [--session-note "<text>"]
 ```
 
@@ -17,6 +17,7 @@ Run with `--peer` in a **separate session** to act as an independent challenger 
 - `--spec` — run a spec boundary check (verifies requirements are tech-agnostic and complete) before the decision
 - `--decision <approve|reject|refine>` — record the architect's decision directly (skip interactive prompt)
 - `--feedback "<text>"` — attach feedback to a reject or refine decision
+- `--target <id>[,<id>...]` — scope a reject/refine to specific work units (comma-separated PS-{slug} / DPD-{NNN} ids; transformation `probe`/`converge` phases only). Explicit targets always override inference from the feedback text. Scoped feedback makes the next `/jupiter:iterate` a **focused iteration** on those work units instead of a full sweep — see Step 4b.
 - `--peer` — peer review mode: evaluate artifact and gate report independently, write findings, no decision prompt
 - `--session-note "<text>"` — label this peer session (e.g. "opus session", "fast mode") — recorded in the peer findings file
 
@@ -180,12 +181,30 @@ Otherwise, prompt:
 If decision is `reject` or `refine` and no `--feedback` was provided, prompt:
 > "Feedback for the next iteration:"
 
+### Step 4b — Resolve feedback scope (transformation `probe`/`converge` only, reject/refine only)
+
+Feedback on the work-unit phases can be scoped to specific PS / DPD instances so the next iteration focuses on the touchpoint instead of sweeping every work unit. Scope is resolved here, at review time — **iterate takes no targeting arguments**; it derives its scope from the recorded feedback state.
+
+Resolution order — explicit target always overrides inference:
+
+1. **`--target` provided**: split on commas. Validate every id against the actual files under `workspace/artifacts/transformation/problem-spaces/` and `workspace/artifacts/transformation/data-products/`. If any id has no matching file, list the valid ids and ask the architect to correct — never record a scope pointing at a work unit that does not exist. Skip inference entirely.
+2. **No `--target`**: infer — scan the feedback text for tokens matching existing PS-{slug} / DPD-{NNN} ids (match against the actual file list, not the pattern alone). If one or more match, confirm with the architect:
+   > "This feedback appears to target {ids}. Record it scoped to {ids}, or phase-wide? (scoped / phase-wide)"
+   Never auto-record an inferred scope without this confirmation — an inferred target may be a mention, not the touchpoint.
+3. **No match, or architect chooses phase-wide**: scope is null (phase-wide feedback; next iterate is a full sweep, exactly as today).
+
+Multiple targets are supported — scope is a list. A comment spanning two PS (e.g. a boundary dispute) is one feedback entry with `scope: [PS-a, PS-b]`; the focused iteration covers the union.
+
+For all other phases and profiles, skip this step (scope is always null).
+
 ### Step 6 — Emit event and update initiative
 
 Append to `workspace/log.jsonl`:
 ```json
-{"event": "phase_reviewed", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}", "decision": "{decision}", "feedback": "{feedback or null}", "panel_used": true|false, "spec_check_used": true|false}
+{"event": "phase_reviewed", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}", "decision": "{decision}", "feedback": "{feedback or null}", "scope": ["PS-{slug}", "..."] , "panel_used": true|false, "spec_check_used": true|false}
 ```
+
+(`scope` is the resolved list from Step 4b, or `null` for phase-wide / non-transformation reviews.)
 
 **On `approve`** — apply phase-specific logic:
 
@@ -201,9 +220,32 @@ For the `design` phase:
 - Update initiative file: `phases.design.status = complete`
 - Append `phase_complete` event for the design phase.
 
+For `vision`, `probe`, or `converge` phases (transformation profile):
+- Update initiative file: `phases.{phase}.status = complete`
+- Append `phase_complete` event:
+```json
+{"event": "phase_complete", "ts": "{ISO-8601}", "initiative": "{id}", "phase": "{phase}"}
+```
+
+For the `design_transformation` phase (transformation profile):
+- Update initiative file: `phases.design_transformation.human_gate_status.HG-DESIGN-001 = approved`. If `--panel` was used, also set `HG-DESIGN-002 = approved` (panel endorsement).
+- Update initiative file: `phases.design_transformation.status = complete`
+- Append `phase_complete` event for the design_transformation phase.
+
 **On `reject` or `refine`**:
 - Update initiative file: `phases.{phase}.status = in_progress`
 - Record feedback: `phases.{phase}.last_feedback = "{feedback}"`
+- **Transformation `probe`/`converge` phases** — additionally append a structured entry to `phases.{phase}.feedback` (a list; create it if absent):
+```yaml
+phases:
+  probe:
+    feedback:
+      - scope: [PS-costing]        # resolved in Step 4b; null = phase-wide
+        text: "{feedback}"
+        ts: "{ISO-8601}"
+        addressed: false
+```
+  The loop agent reads this list at the start of the next `/jupiter:iterate`: unaddressed entries with a non-null scope trigger a **focused iteration** on those work units; it marks entries `addressed: true` once incorporated. `last_feedback` remains the flat string for compatibility — the structured list is the source the loop agent routes on.
 - No `phase_complete` event is emitted.
 
 ### Step 5 — Print result

@@ -1,0 +1,252 @@
+# Jupiter Gate Config — Design (Transformation) → Handoff
+# Defines the checks for completing the Design (Transformation) phase.
+# Design assembles the SOAP from the REQs, ADRs, and DPDs accumulated
+# during Probe and Converge, and produces a migration roadmap.
+
+version: "3.0"
+transition: "design_transformation → handoff"
+description: >
+  Design (Transformation) phase complete when the living SOAP (born in Probe,
+  accreted through Converge) is FINALISED — fully populated per
+  templates/SOAP_template.md and with no emergent element left `open` (every one
+  confirmed or explicitly deferred), ADRs are ratified, the migration roadmap
+  exists, every DPD is at status `aligned`/`implemented` or explicitly noted as
+  deferred, and the architect approves the SOAP for handoff (reviewer panel
+  endorsement is recommended).
+
+# ─── Auto Checks ──────────────────────────────────────────────────────────────
+
+auto_checks:
+
+  - id: AC-DESIGN-001
+    name: soap_artifact_exists
+    description: >
+      The SOAP artifact exists at the path declared by the transformation
+      profile's design_transformation.artifact (typically
+      workspace/artifacts/transformation/design/{initiative_id}-SOAP.md).
+    required: true
+    failure_message: >
+      SOAP artifact is missing. Run /jupiter:iterate to produce it from
+      templates/SOAP_template.md using the REQs/ADRs/DPDs accumulated in
+      Probe and Converge.
+
+  - id: AC-DESIGN-002
+    name: soap_finalised_no_open_elements
+    description: >
+      The living SOAP (born in Probe, accreted through Converge) is FINALISED.
+      Two conditions: (a) every required section per templates/SOAP_template.md
+      has substantive content and no placeholder text ([REPLACE], [TODO], TBD) —
+      Document Control, Section 1 Executive Summary, Section 2 Business Context &
+      Requirements, Section 3 Current State Snapshot, Section 4 Business
+      Architecture, Section 5 Target State Architecture, Section 6 Solution
+      Architecture, Section 7 ADRs Summary, Section 8 Non-Functional
+      Architecture, Section 9 Delivery, Risks & Dependencies; AND (b) no emergent
+      element (§2.3, §6, §7, §8) remains marked `open` — every one is `confirmed`
+      or explicitly `deferred`. The `open` state is legitimate during
+      Probe/Converge but is the handoff-blocking condition here.
+    required: true
+    failure_message: >
+      The SOAP is not finalised — a section still has placeholder text, or an
+      emergent element is still marked `open`. Confirm it (close the underlying
+      PS) or mark it `deferred` with a reason before handoff.
+
+  - id: AC-DESIGN-003
+    name: all_ADRs_ratified
+    description: >
+      Every ADR file under workspace/artifacts/transformation/design/adrs/
+      has status: accepted or superseded. No ADR remains at status: proposed.
+    required: true
+    failure_message: >
+      One or more ADRs are still at status: proposed. Ratify each before
+      handoff.
+
+  - id: AC-DESIGN-004
+    name: migration_roadmap_exists
+    description: >
+      workspace/artifacts/transformation/design/migration-roadmap.md exists
+      and is populated (not empty, not placeholder).
+    required: true
+    failure_message: >
+      Migration roadmap is missing or empty. Capture phased delivery, DPD
+      implementation dependencies, and transition steps.
+
+# ─── AI Checks ────────────────────────────────────────────────────────────────
+
+ai_checks:
+
+  - id: AI-DESIGN-001
+    name: REQs_addressed_in_soap
+    description: >
+      Every REQ key produced during Probe and Converge is addressed in the
+      SOAP — referenced in Section 6 Solution Architecture (for F/BR/S types)
+      or in Section 8 Non-Functional Architecture (for NFR types). No REQ
+      key is orphaned; if an REQ is intentionally deferred, the deferral is
+      documented in Section 9.4 Phasing & Transition Notes.
+    required: true
+    failure_message: >
+      One or more REQ keys are not addressed in the SOAP. Either reference
+      them in the appropriate section or document explicit deferral in 9.4.
+
+  - id: AI-DESIGN-002
+    name: capabilities_covered_in_soap
+    description: >
+      Every in-scope capability from Vision's capability-map.md is reflected
+      in SOAP Section 4.2 Business Capabilities and addressed in Section 5.1
+      Target Capability Alignment.
+    required: true
+    failure_message: >
+      One or more in-scope capabilities from Vision are not covered in the
+      SOAP. Reconcile.
+
+  - id: AI-DESIGN-003
+    name: DPDs_referenced_in_soap
+    description: >
+      DPDs at status `aligned` or `implemented` are referenced in SOAP
+      Section 6.6 Data Architecture Overview. DPDs still at `discovering`
+      or `drafting` are documented as dependencies in Section 9.3 with
+      explicit deferral rationale.
+    required: true
+    failure_message: >
+      DPDs are not properly referenced in the SOAP. Aligned DPDs go in 6.6;
+      in-progress DPDs go in 9.3 with deferral rationale.
+
+  - id: AI-DESIGN-004
+    name: soap_internally_consistent
+    description: >
+      The SOAP is internally consistent — no contradictions between sections.
+      Section 5 Target State and Section 6 Solution Architecture align;
+      Section 8 NFR targets are reflected in Section 6 design choices;
+      Section 9.1 Risks reference real architectural choices, not phantom
+      risks.
+    required: true
+    failure_message: >
+      SOAP has internal contradictions. Reconcile before handoff.
+
+  - id: AI-DESIGN-005
+    name: soap_aligns_with_context
+    description: >
+      The SOAP respects all authoritative context loaded for the initiative
+      — target architecture, policy, prior ADRs, glossary, landscape, data
+      products. No SOAP section silently violates a context constraint. This is
+      the design-phase analog of AI-PROBE-006: outputs must trace to, and stay
+      within, authoritative sources.
+    required: true
+    failure_message: >
+      SOAP appears to violate one or more context constraints. Reconcile, or
+      document an explicit waiver in Section 9.
+
+# ─── Human Gate ───────────────────────────────────────────────────────────────
+
+human_gate:
+  required: true
+  checks:
+    - id: HG-DESIGN-001
+      name: architect_approves_soap_for_handoff
+      description: >
+        Architect confirms the SOAP is complete, internally consistent,
+        aligned with context, and ready for handoff to delivery teams. All
+        ADRs ratified, migration roadmap finalised, DPDs accounted for.
+      required: true
+      failure_message: >
+        Architect approval pending. Run /jupiter:review when ready.
+
+    - id: HG-DESIGN-002
+      name: panel_reviewers_endorse_soap
+      description: >
+        The five reviewer agents (EA, BA, DA, SA, Eng) have evaluated the
+        SOAP via /jupiter:review --panel and the architect has considered
+        their findings. Substantive disagreements are reconciled or
+        documented.
+      required: true
+      failure_message: >
+        Reviewer panel review pending. Run /jupiter:review --panel before
+        final handoff approval.
+
+# ─── Completion ───────────────────────────────────────────────────────────────
+
+completion:
+  rule: all_required_checks_pass
+  human_required: true
+  description: >
+    Design (Transformation) complete when all required auto and AI checks
+    pass and the architect approves via /jupiter:review. Panel review via
+    /jupiter:review --panel is required for HG-DESIGN-002.
+
+# ─── Agent Guidance ───────────────────────────────────────────────────────────
+
+agent_guidance: |
+  Design (Transformation) phase. Probe and Converge have produced a stable
+  REQ catalogue, ratified ADRs, context updates, and collaboratively-defined
+  Data Product Definitions. Your job is to assemble the SOAP from these
+  inputs, finalise the migration roadmap, and prepare the artifact set for
+  handoff. You produce structured content from authoritative inputs — same
+  context-driven principle as Probe/Converge.
+
+  STEP 1 — LOAD INPUTS
+  Read:
+    - The EXISTING living SOAP at
+      workspace/artifacts/transformation/design/{initiative_id}-SOAP.md — born in
+      Probe, accreted through Converge. You are FINALISING this file, not
+      creating it.
+    - workspace/INTENT.md (vision narrative)
+    - workspace/artifacts/transformation/vision/capability-map.md
+    - workspace/artifacts/transformation/vision/conceptual-sketch.md (if present)
+    - All PS files under workspace/artifacts/transformation/problem-spaces/
+      (focus on: resolved OQ outcomes → REQ keys, decisions, derived_from)
+    - All DPD files under workspace/artifacts/transformation/data-products/
+    - All ADR files under workspace/artifacts/transformation/design/adrs/
+    - Full workspace/context/ (policy, ADRs, glossary, landscape, data products)
+    - Template at templates/SOAP_template.md (production SOAP shape)
+
+  STEP 2 — FINALISE THE LIVING SOAP
+  The SOAP already exists — born in Probe, accreted through Converge. Do NOT
+  recreate it from scratch. Open the existing file and finalise it: drive every
+  emergent element still marked `open` to `confirmed` or explicit `deferred`,
+  reconcile cross-PS solution content into one coherent view, and verify every
+  section is substantively populated. Use the loaded inputs to fill any remaining
+  gaps (each section below indicates its source):
+    - Document Control: Owner from project.yml lead_architect; populate
+      Reference / Version / Status fields
+    - Section 1 Executive Summary: from INTENT.md problem + vision drivers
+    - Section 2 Business Context: from REQ catalogue (high-level summary) +
+      scope from initiative + regulatory from context/policy
+    - Section 3 Current State Snapshot: from current-state narratives in PS
+      strawmans and capability map current_state column
+    - Section 4 Business Architecture: from capability map (4.2) + impacted
+      processes derived from PS strawmans (4.3) + value streams from intent
+    - Section 5 Target State Architecture: from vision conceptual sketch
+      (5.2) + ADR-derived principles (5.3) + technology standards from
+      context/standards (5.4)
+    - Section 6 Solution Architecture: synthesise PS strawmans into a
+      coherent solution view; map REQs to components (6.2); DPDs into Data
+      Architecture (6.6)
+    - Section 7 ADRs Summary: row per ratified ADR
+    - Section 8 Non-Functional: from REQ-NFR-* keys and acceptance criteria
+    - Section 9 Delivery, Risks & Dependencies: risks from PS notes +
+      assumptions accumulated + dependencies including DPDs not yet
+      implemented (9.3) + phasing from migration roadmap (9.4)
+
+  Every populated section MUST trace to authoritative inputs — context, REQs,
+  ADRs, PS outputs, DPDs. SOAP content without traceability violates the
+  context-driven principle (per AI-DESIGN-005).
+
+  STEP 3 — PRODUCE MIGRATION ROADMAP
+  Draft workspace/artifacts/transformation/design/migration-roadmap.md
+  capturing phased delivery sequence, DPD implementation dependencies, and
+  transition steps. Cross-reference SOAP Section 9.4 Phasing & Transition Notes.
+
+  STEP 4 — RATIFY OUTSTANDING ADRs
+  Any ADR still at status: proposed must be ratified (accepted or superseded)
+  before handoff. Present each for architect ratification.
+
+  STEP 5 — RUN AUTO AND AI CHECKS
+  Evaluate every check in this gate config against the produced SOAP +
+  migration roadmap + ratified ADRs.
+
+  STEP 6 — PRESENT FOR HUMAN GATE
+  When auto and AI checks pass:
+    - First recommend /jupiter:review --panel — the five reviewer agents
+      (EA, BA, DA, SA, Eng) evaluate the SOAP from their disciplinary
+      perspectives.
+    - Then /jupiter:review for the architect's final approval.
+  The human gate is non-negotiable — never auto-approve.

@@ -74,6 +74,131 @@ phases:
     human_required: false
     outputs_to: []
 
+  # ─── Transformation profile phases ──────────────────────────────────────────
+  # Architecture-led, hypothesis-driven, concurrent-stream methodology.
+  # See workflow/profiles/transformation.yml for the profile that uses these phases.
+
+  vision:
+    id: vision
+    label: Vision
+    sequence: 1
+    description: >
+      Transformation profile entry phase. Capture pain + target conceptual
+      architecture. Produce a mandatory capability map and (optionally) a
+      high-level conceptual sketch — these are the conceptual artifacts from
+      which Problem Spaces are derived in Probe.
+    artifact:
+      path: "workspace/INTENT.md"
+      type: vision_statement
+    sub_artifacts:
+      capability_map:
+        path: "workspace/artifacts/transformation/vision/capability-map.md"
+        type: capability_map
+        template: "templates/capability-map_template.md"
+        required: true
+      conceptual_sketch:
+        path: "workspace/artifacts/transformation/vision/conceptual-sketch.md"
+        type: hl_conceptual_sketch
+        required: false
+    gates_config: "workflow/gates/vision-probe.yml"
+    input_from: null
+    human_required: true
+    outputs_to: [probe]
+
+  probe:
+    id: probe
+    label: Probe
+    sequence: 2
+    description: >
+      Open Problem Spaces from Vision's capability gaps. Architect drafts
+      strawmans, surfaces Open Questions, engages SMEs (workshops, interviews,
+      doc reviews, async resolutions), and resolves OQs into REQs / ADRs /
+      context updates. Problem Spaces run concurrently as work units within
+      this phase. Raw inquiry notes live separately at
+      workspace/artifacts/transformation/notes/PS-{slug}-notes.md and feed
+      structured updates into the PS files via agent-mediated context check.
+    work_units:
+      problem_spaces:
+        type: problem_space
+        path: "workspace/artifacts/transformation/problem-spaces/"
+        pattern: "PS-{slug}.md"
+        template: "templates/PS_template.md"
+        status_field: status
+        notes:
+          path: "workspace/artifacts/transformation/notes/"
+          pattern: "PS-{slug}-notes.md"
+          template: "templates/PS_notes_template.md"
+      data_products:
+        type: data_product_definition
+        path: "workspace/artifacts/transformation/data-products/"
+        pattern: "DPD-{NNN}.md"
+        template: "templates/DPD_template.md"
+        status_field: status
+        notes:
+          path: "workspace/artifacts/transformation/notes/"
+          pattern: "DPD-{NNN}-notes.md"
+          template: "templates/DPD_notes_template.md"
+    gates_config: "workflow/gates/probe-converge.yml"
+    input_from: vision
+    human_required: true
+    outputs_to: [converge]
+
+  converge:
+    id: converge
+    label: Converge
+    sequence: 3
+    description: >
+      Close remaining OQs, reconcile cross-PS dependencies, stabilise the
+      REQ catalogue and ADR set. Problem Spaces transition to status: closed.
+      Output: stable set of requirements, ratified ADRs, and context updates
+      ready for SOAP assembly in Design (Transformation).
+    work_units:
+      problem_spaces:
+        type: problem_space
+        path: "workspace/artifacts/transformation/problem-spaces/"
+        pattern: "PS-{slug}.md"
+        template: "templates/PS_template.md"
+        status_field: status
+      data_products:
+        type: data_product_definition
+        path: "workspace/artifacts/transformation/data-products/"
+        pattern: "DPD-{NNN}.md"
+        template: "templates/DPD_template.md"
+        status_field: status
+    gates_config: "workflow/gates/converge-design.yml"
+    input_from: probe
+    human_required: true
+    outputs_to: [design_transformation]
+
+  design_transformation:
+    id: design_transformation
+    label: Design (Transformation)
+    sequence: 4
+    description: >
+      Assemble full SOAP from REQs/ADRs/context accumulated during Probe and
+      Converge. Produce upstream data product change proposals and a migration
+      roadmap. Distinct from the architecture-profile design phase — different
+      inputs (PS outcomes, not a requirements artifact) and different output
+      set (adds upstream change proposals and roadmap).
+    artifact:
+      path: "workspace/artifacts/transformation/design/{initiative_id}-SOAP.md"
+      type: solution_on_a_page
+    sub_artifacts:
+      adrs:
+        path: "workspace/artifacts/transformation/design/adrs/"
+        pattern: "ADR-{NNN}-{slug}.md"
+        type: architecture_decision_record
+      migration_roadmap:
+        path: "workspace/artifacts/transformation/design/migration-roadmap.md"
+        type: migration_roadmap
+      # Note: Data Product Definitions (DPDs) at workspace/artifacts/transformation/data-products/
+      # are INPUTS to design (created during Probe/Converge), not outputs of this phase.
+      # Aligned/implemented DPDs feed SOAP assembly. New DPDs are not created here.
+    gates_config: "workflow/gates/design-handoff.yml"
+    input_from: converge
+    human_required: true
+    outputs_to: []
+
 # Standard transition sequence for most profiles
 standard_sequence: [intent, requirements, design]
 
@@ -82,6 +207,9 @@ requirements_first_sequence: [requirements, design]
 
 # Assessment runs outside the standard sequence — parallel or standalone
 assessment_profiles: [assessment, discovery]
+
+# Transformation profile sequence — architecture-led, hypothesis-driven, concurrent-stream
+transformation_sequence: [vision, probe, converge, design_transformation]
 
 # Initiative status values
 status_values:
